@@ -1,0 +1,33 @@
+<% content_for :title, @menu_category.name %>
+
+<div class="flex items-center justify-between mb-6">
+  <div>
+    <%= link_to "← Menu", admin_menu_categories_path, class: "text-sm text-gray-500" %>
+    <h1 class="text-2xl font-semibold"><%= @menu_category.name %></h1>
+  </div>
+  <%= link_to "New item", new_admin_menu_category_menu_item_path(@menu_category), class: "bg-gray-900 text-white text-sm px-4 py-2 rounded" %>
+</div>
+
+<% if @menu_items.any? %>
+  <ul class="space-y-4">
+    <% @menu_items.each do |item| %>
+      <li class="bg-white border border-gray-200 rounded p-4">
+        <div class="flex items-center justify-between">
+          <div>
+            <%= link_to item.name, admin_menu_item_path(item), class: "font-medium" %>
+            <span class="text-gray-500 text-sm ml-2">$<%= "%.2f" % item.price %></span>
+            <% unless item.available? %>
+              <span class="text-red-600 text-xs ml-2">Unavailable</span>
+            <% end %>
+          </div>
+          <div class="flex gap-3 text-sm">
+            <%= link_to "Edit", edit_admin_menu_item_path(item), class: "text-gray-600 hover:text-gray-900" %>
+            <%= button_to "Delete", admin_menu_item_path(item), method: :delete, class: "text-red-600 hover:text-red-800 bg-transparent border-0 p-0 cursor-pointer text-sm", form: { data: { turbo_confirm: "Delete this item?" } } %>
+          </div>
+        </div>
+      </li>
+    <% end %>
+  </ul>
+<% else %>
+  <p class="text-gray-500 text-sm">No items in this category yet.</p>
+<% end %>

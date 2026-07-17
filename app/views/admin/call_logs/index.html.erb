@@ -1,0 +1,21 @@
+<% content_for :title, "Call logs" %>
+
+<h1 class="text-2xl font-semibold mb-6">Call logs</h1>
+
+<% if @call_logs.any? %>
+  <ul class="space-y-4">
+    <% @call_logs.each do |call| %>
+      <li class="bg-white border border-gray-200 rounded p-4">
+        <div class="flex items-center justify-between">
+          <%= link_to admin_call_log_path(call), class: "flex-1" do %>
+            <span class="font-medium"><%= call.phone_number %></span>
+            <span class="text-gray-500 text-sm ml-2"><%= call.started_at&.strftime("%b %-d, %-l:%M%P") %></span>
+          <% end %>
+          <span class="text-sm text-gray-500"><%= call.status.humanize %></span>
+        </div>
+      </li>
+    <% end %>
+  </ul>
+<% else %>
+  <p class="text-gray-500 text-sm">No calls yet.</p>
+<% end %>

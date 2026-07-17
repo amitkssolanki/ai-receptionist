@@ -1,0 +1,4 @@
+<% content_for :title, "Edit modifier" %>
+
+<h1 class="text-2xl font-semibold mb-6">Edit modifier for <%= @menu_item.name %></h1>
+<%= render "form", menu_item: @menu_item, menu_item_modifier: @menu_item_modifier %>

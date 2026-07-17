@@ -1,0 +1,20 @@
+<% content_for :title, @call_log.phone_number %>
+
+<%= link_to "← Call logs", admin_call_logs_path, class: "text-sm text-gray-500" %>
+
+<div class="flex items-center justify-between mt-2 mb-6">
+  <div>
+    <h1 class="text-2xl font-semibold"><%= @call_log.phone_number %></h1>
+    <p class="text-gray-500 text-sm">
+      <%= @call_log.started_at&.strftime("%b %-d, %-l:%M%P") %>
+      <% if @call_log.order %> &middot; <%= link_to "Order ##{@call_log.order.id}", admin_order_path(@call_log.order) %><% end %>
+    </p>
+  </div>
+  <span class="text-sm text-gray-500"><%= @call_log.status.humanize %></span>
+</div>
+
+<% if @call_log.recording_url.present? %>
+  <audio controls src="<%= @call_log.recording_url %>" class="mb-6 w-full max-w-md"></audio>
+<% end %>
+
+<pre class="bg-white border border-gray-200 rounded p-4 text-sm whitespace-pre-wrap"><%= @call_log.transcript %></pre>

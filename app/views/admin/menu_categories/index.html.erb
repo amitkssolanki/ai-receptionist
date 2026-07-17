@@ -1,0 +1,25 @@
+<% content_for :title, "Menu" %>
+
+<div class="flex items-center justify-between mb-6">
+  <h1 class="text-2xl font-semibold">Menu</h1>
+  <%= link_to "New category", new_admin_menu_category_path, class: "bg-gray-900 text-white text-sm px-4 py-2 rounded" %>
+</div>
+
+<% if @menu_categories.any? %>
+  <ul class="space-y-4">
+    <% @menu_categories.each do |category| %>
+      <li class="bg-white border border-gray-200 rounded p-4">
+        <div class="flex items-center justify-between">
+          <%= link_to category.name, admin_menu_category_path(category), class: "font-medium" %>
+          <div class="flex gap-3 text-sm">
+            <%= link_to "Items", admin_menu_category_menu_items_path(category), class: "text-gray-600 hover:text-gray-900" %>
+            <%= link_to "Edit", edit_admin_menu_category_path(category), class: "text-gray-600 hover:text-gray-900" %>
+            <%= button_to "Delete", admin_menu_category_path(category), method: :delete, class: "text-red-600 hover:text-red-800 bg-transparent border-0 p-0 cursor-pointer text-sm", form: { data: { turbo_confirm: "Delete this category and all its items?" } } %>
+          </div>
+        </div>
+      </li>
+    <% end %>
+  </ul>
+<% else %>
+  <p class="text-gray-500 text-sm">No menu categories yet.</p>
+<% end %>

@@ -1,0 +1,10 @@
+<% content_for :title, @menu_category.name %>
+
+<div class="flex items-center justify-between mb-6">
+  <h1 class="text-2xl font-semibold"><%= @menu_category.name %></h1>
+  <div class="flex gap-3 text-sm">
+    <%= link_to "Items", admin_menu_category_menu_items_path(@menu_category), class: "text-gray-600 hover:text-gray-900" %>
+    <%= link_to "Edit", edit_admin_menu_category_path(@menu_category), class: "text-gray-600 hover:text-gray-900" %>
+    <%= link_to "Back to menu", admin_menu_categories_path, class: "text-gray-600 hover:text-gray-900" %>
+  </div>
+</div>
