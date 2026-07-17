@@ -1,0 +1,24 @@
+<%= form_with model: menu_item_modifier,
+              url: (menu_item_modifier.persisted? ? admin_menu_item_modifier_path(menu_item_modifier) : admin_menu_item_menu_item_modifiers_path(menu_item)),
+              class: "space-y-4 max-w-md" do |f| %>
+  <% if menu_item_modifier.errors.any? %>
+    <p class="text-red-600 text-sm"><%= menu_item_modifier.errors.full_messages.to_sentence %></p>
+  <% end %>
+
+  <div>
+    <%= f.label :name, class: "block text-sm font-medium mb-1" %>
+    <%= f.text_field :name, class: "w-full border border-gray-300 rounded px-3 py-2" %>
+  </div>
+
+  <div>
+    <%= f.label :price_cents, "Additional price (cents)", class: "block text-sm font-medium mb-1" %>
+    <%= f.number_field :price_cents, class: "w-full border border-gray-300 rounded px-3 py-2" %>
+  </div>
+
+  <div>
+    <%= f.label :position, class: "block text-sm font-medium mb-1" %>
+    <%= f.number_field :position, class: "w-full border border-gray-300 rounded px-3 py-2" %>
+  </div>
+
+  <%= f.submit class: "bg-gray-900 text-white text-sm px-4 py-2 rounded cursor-pointer" %>
+<% end %>

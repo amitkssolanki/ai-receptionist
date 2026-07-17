@@ -1,0 +1,22 @@
+<% content_for :title, "Orders" %>
+
+<h1 class="text-2xl font-semibold mb-6">Orders</h1>
+
+<% if @orders.any? %>
+  <ul class="space-y-4">
+    <% @orders.each do |order| %>
+      <li class="bg-white border border-gray-200 rounded p-4">
+        <div class="flex items-center justify-between">
+          <%= link_to admin_order_path(order), class: "flex-1" do %>
+            <span class="font-medium">Order #<%= order.id %></span>
+            <span class="text-gray-500 text-sm ml-2"><%= order.customer.phone_number %></span>
+            <span class="text-gray-500 text-sm ml-2"><%= order.fulfillment_type.humanize %></span>
+          <% end %>
+          <span class="text-sm text-gray-500"><%= order.status.humanize %></span>
+        </div>
+      </li>
+    <% end %>
+  </ul>
+<% else %>
+  <p class="text-gray-500 text-sm">No orders yet.</p>
+<% end %>

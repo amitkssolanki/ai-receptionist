@@ -1,0 +1,48 @@
+<% content_for :title, "Order ##{@order.id}" %>
+
+<%= link_to "← Orders", admin_orders_path, class: "text-sm text-gray-500" %>
+
+<div class="flex items-center justify-between mt-2 mb-6">
+  <div>
+    <h1 class="text-2xl font-semibold">Order #<%= @order.id %></h1>
+    <p class="text-gray-500 text-sm">
+      <%= @order.customer.phone_number %> &middot; <%= @order.fulfillment_type.humanize %>
+      <% if @order.delivery? %> to <%= @order.delivery_address %><% end %>
+    </p>
+  </div>
+
+  <%= form_with model: @order, url: admin_order_path(@order), method: :patch, class: "flex items-center gap-2" do |f| %>
+    <%= f.select :status, Order.statuses.keys.map { |s| [ s.humanize, s ] }, {}, onchange: "this.form.requestSubmit()", class: "border border-gray-300 rounded px-3 py-2 text-sm" %>
+  <% end %>
+</div>
+
+<table class="w-full bg-white border border-gray-200 rounded overflow-hidden text-sm">
+  <thead class="bg-gray-50 text-left text-gray-500">
+    <tr>
+      <th class="px-4 py-2">Item</th>
+      <th class="px-4 py-2">Qty</th>
+      <th class="px-4 py-2">Modifiers</th>
+      <th class="px-4 py-2 text-right">Subtotal</th>
+    </tr>
+  </thead>
+  <tbody class="divide-y divide-gray-200">
+    <% @order.order_items.each do |item| %>
+      <tr>
+        <td class="px-4 py-2"><%= item.menu_item.name %></td>
+        <td class="px-4 py-2"><%= item.quantity %></td>
+        <td class="px-4 py-2 text-gray-500"><%= item.selected_modifiers.map { |m| m["name"] }.join(", ") %></td>
+        <td class="px-4 py-2 text-right">$<%= "%.2f" % (item.subtotal_cents / 100.0) %></td>
+      </tr>
+    <% end %>
+  </tbody>
+  <tfoot>
+    <tr class="border-t border-gray-200 font-medium">
+      <td class="px-4 py-2" colspan="3">Total</td>
+      <td class="px-4 py-2 text-right">$<%= "%.2f" % @order.total %></td>
+    </tr>
+  </tfoot>
+</table>
+
+<% if @order.notes.present? %>
+  <p class="mt-4 text-sm text-gray-600"><strong>Notes:</strong> <%= @order.notes %></p>
+<% end %>

@@ -1,0 +1,34 @@
+<%= form_with model: menu_item,
+              url: (menu_item.persisted? ? admin_menu_item_path(menu_item) : admin_menu_category_menu_items_path(menu_item.menu_category)),
+              class: "space-y-4 max-w-md" do |f| %>
+  <% if menu_item.errors.any? %>
+    <p class="text-red-600 text-sm"><%= menu_item.errors.full_messages.to_sentence %></p>
+  <% end %>
+
+  <div>
+    <%= f.label :name, class: "block text-sm font-medium mb-1" %>
+    <%= f.text_field :name, class: "w-full border border-gray-300 rounded px-3 py-2" %>
+  </div>
+
+  <div>
+    <%= f.label :description, class: "block text-sm font-medium mb-1" %>
+    <%= f.text_area :description, rows: 3, class: "w-full border border-gray-300 rounded px-3 py-2" %>
+  </div>
+
+  <div>
+    <%= f.label :price, "Price ($)", class: "block text-sm font-medium mb-1" %>
+    <%= f.text_field :price, value: (menu_item.price_cents ? "%.2f" % menu_item.price : nil), class: "w-full border border-gray-300 rounded px-3 py-2" %>
+  </div>
+
+  <div>
+    <%= f.label :position, class: "block text-sm font-medium mb-1" %>
+    <%= f.number_field :position, class: "w-full border border-gray-300 rounded px-3 py-2" %>
+  </div>
+
+  <div class="flex items-center gap-2">
+    <%= f.check_box :available, class: "rounded" %>
+    <%= f.label :available, class: "text-sm font-medium" %>
+  </div>
+
+  <%= f.submit class: "bg-gray-900 text-white text-sm px-4 py-2 rounded cursor-pointer" %>
+<% end %>

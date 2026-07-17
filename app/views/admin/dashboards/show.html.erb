@@ -1,0 +1,43 @@
+<% content_for :title, "Dashboard" %>
+
+<h1 class="text-2xl font-semibold mb-6"><%= @restaurant.name %></h1>
+
+<div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+  <section>
+    <h2 class="text-lg font-medium mb-3">Recent orders</h2>
+    <% if @recent_orders.any? %>
+      <ul class="divide-y divide-gray-200 bg-white rounded border border-gray-200">
+        <% @recent_orders.each do |order| %>
+          <li class="px-4 py-3 flex items-center justify-between">
+            <%= link_to admin_order_path(order), class: "flex-1" do %>
+              <span class="font-medium">Order #<%= order.id %></span>
+              <span class="text-gray-500 text-sm ml-2"><%= order.customer.phone_number %></span>
+            <% end %>
+            <span class="text-sm text-gray-500"><%= order.status.humanize %></span>
+          </li>
+        <% end %>
+      </ul>
+    <% else %>
+      <p class="text-gray-500 text-sm">No orders yet.</p>
+    <% end %>
+  </section>
+
+  <section>
+    <h2 class="text-lg font-medium mb-3">Recent calls</h2>
+    <% if @recent_calls.any? %>
+      <ul class="divide-y divide-gray-200 bg-white rounded border border-gray-200">
+        <% @recent_calls.each do |call| %>
+          <li class="px-4 py-3 flex items-center justify-between">
+            <%= link_to admin_call_log_path(call), class: "flex-1" do %>
+              <span class="font-medium"><%= call.phone_number %></span>
+              <span class="text-gray-500 text-sm ml-2"><%= call.started_at&.strftime("%b %-d, %-l:%M%P") %></span>
+            <% end %>
+            <span class="text-sm text-gray-500"><%= call.status.humanize %></span>
+          </li>
+        <% end %>
+      </ul>
+    <% else %>
+      <p class="text-gray-500 text-sm">No calls yet.</p>
+    <% end %>
+  </section>
+</div>

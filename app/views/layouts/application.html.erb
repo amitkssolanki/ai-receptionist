@@ -23,8 +23,29 @@
     <%= javascript_importmap_tags %>
   </head>
 
-  <body>
-    <main class="container mx-auto mt-28 px-5 flex">
+  <body class="bg-gray-50 text-gray-900">
+    <% if user_signed_in? %>
+      <nav class="bg-white border-b border-gray-200">
+        <div class="container mx-auto px-5 py-3 flex items-center justify-between">
+          <div class="flex items-center gap-6">
+            <%= link_to "AI Receptionist", root_path, class: "font-semibold" %>
+            <%= link_to "Menu", admin_menu_categories_path, class: "text-sm text-gray-600 hover:text-gray-900" %>
+            <%= link_to "Orders", admin_orders_path, class: "text-sm text-gray-600 hover:text-gray-900" %>
+            <%= link_to "Call Logs", admin_call_logs_path, class: "text-sm text-gray-600 hover:text-gray-900" %>
+          </div>
+          <%= button_to "Sign out", destroy_user_session_path, method: :delete, class: "text-sm text-gray-600 hover:text-gray-900 bg-transparent border-0 p-0 cursor-pointer" %>
+        </div>
+      </nav>
+    <% end %>
+
+    <main class="container mx-auto px-5 py-8">
+      <% if notice %>
+        <p class="mb-4 rounded bg-green-50 text-green-800 px-4 py-2 text-sm"><%= notice %></p>
+      <% end %>
+      <% if alert %>
+        <p class="mb-4 rounded bg-red-50 text-red-800 px-4 py-2 text-sm"><%= alert %></p>
+      <% end %>
+
       <%= yield %>
     </main>
   </body>
