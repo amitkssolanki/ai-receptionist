@@ -22,6 +22,9 @@ gem "jbuilder"
 # Authentication for the admin dashboard [https://github.com/heartcombo/devise]
 gem "devise"
 
+# Send SMS order confirmations [https://github.com/twilio/twilio-ruby]
+gem "twilio-ruby"
+
 # Use Active Model has_secure_password [https://guides.rubyonrails.org/active_model_basics.html#securepassword]
 # gem "bcrypt", "~> 3.1.7"
 
