@@ -10,6 +10,8 @@ class Api::Voice::CallsControllerTest < ActionDispatch::IntegrationTest
       restaurant: @restaurant, name: "Burger", price_cents: 1000, position: 1
     )
     @modifier = @menu_item.menu_item_modifiers.create!(name: "Add cheese", price_cents: 150)
+    @fries = @category.menu_items.create!(restaurant: @restaurant, name: "Fries", price_cents: 400, position: 2)
+    @menu_item.menu_item_upsells.create!(upsell_item: @fries)
   end
 
   teardown do
@@ -40,6 +42,7 @@ class Api::Voice::CallsControllerTest < ActionDispatch::IntegrationTest
     assert_response :success
     menu = JSON.parse(response.body)
     assert_equal "Burger", menu.dig(0, "items", 0, "name")
+    assert_equal "Fries", menu.dig(0, "items", 0, "suggest_with", 0, "name")
 
     post api_voice_call_cart_items_path(call_log.external_call_id),
       params: { menu_item_id: @menu_item.id, quantity: 2, modifier_ids: [ @modifier.id ] },
