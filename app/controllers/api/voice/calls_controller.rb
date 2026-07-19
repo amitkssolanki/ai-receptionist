@@ -76,7 +76,8 @@ class Api::Voice::CallsController < Api::Voice::BaseController
 
   # POST /api/voice/calls/:external_call_id/transfer
   def transfer
-    @call_log.update!(status: :transferred)
+    note = "[Transferred to human#{": #{params[:reason]}" if params[:reason].present?}]"
+    @call_log.update!(status: :transferred, transcript: [ @call_log.transcript, note ].compact.join("\n"))
     head :ok
   end
 

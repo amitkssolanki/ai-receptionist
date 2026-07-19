@@ -77,9 +77,12 @@ class Api::Voice::CallsControllerTest < ActionDispatch::IntegrationTest
       params: { external_call_id: "call_3", from: "+15551234567", to: @restaurant.phone_number },
       headers: auth_headers
 
-    post transfer_api_voice_call_path("call_3"), headers: auth_headers
+    post transfer_api_voice_call_path("call_3"), params: { reason: "asked for catering" }, headers: auth_headers
     assert_response :success
-    assert CallLog.find_by!(external_call_id: "call_3").transferred?
+
+    call_log = CallLog.find_by!(external_call_id: "call_3")
+    assert call_log.transferred?
+    assert_includes call_log.transcript, "asked for catering"
   end
 
   test "end_call records the transcript and marks abandoned when no order was placed" do
