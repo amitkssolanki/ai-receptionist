@@ -50,6 +50,6 @@ class Admin::MenuItemsController < Admin::BaseController
   end
 
   def menu_item_params
-    params.expect(menu_item: [ :name, :description, :price, :available, :position ])
+    params.expect(menu_item: [ :name, :description, :price, :available, :position, upsell_item_ids: [] ])
   end
 end

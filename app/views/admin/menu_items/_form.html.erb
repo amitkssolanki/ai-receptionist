@@ -30,5 +30,22 @@
     <%= f.label :available, class: "text-sm font-medium" %>
   </div>
 
+  <% if menu_item.persisted? %>
+    <% other_items = menu_item.restaurant.menu_items.where.not(id: menu_item.id).order(:name) %>
+    <% if other_items.any? %>
+      <div>
+        <label class="block text-sm font-medium mb-1">Suggest alongside this item</label>
+        <div class="space-y-1">
+          <%= f.collection_check_boxes :upsell_item_ids, other_items, :id, :name do |b| %>
+            <div class="flex items-center gap-2">
+              <%= b.check_box(class: "rounded") %>
+              <%= b.label(class: "text-sm") %>
+            </div>
+          <% end %>
+        </div>
+      </div>
+    <% end %>
+  <% end %>
+
   <%= f.submit class: "bg-gray-900 text-white text-sm px-4 py-2 rounded cursor-pointer" %>
 <% end %>

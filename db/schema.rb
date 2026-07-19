@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_07_17_020912) do
+ActiveRecord::Schema[8.1].define(version: 2026_07_19_151814) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -60,6 +60,16 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_17_020912) do
     t.integer "price_cents", default: 0, null: false
     t.datetime "updated_at", null: false
     t.index ["menu_item_id"], name: "index_menu_item_modifiers_on_menu_item_id"
+  end
+
+  create_table "menu_item_upsells", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.bigint "menu_item_id", null: false
+    t.datetime "updated_at", null: false
+    t.bigint "upsell_item_id", null: false
+    t.index ["menu_item_id", "upsell_item_id"], name: "index_menu_item_upsells_uniqueness", unique: true
+    t.index ["menu_item_id"], name: "index_menu_item_upsells_on_menu_item_id"
+    t.index ["upsell_item_id"], name: "index_menu_item_upsells_on_upsell_item_id"
   end
 
   create_table "menu_items", force: :cascade do |t|
@@ -134,6 +144,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_17_020912) do
   add_foreign_key "customers", "restaurants"
   add_foreign_key "menu_categories", "restaurants"
   add_foreign_key "menu_item_modifiers", "menu_items"
+  add_foreign_key "menu_item_upsells", "menu_items"
+  add_foreign_key "menu_item_upsells", "menu_items", column: "upsell_item_id"
   add_foreign_key "menu_items", "menu_categories"
   add_foreign_key "menu_items", "restaurants"
   add_foreign_key "order_items", "menu_items"

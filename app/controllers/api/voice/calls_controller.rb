@@ -19,14 +19,16 @@ class Api::Voice::CallsController < Api::Voice::BaseController
       restaurant: {
         name: restaurant.name,
         timezone: restaurant.timezone,
-        business_hours: restaurant.business_hours
+        business_hours: restaurant.business_hours,
+        open_now: restaurant.open_now?,
+        hours_today: restaurant.hours_today
       }
     }, status: :created
   end
 
   # GET /api/voice/calls/:external_call_id/menu
   def menu
-    categories = @call_log.restaurant.menu_categories.includes(menu_items: :menu_item_modifiers)
+    categories = @call_log.restaurant.menu_categories.includes(menu_items: [ :menu_item_modifiers, :upsell_items ])
 
     render json: categories.map { |category|
       {
@@ -37,7 +39,8 @@ class Api::Voice::CallsController < Api::Voice::BaseController
             name: item.name,
             description: item.description,
             price: item.price,
-            modifiers: item.menu_item_modifiers.map { |m| { id: m.id, name: m.name, price: m.price_cents / 100.0 } }
+            modifiers: item.menu_item_modifiers.map { |m| { id: m.id, name: m.name, price: m.price_cents / 100.0 } },
+            suggest_with: item.upsell_items.available.map { |u| { id: u.id, name: u.name, price: u.price } }
           }
         }
       }

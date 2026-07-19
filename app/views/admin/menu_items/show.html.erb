@@ -34,3 +34,17 @@
 
   <%= link_to "Add modifier", new_admin_menu_item_menu_item_modifier_path(@menu_item), class: "text-sm text-gray-900 underline" %>
 </section>
+
+<section class="max-w-md mt-8">
+  <h2 class="text-lg font-medium mb-3">Suggested alongside this item</h2>
+
+  <% if @menu_item.upsell_items.any? %>
+    <ul class="bg-white rounded border border-gray-200 divide-y divide-gray-200">
+      <% @menu_item.upsell_items.each do |upsell| %>
+        <li class="px-4 py-3"><%= upsell.name %></li>
+      <% end %>
+    </ul>
+  <% else %>
+    <p class="text-gray-500 text-sm">No suggestions set. <%= link_to "Edit item", edit_admin_menu_item_path(@menu_item), class: "underline" %> to add some.</p>
+  <% end %>
+</section>

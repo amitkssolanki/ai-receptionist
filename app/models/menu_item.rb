@@ -3,6 +3,8 @@ class MenuItem < ApplicationRecord
   belongs_to :menu_category
   has_many :menu_item_modifiers, -> { order(:position) }, dependent: :destroy
   has_many :order_items, dependent: :restrict_with_error
+  has_many :menu_item_upsells, dependent: :destroy
+  has_many :upsell_items, through: :menu_item_upsells
 
   validates :name, presence: true
   validates :price_cents, numericality: { greater_than_or_equal_to: 0 }
