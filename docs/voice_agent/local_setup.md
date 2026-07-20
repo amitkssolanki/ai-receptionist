@@ -1,6 +1,18 @@
 # Local setup runbook: running the app + exposing it via ngrok
 
-Everything here is free. The goal is to get a voice platform (Retell/Vapi) talking to your laptop over the internet, with zero hosting cost, so Phase 0's bake-off and later end-to-end testing can happen before you pay for anything.
+Everything on this machine (Rails, Postgres, ngrok) is free with no usage limit. The goal is to get a voice platform (Retell/Vapi) talking to your laptop over the internet, with zero hosting cost, so Phase 0's bake-off and later end-to-end testing can happen on free trial credit before you pay for anything real.
+
+## Managing cost during Phase 0
+
+Twilio isn't the risk — its trial gives ~$15 credit (~75 free voice minutes) and per-minute rates after that are cheap (~$0.014/min + ~$1.15/mo per number). The real exposure is Retell AI and Vapi: both advertise a cheap headline per-minute rate, but that's just the orchestration layer — the LLM, STT, and TTS you plug in each bill separately, so real cost typically runs 2–4x the sticker price (roughly $0.07–$0.33/min all-in, depending on platform and model choices). Both give about $10 in free trial credit, good for somewhere between 30 and 140 minutes depending on how cheap a model/voice you configure.
+
+To stay inside that free credit:
+
+- **Set a spend cap immediately** in each dashboard (Twilio, Retell, Vapi) before testing anything — all three support usage alerts or hard caps.
+- **The webhook API itself already costs nothing to test** — `bin/rails test` and curl walkthroughs cover that completely, no voice minutes needed. Only spend real minutes judging audio quality/latency/interruption handling, which can't be tested another way.
+- **Keep real test calls short and scripted**: greeting → one menu question → add one item → hang up, a few times per platform. A handful of 1-2 minute calls is enough to judge quality — call this 5-10 minutes per platform, well inside free credit.
+- **Use cheaper LLM/voice options while testing** — you're evaluating orchestration and latency here, not final production voice quality. Upgrade once you've committed to a platform.
+- **Test sequentially, not both at once** — try whichever looks more promising first (Retell markets itself as purpose-built for phone agents specifically) and only spend credit on the second if the first disappoints.
 
 ## One-time setup
 
