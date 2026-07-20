@@ -73,7 +73,7 @@ ngrok http 3000
 
 ngrok prints a `Forwarding` URL like `https://your-name.ngrok-free.app -> http://localhost:3000`. That's your `{{base_url}}` for every tool URL in [tools.md](tools.md).
 
-No Rails-side config changes are needed for this — `config.hosts` isn't restricted in `development.rb`, so requests arriving via the ngrok domain aren't blocked.
+`config/environments/development.rb` already allowlists ngrok's domain suffixes (`*.ngrok-free.app`, `*.ngrok-free.dev`, `*.ngrok.io`, `*.ngrok.app`) via `config.hosts`, so you shouldn't hit a "Blocked hosts" error. If ngrok ever changes its domain suffix again, add the new one there the same way.
 
 ### 5. Point the voice platform at it
 
@@ -94,3 +94,4 @@ Provision a Twilio trial number, point it at the voice platform (not directly at
 - **404 on a tool call**: the platform isn't substituting `{{call_id}}` into the URL, or it's using a different call-start `external_call_id` than what it's sending on later tool calls — check the ngrok inspector to see the actual request paths.
 - **Menu/cart looks stale**: the Tailwind CSS being stale is a *display* issue only (see step 3) — if actual data looks wrong, check you're hitting the right restaurant's `phone_number` in the call-start payload.
 - **ngrok URL changed and the platform's webhooks broke**: you're on the free tier without a static domain — claim one (step 1) so this stops happening.
+- **"Blocked hosts" error naming your ngrok domain**: a new ngrok domain suffix appeared that isn't in `config.hosts` yet (`development.rb`) — add it there following the existing pattern and restart the server.
