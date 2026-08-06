@@ -27,7 +27,7 @@ In the assistant's Tools section, add each of these seven as a Custom Tool, usin
 
 ## 3. System prompt (for now, hardcoded)
 
-Paste [system_prompt.md](system_prompt.md), but for this first round of testing, replace `{{restaurant_name}}`, `{{open_now}}`, `{{hours_today}}` with literal values matching your seed data (e.g. "Taj Zayka", currently open, "open 24 hours") rather than leaving them as template placeholders — Vapi has a real mechanism for dynamic per-call prompt injection (its `assistant-request` server event, which lets your server return a fully custom assistant config at call time), but wiring that up is more setup than needed just to test whether Vapi's voice quality/latency is any good. Worth doing properly once you've committed to Vapi and are past the bake-off.
+Paste [system_prompt.md](system_prompt.md) as-is — it's hardcoded to Taj Zayka, open 24 hours, matching the current seed data, so there's nothing to fill in. Vapi has a real mechanism for dynamic per-call prompt injection (its `assistant-request` server event, which lets your server return a fully custom assistant config at call time), which is what you'd want once there's more than one restaurant or hours actually vary — not needed for this bake-off.
 
 ## 4. Test
 
