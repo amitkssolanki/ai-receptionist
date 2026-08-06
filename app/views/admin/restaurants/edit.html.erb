@@ -1,0 +1,51 @@
+<% content_for :title, "Settings" %>
+
+<h1 class="text-2xl font-semibold mb-6">Restaurant settings</h1>
+
+<%= form_with model: @restaurant, url: admin_restaurant_path, method: :patch, class: "space-y-8 max-w-lg" do |f| %>
+  <% if @restaurant.errors.any? %>
+    <p class="text-red-600 text-sm"><%= @restaurant.errors.full_messages.to_sentence %></p>
+  <% end %>
+
+  <section class="space-y-4">
+    <h2 class="text-lg font-medium">Basics</h2>
+
+    <div>
+      <%= f.label :name, class: "block text-sm font-medium mb-1" %>
+      <%= f.text_field :name, class: "w-full border border-gray-300 rounded px-3 py-2" %>
+    </div>
+
+    <div>
+      <%= f.label :phone_number, class: "block text-sm font-medium mb-1" %>
+      <%= f.text_field :phone_number, class: "w-full border border-gray-300 rounded px-3 py-2" %>
+      <p class="text-xs text-gray-500 mt-1">The number callers dial — must match what the voice platform sends as "to" on call start.</p>
+    </div>
+
+    <div>
+      <%= f.label :address, class: "block text-sm font-medium mb-1" %>
+      <%= f.text_field :address, class: "w-full border border-gray-300 rounded px-3 py-2" %>
+    </div>
+
+    <div>
+      <%= f.label :timezone, class: "block text-sm font-medium mb-1" %>
+      <% timezone_options = ActiveSupport::TimeZone.us_zones.map { |z| [ "(GMT#{z.formatted_offset}) #{z.name}", z.tzinfo.name ] } %>
+      <%= f.select :timezone, options_for_select(timezone_options, @restaurant.timezone), {}, class: "w-full border border-gray-300 rounded px-3 py-2" %>
+    </div>
+  </section>
+
+  <section class="space-y-2">
+    <h2 class="text-lg font-medium">Business hours</h2>
+    <p class="text-xs text-gray-500">Format: <code>11:00-21:00</code>, or <code>closed</code> for days you're not open. Used to tell callers whether you're currently open.</p>
+
+    <div class="space-y-2">
+      <% [ %w[mon Monday], %w[tue Tuesday], %w[wed Wednesday], %w[thu Thursday], %w[fri Friday], %w[sat Saturday], %w[sun Sunday] ].each do |key, label| %>
+        <div class="flex items-center gap-3">
+          <label class="w-28 text-sm font-medium" for="restaurant_business_hours_<%= key %>"><%= label %></label>
+          <%= text_field_tag "restaurant[business_hours][#{key}]", @restaurant.business_hours[key], id: "restaurant_business_hours_#{key}", class: "flex-1 border border-gray-300 rounded px-3 py-2" %>
+        </div>
+      <% end %>
+    </div>
+  </section>
+
+  <%= f.submit "Save settings", class: "bg-gray-900 text-white text-sm px-4 py-2 rounded cursor-pointer" %>
+<% end %>
