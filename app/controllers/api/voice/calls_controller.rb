@@ -28,23 +28,7 @@ class Api::Voice::CallsController < Api::Voice::BaseController
 
   # GET /api/voice/calls/:external_call_id/menu
   def menu
-    categories = @call_log.restaurant.menu_categories.includes(menu_items: [ :menu_item_modifiers, :upsell_items ])
-
-    render json: categories.map { |category|
-      {
-        category: category.name,
-        items: category.menu_items.available.map { |item|
-          {
-            id: item.id,
-            name: item.name,
-            description: item.description,
-            price: item.price,
-            modifiers: item.menu_item_modifiers.map { |m| { id: m.id, name: m.name, price: m.price_cents / 100.0 } },
-            suggest_with: item.upsell_items.available.map { |u| { id: u.id, name: u.name, price: u.price } }
-          }
-        }
-      }
-    }
+    render json: @call_log.restaurant.voice_menu_json
   end
 
   # GET /api/voice/calls/:external_call_id/cart

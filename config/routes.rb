@@ -25,6 +25,10 @@ Rails.application.routes.draw do
         resources :cart_items, only: [ :create, :update, :destroy ]
       end
     end
+
+    namespace :vapi do
+      post :webhooks, to: "webhooks#create"
+    end
   end
 
   # Reveal health status on /up that returns 200 if the app boots with no exceptions, otherwise 500.

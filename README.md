@@ -43,7 +43,7 @@ bundle install
 bin/rails db:create db:migrate db:seed
 ```
 
-Seeding creates one restaurant ("Sample Bistro") with a full menu (pizzas, sides, drinks, combos — see `db/seeds.rb`) and one admin login:
+Seeding creates one restaurant ("Taj Zayka", open 24/7) with a full menu (pizzas, sides, drinks, combos — see `db/seeds.rb`) and one admin login:
 
 - Email: `admin@example.com`
 - Password: `password123`
