@@ -9,6 +9,7 @@ Rails.application.routes.draw do
     end
     resources :orders, only: [ :index, :show, :update ]
     resources :call_logs, only: [ :index, :show ]
+    resource :restaurant, only: [ :edit, :update ]
   end
 
   namespace :api do
