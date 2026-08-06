@@ -1,10 +1,10 @@
-restaurant = Restaurant.find_or_create_by!(name: "Sample Bistro") do |r|
+restaurant = Restaurant.find_or_create_by!(name: "Taj Zayka") do |r|
   r.phone_number = "+15551234567"
   r.address = "123 Main St, Springfield"
   r.timezone = "America/New_York"
   r.business_hours = {
-    "mon" => "11:00-21:00", "tue" => "11:00-21:00", "wed" => "11:00-21:00",
-    "thu" => "11:00-21:00", "fri" => "11:00-22:00", "sat" => "11:00-22:00", "sun" => "closed"
+    "mon" => "00:00-23:59", "tue" => "00:00-23:59", "wed" => "00:00-23:59",
+    "thu" => "00:00-23:59", "fri" => "00:00-23:59", "sat" => "00:00-23:59", "sun" => "00:00-23:59"
   }
 end
 
