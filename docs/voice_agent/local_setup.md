@@ -1,8 +1,8 @@
 # Local setup runbook: running the app + exposing it via ngrok
 
-Everything on this machine (Rails, Postgres, ngrok) is free with no usage limit. The goal is to get a voice platform (Retell/Vapi) talking to your laptop over the internet, with zero hosting cost, so Phase 0's bake-off and later end-to-end testing can happen on free trial credit before you pay for anything real.
+Everything local (Rails, Postgres, ngrok) is free with no usage limit. The goal is to get a voice platform talking to your laptop over the internet, with zero hosting cost, so platform evaluation and end-to-end testing can happen on free trial credit before you pay for anything real.
 
-## Managing cost during Phase 0
+## Managing cost while evaluating platforms
 
 Twilio isn't the risk — its trial gives ~$15 credit (~75 free voice minutes) and per-minute rates after that are cheap (~$0.014/min + ~$1.15/mo per number). The real exposure is Retell AI and Vapi: both advertise a cheap headline per-minute rate, but that's just the orchestration layer — the LLM, STT, and TTS you plug in each bill separately, so real cost typically runs 2–4x the sticker price (roughly $0.07–$0.33/min all-in, depending on platform and model choices). Both give about $10 in free trial credit, good for somewhere between 30 and 140 minutes depending on how cheap a model/voice you configure.
 
@@ -16,9 +16,9 @@ To stay inside that free credit:
 
 ## One-time setup
 
-### 1. Upgrade ngrok
+### 1. Install ngrok v3
 
-This machine has an old ngrok v2 binary (`ngrok version` → `2.3.41`, from 2018) with only a legacy v2 config at `~/.ngrok2/`. ngrok's v2 service tier is long past end-of-life — install v3 instead:
+Check with `ngrok version`. If you're on a v2 binary (config lives at `~/.ngrok2/`), that service tier is long past end-of-life — install v3:
 
 ```
 brew install ngrok/ngrok/ngrok
@@ -40,7 +40,7 @@ The repo includes a `.rvmrc` that auto-selects the correct Ruby/gemset (`ruby-3.
 rvm rvmrc trust /path/to/ai-receptionist
 ```
 
-Note: this Ruby is an x86_64 build (see [[rvm-arch-flag-fix]] in memory / the git log for why), so on this Apple Silicon Mac every command still needs `arch -x86_64`. The `.rvmrc` picks the right Ruby; it doesn't remove that requirement.
+Note for Apple Silicon: if your RVM Ruby happens to be an x86_64 build running under Rosetta, native gem extensions can compile for the wrong architecture and fail to load with `incompatible architecture (have 'arm64', need 'x86_64')`. The fix is to set `ARCH_FLAG` in that Ruby's `rbconfig.rb` to `-arch x86_64` so extensions match the interpreter, and to run commands under `arch -x86_64`. If you're on a native arm64 Ruby, none of this applies.
 
 ## Every session
 
@@ -67,8 +67,7 @@ Set this in the same shell you start `bin/dev` from — it won't persist across 
 Use `bin/dev` (not `bin/rails server`) so the Tailwind watcher rebuilds CSS automatically as you edit views — using `bin/rails server` directly means you have to remember to run `bin/rails tailwindcss:build` by hand after view changes, which has bitten us once already this project.
 
 ```
-cd /path/to/ai-receptionist
-arch -x86_64 bash -lc "bin/dev"
+bin/dev
 ```
 
 Confirm it's up: `curl http://localhost:3000/up` should return `200`.
