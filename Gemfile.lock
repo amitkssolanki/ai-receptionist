@@ -119,6 +119,7 @@ GEM
     ffi (1.17.4-aarch64-linux-musl)
     ffi (1.17.4-arm-linux-gnu)
     ffi (1.17.4-arm-linux-musl)
+    ffi (1.17.4-arm64-darwin)
     ffi (1.17.4-x86_64-darwin)
     ffi (1.17.4-x86_64-linux-gnu)
     ffi (1.17.4-x86_64-linux-musl)
@@ -200,6 +201,8 @@ GEM
       racc (~> 1.4)
     nokogiri (1.19.4-arm-linux-musl)
       racc (~> 1.4)
+    nokogiri (1.19.4-arm64-darwin)
+      racc (~> 1.4)
     nokogiri (1.19.4-x86_64-darwin)
       racc (~> 1.4)
     nokogiri (1.19.4-x86_64-linux-gnu)
@@ -215,6 +218,7 @@ GEM
     pg (1.6.3)
     pg (1.6.3-aarch64-linux)
     pg (1.6.3-aarch64-linux-musl)
+    pg (1.6.3-arm64-darwin)
     pg (1.6.3-x86_64-darwin)
     pg (1.6.3-x86_64-linux)
     pg (1.6.3-x86_64-linux-musl)
@@ -349,12 +353,14 @@ GEM
     tailwindcss-ruby (4.3.2)
     tailwindcss-ruby (4.3.2-aarch64-linux-gnu)
     tailwindcss-ruby (4.3.2-aarch64-linux-musl)
+    tailwindcss-ruby (4.3.2-arm64-darwin)
     tailwindcss-ruby (4.3.2-x86_64-darwin)
     tailwindcss-ruby (4.3.2-x86_64-linux-gnu)
     tailwindcss-ruby (4.3.2-x86_64-linux-musl)
     thor (1.5.0)
     thruster (0.1.25)
     thruster (0.1.25-aarch64-linux)
+    thruster (0.1.25-arm64-darwin)
     thruster (0.1.25-x86_64-darwin)
     thruster (0.1.25-x86_64-linux)
     timeout (0.6.1)
@@ -391,6 +397,8 @@ PLATFORMS
   aarch64-linux-musl
   arm-linux-gnu
   arm-linux-musl
+  arm64-darwin
+  arm64-darwin-27
   x86_64-darwin-25
   x86_64-linux
   x86_64-linux-gnu
