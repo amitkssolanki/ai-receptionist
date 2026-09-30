@@ -228,3 +228,11 @@ unrecorded-fallback fix (`7e4ccb5`), which acts only when a tool invocation cann
 
 **Next:** Call #5 with the exact same script and configuration, to obtain one current-configuration call that reaches
 `submit_order` and so observe the live turn-evidence instrumentation.
+
+## 2026-09-30 — Configuration change: reasoning effort `minimal` → `low` (dev assistant v2 → v3)
+The single experiment variable changed after Call #4. One `PATCH /assistant/f858bbe9…` sent the assistant's complete current
+`model` object with only `reasoningEffort` changed; a before/after comparison of the whole assistant (excluding `updatedAt` and
+`latestVersion`) differs in `model.reasoningEffort` only (prompt and tools identical). The repository (`config/vapi/assistant.json`)
+matches and `vapi:check` is clean. The frozen baseline assistant `8f2053ae…` was not touched. Everything else is unchanged:
+runtime model `openai/gpt-5-mini`, prompt, tools, SMS, fillers, server-side order logic and the turn-evidence instrumentation.
+Calls from Call #5 onward run on v3 (`low`); Calls #1–#4 (Vapi/DB calls #8–#11) ran on `minimal`.

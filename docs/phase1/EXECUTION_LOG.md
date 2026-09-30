@@ -516,3 +516,9 @@ Verified against the live Vapi API (read-only) and locally; **no call was made a
   Regression tests use real top-level transactions. Recorded as an invalid run in `docs/voice_agent/verification_log.md`; the
   runbook now says to restart `bin/dev` after any migration. No prompt, tool, model, reasoning, SMS, filler, turn-evidence or
   enforcement change.
+
+## After Call #4: reasoning effort `minimal` → `low` on the dev assistant
+
+- One variable changed, by owner decision: `reasoningEffort` on the dev assistant `f858bbe9…` (v2 → v3), via one `PATCH` of the
+  complete current `model` object (only `reasoningEffort` differed; verified by a before/after comparison of the whole assistant).
+  `config/vapi/assistant.json` and `assistant.md` updated to match; `vapi:check` clean. Baseline assistant untouched. No code change.

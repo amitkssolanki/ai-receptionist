@@ -1,6 +1,6 @@
 {
   "name": "Taj Zayka Receptionist (dev)",
-  "model": { "provider": "openai", "model": "gpt-5-mini", "reasoningEffort": "minimal" },
+  "model": { "provider": "openai", "model": "gpt-5-mini", "reasoningEffort": "low" },
   "voice": { "provider": "vapi", "voiceId": "Elliot" },
   "transcriber": { "provider": "soniox", "model": "stt-rt-v5", "language": "en" },
   "firstMessage": "Thanks for calling Taj Zayka, this is your AI host — how can I help?",
