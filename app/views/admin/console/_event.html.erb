@@ -8,7 +8,7 @@
     <%= event.result_summary %>
     <% if event.replays.positive? %><span class="text-amber-400"> ↺ replayed ×<%= event.replays %> (stored result returned)</span><% end %>
     <% event.observations.each do |observation| %>
-      <span data-observation class="block mt-0.5 <%= observation.warn ? 'text-amber-400' : 'text-gray-500' %>">⏱ <%= observation.text %></span>
+      <span data-observation class="block mt-0.5 <%= observation.warn ? 'text-amber-400' : 'text-gray-500' %>"><%= observation.icon %> <%= observation.text %></span>
     <% end %>
     <details class="mt-1"><summary class="cursor-pointer text-gray-500">what the agent was told</summary><pre class="mt-1 whitespace-pre-wrap text-gray-400"><%= event.result_json %></pre></details>
   </span>

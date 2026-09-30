@@ -109,7 +109,9 @@ class ConsoleBroadcasterTest < ActiveSupport::TestCase
     text = html(actions)
     assert_includes text, "Burger is now on 2 lines of the cart"
     assert_includes text, "Burger is on 2 lines of the cart"
-    assert_match(/submitted \d+\.\d s after the last get_cart/, text)
+    assert_match(/\d+\.\d s since the last get_cart \(elapsed time only/, text)
+    assert_includes text, "confirmation gate: shadow only (observed, nothing refused)"
+    assert_no_match(/submitted \d+\.\d s after the last get_cart/, text)
     assert_includes text, "data-repeated-item"
     no_failures!
   end

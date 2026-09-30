@@ -13,15 +13,16 @@ class ToolInvocation < ApplicationRecord
 
   # Inserts the record of one execution. Voice::ToolRunner calls this inside the same transaction as the business
   # change; the unique (call_log_id, tool_call_id) index is the backstop that makes a second record impossible.
+  # turn_evidence (submit_order only) is a shadow-mode observation from Voice::TurnEvidence; it is never enforced.
   def self.record!(call_log:, tool_call_id:, tool_name:, arguments:, result:, status:, started_at:, duration_ms:,
                    order: nil, error_code: nil, error_class: nil, vapi_requested_at: nil, source: "vapi",
-                   cart_version_before: nil, cart_version_after: nil)
+                   cart_version_before: nil, cart_version_after: nil, turn_evidence: nil)
     create!(
       call_log: call_log, order: order, tool_call_id: tool_call_id, source: source, tool_name: tool_name,
       arguments: cap_arguments(arguments), result: result, status: status, error_code: error_code,
       error_class: error_class, vapi_requested_at: vapi_requested_at, started_at: started_at,
       finished_at: started_at + duration_ms / 1000.0, duration_ms: duration_ms,
-      cart_version_before: cart_version_before, cart_version_after: cart_version_after
+      cart_version_before: cart_version_before, cart_version_after: cart_version_after, turn_evidence: turn_evidence
     )
   end
 

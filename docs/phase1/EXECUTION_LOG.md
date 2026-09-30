@@ -488,3 +488,22 @@ Verified against the live Vapi API (read-only) and locally; **no call was made a
   start + duration instead of when Vapi's report arrived. Checked on the real call #8 data.
 - **Not done, by decision:** no minimum-gap rule. The proposal for making customer confirmation a server-enforced state is in
   `docs/phase1/CONFIRMATION_PROPOSAL.md` (not implemented).
+
+## After call #9: shadow turn evidence at submit (instrumentation only)
+
+- **Why:** Vapi's stored records showed that in call #9 the read-back and `submit_order` came from one model completion and the
+  caller's "yes" began 104 ms after the submit request; call #8 likewise had no caller turn before the submit. The "submitted N s
+  after the last get_cart" observation was measuring the agent's speech, not the caller's chance to answer. Details and the
+  verified payload structure: `docs/voice_agent/verification_log.md` (entries "Correction: call #9…" and "Shadow turn evidence…").
+- **What changed:** `Voice::TurnEvidence` derives, per `submit_order`, from the webhook's `artifact` (Vapi's live conversation
+  history): history present/missing/malformed, caller turns since the last `get_cart` result (by position, before the submit's own
+  entry), caller turns after the submit request (reported, not counted), whether the completion that answered the `get_cart` result
+  issued the submit (plus its speech length), millisecond gaps, the last `get_cart` tool-call id and anomaly flags. Stored in
+  `tool_invocations.turn_evidence` (jsonb, new column). The controller passes `artifact` through; it is never logged.
+- **Console:** the submit row's "submitted N s…" (amber under 10 s) is replaced by "N s since the last get_cart (elapsed time only,
+  includes the agent's speech; not evidence the caller answered)", never amber; ◌ lines show the shadow evidence and "confirmation
+  gate: shadow only (observed, nothing refused)". `bin/rails calls:last` prints the same lines under the submit.
+- **No behaviour change:** `submit_order` runs exactly as before whatever the evidence says (tests compare results, order state and
+  SMS decisions with and without history, and with the observer raising). Prompt, tools, model, reasoning effort, SMS, fillers
+  and the Vapi assistant are unchanged (`vapi:check` clean).
+- **Not done, by decision:** no enforcement, no yes/no classifier, no four-state machine, no `conversation-update` subscription.

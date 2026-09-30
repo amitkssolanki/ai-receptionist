@@ -75,7 +75,7 @@ Call 163 s, ended by the customer, cost $0.2368. Numbers from the database, the 
 | Add on a question | `add_to_cart` 2 s after "Tell me about the Margherita" | Answered the question, asked "Would you like one?", added only after "I'll have one Margherita with extra cheese" |
 | Options | Added a plain Margherita, then a second line with extra cheese | One `add_to_cart` with the option (v0→v1) |
 | Cart at the end | 2 Margheritas + knots, $35.50 | 1 Margherita with extra cheese + knots, **$21.50, what was asked** |
-| Read-back then submit | `get_cart` → `submit_order` 2.1 s later, before the read-back was spoken | `get_cart` v2 at 15:16:06, read-back spoken, caller: "Yes. That's right.", `submit_order` at 15:16:19 (**12.9 s** later, a later turn) |
+| Read-back then submit | `get_cart` → `submit_order` 2.1 s later, before the read-back was spoken | `get_cart` v2 at 15:16:06, read-back spoken, caller: "Yes. That's right.", `submit_order` at 15:16:19 (**12.9 s** later, a later turn) **— corrected below: the same model completion, 0 caller turns; the 12.9 s was the agent's own speech** |
 | Re-read after a change | n/a | Yes: the caller added knots after the first read-back; the agent added, called `get_cart` again and re-read v2 |
 | Tool calls | 14 (three `get_cart` loops after confirmation) | 8, none wasted, none rejected |
 | Server time per call | 9–64 ms | 10–43 ms (median 20) |
@@ -86,6 +86,8 @@ The dashboard observations behaved as designed: no repeated-item note (correct: 
 "submitted 12.9 s after the last get_cart" (not amber). What this shows: the prompt/tool wording fixed the two behavioural failures
 of call #8 in this call. What it does not show: that the server enforces it. The server still only knows `get_cart` ran; a single
 compliant call says nothing about how often the model complies (see `docs/phase1/CONFIRMATION_PROPOSAL.md`).
+**Correction (later the same day, see "Correction: call #9 did not wait for the caller" below): the read-back/submit row above is
+wrong. Only the add-on-a-question and duplicate-line fixes held in call #9; the submit ordering did not.**
 
 ### Still wrong in call #9 (for the caller, not the order)
 1. **The agent spoke its own reasoning.** After the second add it said, aloud: "We need to answer user's question: what pickup?
@@ -105,3 +107,51 @@ compliant call says nothing about how often the model complies (see `docs/phase1
   and "If `confirmation_sms` is not `queued`, say nothing about texts."; cap fillers to one per tool call.
 - If the spoken reasoning persists after the wording change: try `reasoningEffort: "low"` on the dev assistant (latency and cost
   trade-off; measure with `calls:last`) before considering another model.
+
+## 2026-09-30 — Correction: call #9 did not wait for the caller
+Source: Vapi's stored record of calls #8 and #9 (`GET /call/{id}`, read-only) and the live `submit_order` webhooks of both calls,
+still held by the local ngrok inspector (structure-only copies: `test/fixtures/files/vapi/live_submit_webhook_call{8,9}.json`).
+
+- In call #9 one model completion produced the spoken read-back ("…Total $21.50. Did I get that right?") **and** the
+  `submit_order` call. Vapi speaks a completion's text and then runs its tool call, so `submit_order` was requested at 130.4 s from
+  call start, as the read-back finished playing; the caller's "Yes. That's right." began **104 ms after** the request. There was
+  **no caller utterance** between the last `get_cart` result and the submit. The 12.9 s between `get_cart` and `submit_order` was
+  the agent's own speech, not time the caller had to answer.
+- Call #8 had the same shape: 0 caller utterances between the last `get_cart` result (131.0 s) and `submit_order` (131.8 s); the
+  completion that submitted spoke 44 characters of filler.
+- So the submit-ordering failure occurred in **both** live calls (2 of 2). The call #9 table row above and the dashboard's
+  "submitted N s after the last get_cart" observation were misleading; the observation has been replaced (next entry).
+- Vapi billed `reasoningTokens = 0` for both calls (reasoning effort `minimal`); the spoken reasoning in call #9 sits in the
+  model's ordinary `content`. Recorded here as a fact for the reasoning-effort experiment, not acted on.
+
+## 2026-09-30 — Shadow turn evidence at submit (instrumentation, not enforcement)
+Code: `Voice::TurnEvidence`, stored per `submit_order` in `tool_invocations.turn_evidence`, shown on the console's submit row
+(◌ lines) and in `bin/rails calls:last`. **Nothing is refused, delayed or changed**: the submit runs exactly as before.
+
+**What the live `tool-calls` webhook carries** (verified on calls #8 and #9): `message.artifact` with `messages`,
+`messagesOpenAIFormatted`, `variableValues`, `variables`.
+- `messages`: one entry per event, in order. `system` / `bot` / `user` entries carry `message`, `time` (epoch ms), `endTime`,
+  `secondsFromStart`, `duration`; `tool_calls` entries carry `time` and `toolCalls[{id, function{name}}]`; `tool_call_result`
+  entries carry `time`, `name`, `toolCallId`, `result`. **The in-flight submit is already in the list** (its `toolCalls[].id`
+  equals the webhook's `toolCallList[].id`), and **caller speech that began after the submit request can also be in it** (call #9:
+  the "yes" is the entry after the submit).
+- `messagesOpenAIFormatted`: the model's view; one `assistant` entry per model completion (`content` = what it said, `tool_calls`),
+  `tool` entries (`tool_call_id`), `user` entries. Completion boundaries are visible only here.
+
+**How it is derived (by position, stateless, per submit):**
+- *Caller turns since the last get_cart*: `user` entries in `messages` strictly after the last `tool_call_result` named `get_cart`
+  and strictly before the submit's own `tool_calls` entry. Speech during the `get_cart` request is not counted; `user` entries
+  after the submit request are reported separately (`caller_turns_after_submit_request`) and never counted.
+- *Same completion*: in `messagesOpenAIFormatted`, the `assistant` entry whose `tool_calls` contain this submit's id; it "answered
+  the get_cart result" when the entry immediately before it is the `tool` message for a `get_cart` call (no caller turn, no other
+  tool result in between). Its speech is recorded as a character count only.
+- Also stored: history present / missing / malformed, message count, the last `get_cart` tool-call id, millisecond gaps
+  (get_cart result → submit request, submit request → next caller turn), and anomaly flags. **No text is stored.**
+
+**Applied to the real payloads** (tests `test/services/voice/turn_evidence_test.rb`): call #9 → 0 caller turns, 1 later turn
+starting 104 ms after the request, same completion (118 characters spoken); call #8 → 0 caller turns, same completion
+(44 characters). Calls #8 and #9 themselves have no stored evidence (they predate the instrumentation); the console says so.
+
+**Limits:** a caller turn is evidence of turn-taking, **not of a yes** (no classifier, by decision). The observation trusts the
+order of Vapi's list and its speech-to-text; a caller who speaks during the read-back counts as a turn only if Vapi recorded that
+utterance before the submit entry. Not yet seen live with this code: the next call (#3 in the owner's numbering) is the first.

@@ -14,6 +14,8 @@ namespace :calls do
         puts "  #{entry.offset}  ● #{entry.text}"
       else
         puts format("  %s  %-26s %-8s %-10s %-9s %4dms  %s", entry.offset, entry.tool, entry.status, entry.code.to_s, entry.cart_label.tr(" ", ""), entry.server_ms, entry.result_summary.tr("\n", " ")[0, 90])
+        # Submit rows: elapsed time plus the shadow-mode turn evidence (counts and flags only, never refused).
+        entry.observations.each { |observation| puts "           #{observation.icon} #{observation.text}" } if entry.tool == "submit_order"
       end
     end
     puts "order: #{board.present? ? "##{board.order_id} #{board.status_label} v#{board.cart_version} $#{'%.2f' % board.total}  read-back: #{board.read_back}  sms: #{board.sms}" : 'none'}"

@@ -122,3 +122,11 @@ shadow calls and analysis; enforcement flag, prompt wording and drift/config upd
 Decisions for the owner: (1) which event source (`conversation-update` is proven to be sent; `transcript` finals need the config
 change); (2) shadow first (recommended) or enforce directly; (3) how strict the affirmative list should be; (4) whether option C
 belongs in the roadmap for real phone orders.
+
+## Addendum (after call #9): the history arrives with the tool call; shadow observation added
+
+Live `tool-calls` webhooks carry `artifact.messages` / `messagesOpenAIFormatted` (Vapi's live conversation history, including the
+in-flight submit), so a check at submit time needs no `conversation-update` subscription. The observation half is implemented in
+shadow mode (`Voice::TurnEvidence`, `tool_invocations.turn_evidence`); it refuses nothing. Evidence so far (from the stored records
+of calls #8 and #9): 0 caller turns between the last `get_cart` result and `submit_order` in 2 of 2 calls. Enforcement, a yes/no
+classifier and the state machine above remain **not implemented** pending live shadow data.

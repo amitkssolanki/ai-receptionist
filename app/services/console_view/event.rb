@@ -35,11 +35,13 @@ module ConsoleView
       end
     end
 
-    # Display-only observations computed from server facts (timestamps and results), never refusals.
-    Observation = Data.define(:text, :warn)
-    QUICK_SUBMIT_SECONDS = 10 # amber when a submit follows the last get_cart by less than this; an aid for the eye, not a rule
+    # Display-only observations computed from server facts, never refusals. icon: "⏱" timing / cart facts,
+    # "◌" shadow-mode turn evidence from Vapi's conversation history (observed, not enforced).
+    Observation = Data.define(:text, :warn, :icon) do
+      def initialize(text:, warn:, icon: "⏱") = super
+    end
 
-    def observations = [ submit_timing, second_line ].compact
+    def observations = [ submit_elapsed, *submit_turn_evidence, second_line ].compact
 
     # Arguments with ids resolved to names; free text and addresses summarised, never echoed.
     def arguments_summary
@@ -82,15 +84,60 @@ module ConsoleView
 
     private
 
-    # How long after the last get_cart the submit arrived: the time the caller had to hear the read-back and answer.
-    def submit_timing
+    # Elapsed time since the last get_cart, as latency information only. Call #9 showed why it is not evidence of an
+    # answer: the read-back and the submit came from one model completion, and the 12.9 s were the agent's own speech.
+    def submit_elapsed
       return unless tool == "submit_order"
 
       previous = call_log.tool_invocations.where(tool_name: "get_cart", status: "ok").where(started_at: ...invocation.started_at).order(started_at: :desc).first
-      return Observation.new("no get_cart before this submit", true) unless previous
+      return Observation.new(text: "no get_cart before this submit", warn: true) unless previous
 
       seconds = (invocation.started_at - previous.started_at).round(1)
-      Observation.new("submitted #{seconds} s after the last get_cart", seconds < QUICK_SUBMIT_SECONDS)
+      Observation.new(text: "#{seconds} s since the last get_cart (elapsed time only, includes the agent's speech; not evidence the caller answered)", warn: false)
+    end
+
+    # Shadow-mode turn evidence recorded at submit time (Voice::TurnEvidence). Observation only: nothing was refused.
+    def submit_turn_evidence
+      return unless tool == "submit_order"
+
+      evidence = invocation.turn_evidence
+      return [ shadow("turn evidence not recorded for this submit (recorded before shadow instrumentation, or replayed/unrecorded)", false) ] unless evidence.is_a?(Hash)
+
+      case evidence["artifact_messages"]
+      when "missing" then return [ shadow("turn evidence unavailable: the webhook carried no conversation history", true), shadow_gate ]
+      when "present" then nil
+      else return [ shadow("turn evidence unavailable: the conversation history was unreadable", true), shadow_gate ]
+      end
+
+      [ caller_turns_observation(evidence), after_submit_observation(evidence), completion_observation(evidence["completion"]), shadow_gate ].compact
+    end
+
+    def shadow(text, warn) = Observation.new(text: text, warn: warn, icon: "◌")
+    def shadow_gate = shadow("confirmation gate: shadow only (observed, nothing refused)", false)
+
+    def caller_turns_observation(evidence)
+      turns = evidence["caller_turns_since_last_get_cart"]
+      return shadow("caller turns since the last get_cart result: n/a (no get_cart result in Vapi's history)", true) if turns.nil?
+
+      shadow("caller turns since the last get_cart result: #{turns} (turn-taking only; not a yes)", turns.zero?)
+    end
+
+    def after_submit_observation(evidence)
+      later = evidence["caller_turns_after_submit_request"].to_i
+      return if later.zero?
+
+      gap = evidence["ms_submit_request_to_next_caller_turn"]
+      shadow("caller began speaking #{gap ? "#{(gap / 1000.0).round(2)} s " : ''}after the submit was requested (#{later} later turn#{'s' if later > 1}, not counted)", false)
+    end
+
+    def completion_observation(completion)
+      return shadow("model completion: not identifiable in Vapi's history", false) unless completion.is_a?(Hash) && completion["found"]
+
+      if completion["responds_to_get_cart_result"]
+        shadow("same model completion answered the get_cart result and issued this submit: yes (it spoke #{completion['speech_chars'].to_i} characters)", true)
+      else
+        shadow("same model completion answered the get_cart result and issued this submit: no", false)
+      end
     end
 
     # An accepted add that leaves the same menu item on two cart lines.
@@ -99,7 +146,7 @@ module ConsoleView
 
       name = item_name(invocation.arguments["menu_item_id"])
       lines = Array(parsed_result.is_a?(Hash) ? parsed_result["items"] : nil).count { |item| item["menu_item"] == name }
-      Observation.new("#{name} is now on #{lines} lines of the cart", true) if lines > 1
+      Observation.new(text: "#{name} is now on #{lines} lines of the cart", warn: true) if lines > 1
     end
 
     def parsed_result

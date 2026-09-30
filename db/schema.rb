@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_30_170000) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_30_180000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -153,6 +153,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_30_170000) do
     t.string "status", null: false
     t.string "tool_call_id", null: false
     t.string "tool_name", null: false
+    t.jsonb "turn_evidence", comment: "submit_order only, shadow mode: caller turn-taking observed in Vapi's conversation history (counts/flags/ids; never text). Not enforced."
     t.datetime "updated_at", null: false
     t.datetime "vapi_requested_at", precision: 3
     t.index ["call_log_id", "started_at"], name: "index_tool_invocations_on_call_log_id_and_started_at"

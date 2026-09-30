@@ -20,20 +20,23 @@ module Voice
       { ok: false, error: { code: code.to_s, message: message }.merge(details) }.to_json
     end
 
-    def self.call(call_log:, tool_call:, vapi_timestamp: nil)
+    # artifact: the webhook's conversation history (Vapi's live call.artifact). Only read to record a shadow-mode
+    # observation on submit_order (Voice::TurnEvidence); it never influences what a tool does or returns.
+    def self.call(call_log:, tool_call:, vapi_timestamp: nil, artifact: nil)
       return error_json(:no_active_call, MESSAGES.fetch(:no_active_call)) unless call_log
 
-      new(call_log, tool_call, vapi_timestamp).call
+      new(call_log, tool_call, vapi_timestamp, artifact).call
     end
 
     # The recording could not be written (not a business failure). Raised inside the transaction so the business
     # change rolls back with it; #call then serves the request once, unrecorded.
     AuditFailure = Class.new(StandardError)
 
-    def initialize(call_log, tool_call, vapi_timestamp)
+    def initialize(call_log, tool_call, vapi_timestamp, artifact = nil)
       @call_log = call_log
       @tool_call = tool_call
       @vapi_timestamp = vapi_timestamp
+      @artifact = artifact
     end
 
     # One transaction per tool call:
@@ -91,6 +94,7 @@ module Voice
     end
 
     def execute_and_record
+      turn_evidence = submit_turn_evidence # pure; computed from the payload before anything runs, never consulted by it
       started_at = Time.current
       clock = Process.clock_gettime(Process::CLOCK_MONOTONIC)
       before = cart_version
@@ -106,7 +110,7 @@ module Voice
             arguments: outcome[:arguments], result: outcome[:result], status: outcome[:status],
             error_code: outcome[:error_code], error_class: outcome[:error_class], started_at: started_at,
             duration_ms: duration_ms, vapi_requested_at: requested_at,
-            cart_version_before: before, cart_version_after: cart_version
+            cart_version_before: before, cart_version_after: cart_version, turn_evidence: turn_evidence
           )
         end
       rescue ActiveRecord::RecordNotUnique
@@ -126,6 +130,15 @@ module Voice
         @call_log.lock!
         execute[:result]
       end
+    end
+
+    # Shadow mode: observed and recorded for submit_order only, never enforced (see Voice::TurnEvidence).
+    def submit_turn_evidence
+      return unless (@tool_call.dig("function", "name") || @tool_call["name"]) == "submit_order"
+
+      TurnEvidence.for_submit(@artifact, tool_call_id: tool_call_id)
+    rescue StandardError => e # belt and braces: an observation must never stop the submit
+      { "schema" => TurnEvidence::SCHEMA, "mode" => "shadow", "artifact_messages" => "malformed", "error" => e.class.name.first(80) }
     end
 
     # The model-visible cart version: 0 while there is no order.

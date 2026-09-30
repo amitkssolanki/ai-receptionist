@@ -144,27 +144,22 @@ class ConsoleViewTest < ActiveSupport::TestCase
     assert_equal [ "Burger is now on 2 lines of the cart" ], by_id["b"].observations.map(&:text)
   end
 
-  test "a submit row states how long after the last get_cart it arrived, amber when quick" do
+  def timing(event) = event.observations.select { |o| o.icon == "⏱" }
+  def shadow(event) = event.observations.select { |o| o.icon == "◌" }
+
+  # Call #9: read-back and submit came from one model completion; the 12.9 s were the agent's own speech. Elapsed time
+  # is therefore shown as latency only - never amber, never presented as time the caller had to answer.
+  test "a submit row shows elapsed time since the last get_cart as latency only, never as a warning" do
     travel_to Time.zone.local(2026, 9, 30, 12, 0, 0) do
       run_tool("a", "add_to_cart", { "menu_item_id" => @burger.id })
       run_tool("c1", "get_cart")
       travel 2.seconds
       run_tool("s1", "submit_order", { "fulfillment_type" => "pickup", "cart_version" => 1 })
 
-      quick = events.find { |e| e.invocation.tool_call_id == "s1" }.observations.sole
-      assert_equal [ "submitted 2.0 s after the last get_cart", true ], [ quick.text, quick.warn ]
+      quick = timing(events.find { |e| e.invocation.tool_call_id == "s1" }).sole
+      assert_equal "2.0 s since the last get_cart (elapsed time only, includes the agent's speech; not evidence the caller answered)", quick.text
+      assert_not quick.warn
     end
-
-    slow_call = CallLifecycle.start(external_call_id: "view_slow", dialed_number: @restaurant.phone_number, caller_number: "+15557774444")
-    run = ->(id, name, args = {}) { Voice::ToolRunner.call(call_log: slow_call.reload, tool_call: { "id" => id, "function" => { "name" => name, "arguments" => args } }) }
-    travel_to Time.zone.local(2026, 9, 30, 13, 0, 0) do
-      run.("a", "add_to_cart", { "menu_item_id" => @burger.id })
-      run.("c", "get_cart")
-      travel 25.seconds
-      run.("s", "submit_order", { "fulfillment_type" => "pickup", "cart_version" => 1 })
-    end
-    slow = ConsoleView::Timeline.new(slow_call.reload).tool_events.find { |e| e.invocation.tool_call_id == "s" }.observations.sole
-    assert_equal [ "submitted 25.0 s after the last get_cart", false ], [ slow.text, slow.warn ]
   end
 
   test "a refused submit is never blocked or altered by the observation, and other tools carry none" do
@@ -172,8 +167,53 @@ class ConsoleViewTest < ActiveSupport::TestCase
     run_tool("s", "submit_order", { "fulfillment_type" => "pickup", "cart_version" => 1 }) # no read-back: refused by the server rule
     refused = events.find { |e| e.invocation.tool_call_id == "s" }
     assert_equal "readback_required", refused.code
-    assert_equal [ "no get_cart before this submit" ], refused.observations.map(&:text)
+    assert_equal [ "no get_cart before this submit" ], timing(refused).map(&:text)
     assert_empty events.find { |e| e.invocation.tool_call_id == "a" }.observations
+  end
+
+  # --- shadow-mode turn evidence (observation only, recorded from Vapi's conversation history) ---
+
+  def submit_with(artifact)
+    run_tool("a", "add_to_cart", { "menu_item_id" => @burger.id })
+    run_tool("c", "get_cart")
+    Voice::ToolRunner.call(call_log: CallLog.find(@call.id), artifact: artifact,
+                           tool_call: { "id" => "s", "function" => { "name" => "submit_order", "arguments" => { "fulfillment_type" => "pickup", "cart_version" => 1 } } })
+    events.find { |e| e.invocation.tool_call_id == "s" }
+  end
+
+  test "shadow evidence from a chained read-back + submit (the call #9 pattern) is shown as observation, flagged, not enforced" do
+    payload = JSON.parse(file_fixture("vapi/live_submit_webhook_call9.json").read)
+    payload["artifact"]["messages"].each { |m| m["toolCalls"]&.each { |t| t["id"] = "s" if t["id"] == payload.dig("toolCallList", 0, "id") } }
+    payload["artifact"]["messagesOpenAIFormatted"].each { |m| m["tool_calls"]&.each { |t| t["id"] = "s" if t["id"] == payload.dig("toolCallList", 0, "id") } }
+    submit = submit_with(payload["artifact"])
+
+    assert_equal "ok", submit.status, "nothing was refused"
+    assert_equal [
+      [ "caller turns since the last get_cart result: 0 (turn-taking only; not a yes)", true ],
+      [ "caller began speaking 0.1 s after the submit was requested (1 later turn, not counted)", false ],
+      [ "same model completion answered the get_cart result and issued this submit: yes (it spoke 118 characters)", true ],
+      [ "confirmation gate: shadow only (observed, nothing refused)", false ]
+    ], shadow(submit).map { |o| [ o.text, o.warn ] }
+    assert shadow(submit).none? { |o| o.text.match?(/confirmed by|customer confirmed|caller confirmed/i) }
+  end
+
+  test "a caller turn after the read-back and a later completion are not flagged" do
+    artifact = { "messages" => [ { "role" => "tool_call_result", "name" => "get_cart", "toolCallId" => "c", "time" => 1 },
+                                 { "role" => "user", "time" => 2 }, { "role" => "tool_calls", "time" => 3, "toolCalls" => [ { "id" => "s" } ] } ],
+                 "messagesOpenAIFormatted" => [ { "role" => "tool", "tool_call_id" => "c" }, { "role" => "user" },
+                                                { "role" => "assistant", "tool_calls" => [ { "id" => "s", "function" => { "name" => "submit_order" } } ] } ] }
+    submit = submit_with(artifact)
+    assert_equal [ [ "caller turns since the last get_cart result: 1 (turn-taking only; not a yes)", false ],
+                   [ "same model completion answered the get_cart result and issued this submit: no", false ],
+                   [ "confirmation gate: shadow only (observed, nothing refused)", false ] ], shadow(submit).map { |o| [ o.text, o.warn ] }
+  end
+
+  test "missing history and rows recorded before the instrumentation say so" do
+    assert_equal [ "turn evidence unavailable: the webhook carried no conversation history", true ], shadow(submit_with(nil)).first.then { |o| [ o.text, o.warn ] }
+
+    ToolInvocation.find_by!(call_log_id: @call.id, tool_call_id: "s").update_columns(turn_evidence: nil)
+    older = events.find { |e| e.invocation.tool_call_id == "s" }
+    assert_match(/\Aturn evidence not recorded for this submit/, shadow(older).sole.text)
   end
 
   test "the ended row sits where the call really ended, not when Vapi's report arrived" do
