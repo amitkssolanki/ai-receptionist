@@ -81,6 +81,19 @@ class BaselineReliabilityTest < ActionDispatch::IntegrationTest
 
   def rec(**row) = BaselineObservations.record(**row)
 
+  # Phase 1 Step 3: failures are {"ok":false,"error":{"code","message"}}; returns [code, message].
+  def error_of(result)
+    error = JSON.parse(result)["error"]
+    [ error["code"], error["message"] ]
+  end
+
+  # Nothing the model is told may contain exception text, SQL or class names.
+  LEAK_PATTERN = /Sorry, something went wrong|ActiveRecord|undefined method|key not found|Validation failed|Couldn't find|NoMethodError|SELECT |Traceback|\.rb:\d+|Error\b/
+
+  def assert_no_leak(result)
+    assert_no_match LEAK_PATTERN, result
+  end
+
   # --- Confirmation / order lifecycle ---
 
   test "R01 submit_order is accepted without any prior get_cart read-back" do
@@ -160,21 +173,24 @@ class BaselineReliabilityTest < ActionDispatch::IntegrationTest
     other.menu_categories.create!(name: "X", position: 1).menu_items.create!(restaurant: other, name: "Foreign Item", price_cents: 100)
   end
 
-  test "R06 unknown, unavailable and foreign menu items are rejected, but with raw exception text" do
+  test "R06 unknown, unavailable and foreign menu items are rejected with a structured, speakable code" do
     c = start_call
     @foreign_item = create_other_restaurant_item # created after call start; see R23 for why
     unknown = tool(c.external_call_id, "add_to_cart", { menu_item_id: 999_999 })
     sold_out = tool(c.external_call_id, "add_to_cart", { menu_item_id: @sold_out.id })
     foreign = tool(c.external_call_id, "add_to_cart", { menu_item_id: @foreign_item.id })
 
-    [ unknown, sold_out, foreign ].each { |r| assert_match(/\ASorry, something went wrong handling that - Couldn't find MenuItem/, r) }
+    [ unknown, sold_out, foreign ].each do |r|
+      assert_equal "menu_item_unavailable", error_of(r).first
+      assert_no_leak r
+    end
     assert_nil c.reload.order
     rec(id: "R06", scenario: "Invalid / unavailable / other-restaurant menu item", layer: "vapi",
-        current: "Not inserted (safe). Error returned to the LLM is raw ActiveRecord text, e.g. #{unknown.inspect}",
+        current: "Not inserted. Step 3: structured error code menu_item_unavailable with guidance, no exception text, e.g. #{unknown.inspect}",
         safe: "Not inserted, with a structured, speakable error code (e.g. item_unavailable)")
   end
 
-  test "R07 quantity has no upper bound; zero/negative fail with raw validation text" do
+  test "R07 quantity has no upper bound; zero/negative/non-numeric are refused without raw validation text" do
     c = start_call
     tool(c.external_call_id, "add_to_cart", { menu_item_id: @margherita.id, quantity: 500 })
     zero = tool(c.external_call_id, "add_to_cart", { menu_item_id: @margherita.id, quantity: 0 })
@@ -184,9 +200,15 @@ class BaselineReliabilityTest < ActionDispatch::IntegrationTest
 
     assert_equal [ 500 ], order.order_items.map(&:quantity)
     assert_equal 700_000, order.total_cents
-    [ zero, negative, words ].each { |r| assert_match(/\ASorry, something went wrong handling that - Validation failed: Quantity/, r) }
+    [ zero, negative ].each do |r|
+      assert_equal "invalid_arguments", error_of(r).first # Step 4 turns these into quantity_out_of_range
+      assert_match(/quantity/i, error_of(r).last)
+      assert_no_leak r
+    end
+    assert_equal "invalid_arguments", error_of(words).first
+    assert_match(/quantity must be a whole number/, error_of(words).last)
     rec(id: "R07", scenario: "Excessive / invalid quantity", layer: "vapi",
-        current: "quantity 500 accepted (order total $7,000.00). 0, -3 and \"two\" rejected with raw text: #{zero.inspect}",
+        current: "quantity 500 accepted (order total $7,000.00). 0, -3 and \"two\" refused with invalid_arguments (no raw text): #{zero.inspect}",
         safe: "Upper bound; large orders routed to a human (the prompt's 'large order -> transfer' rule enforced server-side)")
   end
 
@@ -214,7 +236,7 @@ class BaselineReliabilityTest < ActionDispatch::IntegrationTest
 
   # --- Malformed arguments / raw exceptions ---
 
-  test "R10 malformed tool arguments reach business logic and return raw Ruby exception text" do
+  test "R10 malformed tool arguments are refused at the boundary with structured errors" do
     c = start_call
     missing = tool(c.external_call_id, "add_to_cart", {})
     bad_json = begin
@@ -229,13 +251,17 @@ class BaselineReliabilityTest < ActionDispatch::IntegrationTest
     end
     no_address = tool(c.external_call_id, "submit_order", { fulfillment_type: "delivery" })
 
-    assert_match(/key not found: "menu_item_id"/, missing)
-    assert_match(/unexpected|expected/i, bad_json)
-    assert_match(/undefined method 'order_items' for nil/, no_cart_update)
-    assert_match(/'teleport' is not a valid fulfillment_type/, bad_enum)
-    assert_match(/Delivery address can't be blank/, no_address)
+    assert_equal "invalid_arguments", error_of(missing).first
+    assert_match(/menu_item_id is required/, error_of(missing).last)
+    assert_equal "invalid_arguments", error_of(bad_json).first
+    assert_match(/not valid JSON/, error_of(bad_json).last)
+    assert_equal "cart_empty", error_of(no_cart_update).first
+    assert_equal "invalid_arguments", error_of(bad_enum).first
+    assert_match(/fulfillment_type must be one of: pickup, delivery/, error_of(bad_enum).last)
+    assert_equal "delivery_address_required", error_of(no_address).first
+    [ missing, bad_json, no_cart_update, bad_enum, no_address ].each { |r| assert_no_leak r }
     rec(id: "R10", scenario: "Malformed tool arguments / raw exception exposure", layer: "vapi",
-        current: "All caught by one `rescue => e` and returned to the LLM verbatim: #{[ missing, bad_json, no_cart_update, bad_enum ].map(&:inspect).join(' | ')}",
+        current: "Step 3: validated by Voice::ToolArguments before any service runs; structured errors, no exception text: #{[ missing, bad_json, no_cart_update, bad_enum ].map(&:inspect).join(' | ')}",
         safe: "Validate arguments at the boundary; return structured error codes; never expose exception text")
   end
 
@@ -244,10 +270,11 @@ class BaselineReliabilityTest < ActionDispatch::IntegrationTest
     c = start_call
     unknown_tool = tool(c.external_call_id, "delete_everything")
 
-    assert_equal "No active call found for this request.", unknown_call
-    assert_equal "Unknown tool: delete_everything", unknown_tool
+    assert_equal "no_active_call", error_of(unknown_call).first
+    assert_equal "unknown_tool", error_of(unknown_tool).first
+    [ unknown_call, unknown_tool ].each { |r| assert_no_leak r }
     rec(id: "R11", scenario: "Unknown call id / unknown tool", layer: "vapi",
-        current: "Handled with fixed strings (#{unknown_call.inspect}, #{unknown_tool.inspect}); HTTP 200",
+        current: "Step 3: structured errors no_active_call / unknown_tool (#{unknown_call.inspect}, #{unknown_tool.inspect}); HTTP 200",
         safe: "Already safe; keep")
   end
 
@@ -351,7 +378,7 @@ class BaselineReliabilityTest < ActionDispatch::IntegrationTest
 
     assert_nil c
     assert_response :success
-    assert_equal "No active call found for this request.", menu
+    assert_equal "no_active_call", error_of(menu).first
     rec(id: "R23", scenario: "Restaurant resolution for web calls (no dialed number)", layer: "vapi",
         current: "Works only while exactly one Restaurant exists (Restaurant.count == 1 fallback). With two, no CallLog is created (HTTP 200, warning log only) and every tool returns 'No active call found'",
         safe: "Explicit restaurant resolution (e.g. assistant metadata) and a loud failure; documented single-tenant assumption")

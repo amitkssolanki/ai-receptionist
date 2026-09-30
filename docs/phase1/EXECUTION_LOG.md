@@ -56,3 +56,24 @@ unchanged.
     refusal from success; it maps to the existing `rejected`/`cart_empty` ToolInvocation status.
   - Docs that still describe `api/voice/*` (README, `docs/voice_agent/{tools,local_setup,vapi_setup}.md`) are left for
     Step 17, as planned.
+
+## Step 3 — Voice::ToolArguments + structured errors
+
+- `Voice::ToolArguments`: per-tool schema (plain hash). Types: whole number (accepts integer, integral float,
+  digit string), list of whole numbers, text, enum. Missing/null required → `<field> is required.`; wrong type →
+  `<field> must be … (got "…")`; malformed JSON / non-object → `invalid_arguments`. Unknown fields are dropped and
+  never forwarded (R19). Services now receive symbol-keyed, typed keywords only.
+- Error contract (string of JSON): `{"ok":false,"error":{"code","message"}}`, message is speakable guidance.
+  Codes in use: `invalid_arguments`, `unknown_tool`, `no_active_call`, `menu_item_unavailable`, `item_not_in_cart`,
+  `cart_empty`, `delivery_address_required`, `internal_error`. Validation failures → status `rejected`; unexpected
+  exceptions → status `error` + `error_class` (kept only in `tool_invocations`/logs) and the model gets
+  `internal_error`. No exception text, SQL or class name reaches a response (battery test over 16 bad calls).
+- Flipped: R06, R10, R11 (+ R07's raw-text half, R23's no-call string). Successful payloads are unchanged, so the
+  live-call replay still compares identical results.
+- Deviations: the `"ok":true` marker on successes is deferred to Step 5, where get_cart/submit/get_menu payloads
+  change anyway and the replay is rewritten (adding it now would break the verbatim-result replay for no gain).
+  `delivery_address_required` and `cart_empty` for update/remove with no cart are decided in `OrderTaking` (they
+  replace raw exceptions; no other rule was added).
+- Timestamp follow-up: `Voice::ToolRunner` tolerates integer/float/numeric-string timestamps and persists the row
+  with a NULL timestamp for anything else; replay tests now assert every real tool call has a ToolInvocation with
+  the exact Vapi ms timestamp and that no "could not record tool invocation" line was logged.

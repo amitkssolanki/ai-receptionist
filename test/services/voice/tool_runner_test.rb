@@ -32,9 +32,9 @@ class Voice::ToolRunnerTest < ActiveSupport::TestCase
   end
 
   test "fixed replies for no call, unknown tools, and contained failures" do
-    assert_equal "No active call found for this request.", run_tool("get_cart", call_log: nil)
-    assert_equal "Unknown tool: nope", run_tool("nope")
-    assert_match(/\ASorry, something went wrong handling that - key not found: "menu_item_id"/, run_tool("add_to_cart"))
+    assert_equal "no_active_call", JSON.parse(run_tool("get_cart", call_log: nil)).dig("error", "code")
+    assert_equal "unknown_tool", JSON.parse(run_tool("nope")).dig("error", "code")
+    assert_equal "invalid_arguments", JSON.parse(run_tool("add_to_cart")).dig("error", "code")
   end
 
   test "each execution is recorded with status and code" do
@@ -47,6 +47,50 @@ class Voice::ToolRunnerTest < ActiveSupport::TestCase
     assert_equal 4, rows.size
     assert_equal "ok", rows["tc_ok"].status
     assert_equal [ "rejected", "unknown_tool" ], [ rows["tc_unknown"].status, rows["tc_unknown"].error_code ]
-    assert_equal [ "error", "KeyError" ], [ rows["tc_err"].status, rows["tc_err"].error_class ]
+    assert_equal [ "rejected", "invalid_arguments" ], [ rows["tc_err"].status, rows["tc_err"].error_code ]
+  end
+
+  test "no tool response ever contains exception text, SQL or class names" do
+    LEAK = /ActiveRecord|NoMethodError|KeyError|TypeError|undefined method|key not found|Validation failed|Couldn't find|SELECT |\.rb:\d+|Sorry, something went wrong/
+    battery = [
+      [ "add_to_cart", {} ], [ "add_to_cart", "{not json" ], [ "add_to_cart", "[1]" ], [ "add_to_cart", { "menu_item_id" => "x" } ],
+      [ "add_to_cart", { "menu_item_id" => 0 } ], [ "add_to_cart", { "menu_item_id" => @item.id, "quantity" => 0 } ],
+      [ "add_to_cart", { "menu_item_id" => @item.id, "quantity" => -3 } ], [ "add_to_cart", { "menu_item_id" => @item.id, "modifier_ids" => "a" } ],
+      [ "update_cart_item_quantity", { "order_item_id" => 1, "quantity" => 2 } ], [ "remove_cart_item", { "order_item_id" => 1 } ],
+      [ "submit_order", {} ], [ "submit_order", { "fulfillment_type" => "teleport" } ],
+      [ "submit_order", { "fulfillment_type" => "delivery" } ], [ "transfer_to_human", { "reason" => 5 } ],
+      [ "nope", {} ], [ nil, {} ]
+    ]
+    battery.each_with_index do |(name, args), i|
+      result = run_tool(name, args, id: "leak_#{i}")
+      assert_no_match LEAK, result, "#{name} #{args.inspect}"
+      assert_equal false, JSON.parse(result)["ok"], "#{name} #{args.inspect} should be refused"
+    end
+  end
+
+  test "business-validation failures become invalid_arguments naming fields, not exception text" do
+    run_tool("add_to_cart", { "menu_item_id" => @item.id })
+    line = @call_log.reload.order.order_items.sole
+    result = JSON.parse(run_tool("update_cart_item_quantity", { "order_item_id" => line.id, "quantity" => 0 }))
+    assert_equal "invalid_arguments", result.dig("error", "code")
+    assert_match(/quantity/, result.dig("error", "message"))
+    assert_equal 1, line.reload.quantity
+  end
+
+  test "vapi_requested_at is stored for integer, float and numeric-string timestamps, and a bad one never drops the row" do
+    { "ts_int" => 1_790_000_000_123, "ts_float" => 1_790_000_000_123.0, "ts_str" => "1790000000123" }.each do |id, ts|
+      Voice::ToolRunner.call(call_log: @call_log, tool_call: { "id" => id, "function" => { "name" => "get_cart", "arguments" => {} } }, vapi_timestamp: ts)
+    end
+    %w[ts_int ts_float ts_str].each do |id|
+      row = @call_log.tool_invocations.find_by!(tool_call_id: id)
+      assert_equal Time.zone.at(1_790_000_000, 123, :millisecond), row.vapi_requested_at, id
+    end
+
+    [ nil, "garbage", {}, [] ].each_with_index do |ts, i|
+      Voice::ToolRunner.call(call_log: @call_log, tool_call: { "id" => "ts_bad_#{i}", "function" => { "name" => "get_cart", "arguments" => {} } }, vapi_timestamp: ts)
+      row = @call_log.tool_invocations.find_by(tool_call_id: "ts_bad_#{i}")
+      assert row, "row must be persisted for timestamp #{ts.inspect}"
+      assert_nil row.vapi_requested_at
+    end
   end
 end

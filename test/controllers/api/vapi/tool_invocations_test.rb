@@ -48,29 +48,38 @@ class Api::Vapi::ToolInvocationsTest < ActionDispatch::IntegrationTest
     assert_equal({ "menu_item_id" => @item.id }, @call_log.tool_invocations.sole.arguments)
   end
 
-  test "unknown tool and empty-cart submit are recorded as rejected with the same text as before" do
-    assert_equal "Unknown tool: make_coffee", tool("make_coffee", {}, id: "tc_unknown")
-    assert_equal({ "error" => "Cart is empty" }, JSON.parse(tool("submit_order", { fulfillment_type: "pickup" }, id: "tc_empty")))
+  test "unknown tool and empty-cart submit are recorded as rejected with their structured result" do
+    assert_equal "unknown_tool", JSON.parse(tool("make_coffee", {}, id: "tc_unknown")).dig("error", "code")
+    assert_equal "cart_empty", JSON.parse(tool("submit_order", { fulfillment_type: "pickup" }, id: "tc_empty")).dig("error", "code")
 
     unknown, empty = @call_log.tool_invocations.order(:id)
     assert_equal [ "rejected", "unknown_tool" ], [ unknown.status, unknown.error_code ]
     assert_equal [ "rejected", "cart_empty" ], [ empty.status, empty.error_code ]
   end
 
-  test "an exception is recorded as error with its class, and the model still gets the original text" do
-    result = tool("add_to_cart", { menu_item_id: 0 }, id: "tc_boom")
+  test "an unexpected exception is recorded as error with its class; the model only gets internal_error" do
+    original = Order.instance_method(:recompute_total!)
+    Order.define_method(:recompute_total!) { raise "secret detail: connection to db-7 lost" }
+    begin
+      result = tool("add_to_cart", { menu_item_id: @item.id }, id: "tc_boom")
+    ensure
+      Order.define_method(:recompute_total!, original)
+    end
 
-    assert_match(/\ASorry, something went wrong handling that - /, result)
+    assert_equal "internal_error", JSON.parse(result).dig("error", "code")
+    assert_no_match(/secret detail|db-7|RuntimeError/, result)
     invocation = @call_log.tool_invocations.sole
     assert_predicate invocation, :error?
-    assert_equal "ActiveRecord::RecordNotFound", invocation.error_class
+    assert_equal "RuntimeError", invocation.error_class
+    assert_equal "internal_error", invocation.error_code
     assert_equal result, invocation.result
   end
 
-  test "malformed JSON arguments are recorded as received" do
-    tool("add_to_cart", "{not json", id: "tc_bad")
+  test "malformed JSON arguments are a rejected invalid_arguments, recorded as received" do
+    result = tool("add_to_cart", "{not json", id: "tc_bad")
+    assert_equal "invalid_arguments", JSON.parse(result).dig("error", "code")
     invocation = @call_log.tool_invocations.sole
-    assert_predicate invocation, :error?
+    assert_predicate invocation, :rejected?
     assert_equal "{not json", invocation.arguments
   end
 
@@ -83,7 +92,7 @@ class Api::Vapi::ToolInvocationsTest < ActionDispatch::IntegrationTest
   end
 
   test "no call log means nothing to attach to: same reply, no row" do
-    assert_equal "No active call found for this request.", tool("get_cart", {}, id: "tc_none", call: "missing")
+    assert_equal "no_active_call", JSON.parse(tool("get_cart", {}, id: "tc_none", call: "missing")).dig("error", "code")
     assert_equal 0, ToolInvocation.count
   end
 

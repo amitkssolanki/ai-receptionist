@@ -42,7 +42,19 @@ class BaselineLiveCallReplayTest < ActionDispatch::IntegrationTest
 
   teardown { ENV.delete("VAPI_SERVER_SECRET") }
 
+  # Phase 1 (Steps 0-2 follow-up): recording failures are swallowed by design, so replays must prove none happened.
   def replay(call_dir, db_call_id)
+    log = StringIO.new
+    original_logger = Rails.logger
+    Rails.logger = ActiveSupport::Logger.new(log)
+    begin
+      replay_events(call_dir, db_call_id)
+    ensure
+      Rails.logger = original_logger
+    end.tap { assert_no_match(/could not record tool invocation/, log.string) }
+  end
+
+  def replay_events(call_dir, db_call_id)
     events = JSON.parse(File.read(File.join(DIR, call_dir, "events.json")))
     transcript = @snapshot["call_logs"].find { |c| c["id"] == db_call_id }["transcript_verbatim"]
     tool_results = {}
@@ -108,6 +120,18 @@ class BaselineLiveCallReplayTest < ActionDispatch::IntegrationTest
     recorded = recorded_results("call7")
     assert_equal recorded.keys.sort, @tool_results.keys.sort
     recorded.each { |id, result| assert_equal normalize(result), normalize(@tool_results[id]), "tool result mismatch for #{id}" }
+
+    # Every real tool call left a ToolInvocation with the real Vapi timestamp (epoch ms) - none silently dropped.
+    tool_events = events.select { |e| e["type"] == "tool-calls" }
+    invocations = call.tool_invocations.order(:started_at, :id)
+    assert_equal tool_events.size, invocations.count
+    tool_events.zip(invocations).each do |event, invocation|
+      payload = event["payload"]
+      assert_equal payload["toolCallList"].first["id"], invocation.tool_call_id
+      assert_equal payload["toolCallList"].first["function"]["name"], invocation.tool_name
+      assert_equal Time.zone.at(payload["timestamp"] / 1000, payload["timestamp"] % 1000, :millisecond), invocation.vapi_requested_at
+      assert_predicate invocation, :ok?
+    end
 
     assert call.completed?
     assert order.confirmed?
