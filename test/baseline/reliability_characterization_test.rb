@@ -66,9 +66,9 @@ class BaselineReliabilityTest < ActionDispatch::IntegrationTest
     post api_vapi_webhooks_path, params: { message: message }, headers: { "X-Vapi-Secret" => "test-vapi-secret" }, as: :json
   end
 
-  def start_call(id = "call_baseline")
-    # Browser web call: no customer number, matching both live calls.
-    vapi(type: "status-update", status: "in-progress", call: { id: id, type: "webCall" })
+  def start_call(id = "call_baseline", customer: nil)
+    # Browser web call by default: no customer number, matching both live calls. `customer:` makes it a phone call.
+    vapi({ type: "status-update", status: "in-progress", call: { id: id, type: "webCall" } }.merge(customer ? { customer: { number: customer } } : {}))
     CallLog.find_by(external_call_id: id)
   end
 
@@ -117,21 +117,25 @@ class BaselineReliabilityTest < ActionDispatch::IntegrationTest
         safe: "Reject unless the cart was read back (via server) after the last change")
   end
 
-  test "R02 submitting twice re-confirms, moves placed_at, and enqueues a second SMS" do
-    c = start_call
+  test "R02 submitting twice is idempotent: the existing confirmation comes back, nothing changes, no second SMS" do
+    c = start_call("r02_call", customer: "+15557771234") # a real number, so the first submit queues one SMS
     tool(c.external_call_id, "add_to_cart", { menu_item_id: @margherita.id })
-    submit(c.external_call_id)
+    first = submit(c.external_call_id)
     first_placed = c.reload.order.placed_at
+    second = nil
     travel 1.minute do
-      submit(c.external_call_id, { fulfillment_type: "delivery", delivery_address: "1 Main St" })
+      second = submit(c.external_call_id, { fulfillment_type: "delivery", delivery_address: "1 Main St" })
     end
     order = c.reload.order
 
-    assert_equal 2, enqueued_jobs.count { |j| j["job_class"] == "OrderConfirmationSmsJob" }
-    assert_not_equal first_placed, order.placed_at
-    assert order.delivery?
+    assert_equal "queued", JSON.parse(first)["confirmation_sms"]
+    assert_equal [ true, "already_handled" ], [ JSON.parse(second)["already_submitted"], JSON.parse(second)["confirmation_sms"] ]
+    assert_equal 1, enqueued_jobs.count { |j| j["job_class"] == "OrderConfirmationSmsJob" }
+    assert_equal first_placed, order.placed_at
+    assert order.pickup?, "fulfillment was not switched"
+    assert_nil order.delivery_address
     rec(id: "R02", scenario: "Submit twice", layer: "vapi",
-        current: "Second submit accepted: 2 OrderConfirmationSmsJob enqueued, placed_at overwritten, fulfillment switched pickup->delivery on an already-confirmed order",
+        current: "Step 9: the second submit returns the existing summary with already_submitted: true, changes nothing (placed_at, fulfillment) and queues no second SMS",
         safe: "Idempotent: second submit returns the existing confirmation; no second SMS; no field changes")
   end
 
@@ -441,33 +445,49 @@ class BaselineReliabilityTest < ActionDispatch::IntegrationTest
 
   # --- SMS ---
 
-  test "R18 SMS: no-op without Twilio config; with config it texts a synthetic caller id and is not itemized" do
-    c = start_call("sms_call")
-    tool(c.external_call_id, "add_to_cart", { menu_item_id: @margherita.id, modifier_ids: [ @extra_cheese.id ] })
-    tool(c.external_call_id, "add_to_cart", { menu_item_id: @knots.id })
-    submit(c.external_call_id)
-    order_id = c.reload.order.id
-
-    assert_nothing_raised { OrderConfirmationSmsJob.perform_now(order_id) } # env unset -> returns early
-
+  def with_fake_twilio
     ENV["TWILIO_ACCOUNT_SID"] = "AC_test"
     ENV["TWILIO_AUTH_TOKEN"] = "token"
     ENV["TWILIO_FROM_NUMBER"] = "+15550009999"
     fake = FakeTwilio.new
     Twilio::REST::Client.singleton_class.send(:alias_method, :__baseline_new, :new)
     Twilio::REST::Client.define_singleton_method(:new) { |*| fake }
-    begin
-      OrderConfirmationSmsJob.perform_now(order_id)
-    ensure
-      Twilio::REST::Client.singleton_class.send(:alias_method, :new, :__baseline_new)
-    end
+    yield fake
+  ensure
+    Twilio::REST::Client.singleton_class.send(:alias_method, :new, :__baseline_new)
+  end
 
-    sent = fake.sent.first
-    assert_equal "unknown-sms_call", sent[:to]
-    assert_equal "Thanks for your order at Baseline Pizzeria! Total: $21.50. We'll have it ready soon.", sent[:body]
-    rec(id: "R18", scenario: "SMS confirmation behavior", layer: "job",
-        current: "Twilio unset: silent no-op. Twilio set: sends to #{sent[:to].inspect} (web-call placeholder, not a phone number); body #{sent[:body].inspect} - total only, no items",
-        safe: "Skip non-phone caller ids; itemized body; record send status on the order")
+  test "R18 SMS: browser calls are skipped explicitly; a real number gets an itemized text; nothing is sent without Twilio config" do
+    # Browser call: order confirmed, SMS explicitly skipped, and the job itself refuses a synthetic number.
+    web = start_call("sms_web")
+    tool(web.external_call_id, "add_to_cart", { menu_item_id: @margherita.id })
+    web_result = JSON.parse(submit(web.external_call_id))
+    assert web.reload.order.confirmed?
+    assert_equal "skipped_web_call", web_result["confirmation_sms"]
+    assert_equal 0, enqueued_jobs.count { |j| j["job_class"] == "OrderConfirmationSmsJob" }
+
+    # Real caller.
+    c = start_call("sms_call", customer: "+15557775678")
+    tool(c.external_call_id, "add_to_cart", { menu_item_id: @margherita.id, modifier_ids: [ @extra_cheese.id ] })
+    tool(c.external_call_id, "add_to_cart", { menu_item_id: @knots.id })
+    result = JSON.parse(submit(c.external_call_id))
+    order_id = c.reload.order.id
+    assert_equal "queued", result["confirmation_sms"]
+    assert_equal 1, enqueued_jobs.count { |j| j["job_class"] == "OrderConfirmationSmsJob" }
+
+    assert_nothing_raised { OrderConfirmationSmsJob.perform_now(order_id) } # env unset -> returns early
+
+    with_fake_twilio do |fake|
+      OrderConfirmationSmsJob.perform_now(order_id)
+      OrderConfirmationSmsJob.perform_now(web.order.id) # synthetic number: skipped even though Twilio is configured
+      assert_equal 1, fake.sent.size
+      sent = fake.sent.first
+      assert_equal "+15557775678", sent[:to]
+      assert_equal "Thanks for your order at Baseline Pizzeria! 1x Margherita Pizza (Extra cheese), 1x Garlic Knots. Total: $21.50. We'll have it ready soon.", sent[:body]
+      rec(id: "R18", scenario: "SMS confirmation behavior", layer: "job",
+          current: "Step 9: web calls -> confirmation_sms skipped_web_call (nothing enqueued, job also skips synthetic numbers); real number -> queued after commit, itemized body #{sent[:body].inspect}",
+          safe: "Skip non-phone caller ids; itemized body; record send status on the order")
+    end
   end
 
   # --- Boundary properties that are already safe (kept for the before/after table) ---

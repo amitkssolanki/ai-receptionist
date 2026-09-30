@@ -19,7 +19,7 @@ class Voice::ToolRunnerConcurrencyTest < ActiveSupport::TestCase
     [ ToolInvocation, CallLog, OrderItem, Order, Customer, MenuItem, MenuCategory, Restaurant ].each(&:delete_all)
   end
 
-  def new_call = CallLifecycle.start(external_call_id: "race_#{@seq += 1}", dialed_number: @restaurant.phone_number, caller_number: nil)
+  def new_call = CallLifecycle.start(external_call_id: "race_#{@seq += 1}", dialed_number: @restaurant.phone_number, caller_number: "+1555777#{format("%04d", @seq)}")
 
   def deliver(call, id, name, args = {})
     Voice::ToolRunner.call(call_log: CallLog.find(call.id), tool_call: { "id" => id, "function" => { "name" => name, "arguments" => args } })

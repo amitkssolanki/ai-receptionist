@@ -11,6 +11,7 @@ class OrderTaking
     def rejected? = !rejection.nil?
   end
 
+  ALREADY_SUBMITTED = %w[confirmed preparing ready completed].freeze
   MAX_LINE_QUANTITY = 20
   MAX_ORDER_ITEMS = 30
 
@@ -104,14 +105,18 @@ class OrderTaking
   end
 
   # Submitting requires the cart_version the caller heard read back: the server's current version must equal both
-  # the argument and the last read-back. Until the duplicate-submit work, re-submitting a confirmed order still
-  # behaves as it always has; orders the kitchen has already picked up (or that ended) are refused.
+  # the argument and the last read-back.
+  #
+  # Idempotent: an order that was already submitted (confirmed, or later in the kitchen flow) answers with its
+  # existing summary and `already_submitted: true`; nothing is written and no SMS is queued. Only the
+  # pending -> confirmed transition queues the confirmation SMS, and only for a caller with a real number.
   def submit(fulfillment_type:, cart_version:, delivery_address: nil, notes: nil)
     mutating do
       cart_order = order
-      next refuse(:restaurant_closed, closed_message) unless restaurant.open_now?
       next refuse(:cart_empty) if cart_order.nil? || cart_order.order_items.none?
-      next refuse(:order_already_submitted) unless cart_order.cart_open? || cart_order.confirmed?
+      next already_submitted(cart_order) if ALREADY_SUBMITTED.include?(cart_order.status)
+      next refuse(:order_already_submitted) unless cart_order.cart_open?
+      next refuse(:restaurant_closed, closed_message) unless restaurant.open_now?
       next refuse(:delivery_address_required) if fulfillment_type == "delivery" && delivery_address.blank?
       next refuse(:readback_required) if cart_order.read_back_version.nil?
       if cart_version != cart_order.cart_version || cart_order.read_back_version != cart_order.cart_version
@@ -126,14 +131,30 @@ class OrderTaking
         placed_at: Time.current
       )
       cart_order.recompute_total!
-      OrderConfirmationSmsJob.perform_later(cart_order.id)
-      Result.ok(cart_order.cart_summary)
+      Result.ok(cart_order.cart_summary.merge(confirmation_sms: queue_confirmation_sms(cart_order)))
     end
   end
 
   private
 
   def refuse(code, message = MESSAGES.fetch(code), details = {}) = Result.rejected(code, message, details)
+
+  def already_submitted(cart_order)
+    Result.ok(cart_order.cart_summary.merge(already_submitted: true, confirmation_sms: "already_handled"))
+  end
+
+  # "queued" for a caller with a real number, "skipped_web_call" for browser/synthetic callers (no SMS is attempted,
+  # and the skip is a normal outcome, not a failure). Nothing here can fail the order: the job is enqueued after
+  # commit and its errors are contained. Phone numbers are never logged.
+  def queue_confirmation_sms(cart_order)
+    if cart_order.customer.sms_capable?
+      OrderConfirmationSmsJob.enqueue_after_commit(cart_order)
+      "queued"
+    else
+      Rails.logger.info("[SMS] skipped confirmation for order #{cart_order.id}: caller has no SMS-capable number")
+      "skipped_web_call"
+    end
+  end
 
   def empty_cart = { items: [], total: 0.0, cart_version: 0, readback_text: Readback.cart(nil) }
 

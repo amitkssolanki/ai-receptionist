@@ -9,7 +9,7 @@ class Voice::ToolIdempotencyTest < ActiveSupport::TestCase
     category = @restaurant.menu_categories.create!(name: "Mains", position: 1)
     @burger = category.menu_items.create!(restaurant: @restaurant, name: "Burger", price_cents: 1000)
     @fries = category.menu_items.create!(restaurant: @restaurant, name: "Fries", price_cents: 400)
-    @call_log = CallLifecycle.start(external_call_id: "idem_1", dialed_number: @restaurant.phone_number, caller_number: nil)
+    @call_log = CallLifecycle.start(external_call_id: "idem_1", dialed_number: @restaurant.phone_number, caller_number: "+15557770101") # a real number: SMS-capable
   end
 
   def run_tool(id, name, arguments = {}, timestamp: nil)

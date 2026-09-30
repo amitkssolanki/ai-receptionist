@@ -204,7 +204,8 @@ class BaselineLiveCallReplayTest < ActionDispatch::IntegrationTest
   test "call #7 adapted (cart_version injected from get_cart) replays to the same confirmed $16 order" do
     @inject_version = true
     events = nil
-    assert_enqueued_jobs 1, only: OrderConfirmationSmsJob do
+    # Call #7 was a browser call (no caller number): the order is confirmed and the SMS is explicitly skipped.
+    assert_no_enqueued_jobs only: OrderConfirmationSmsJob do
       events, results = replay_call7 { |e| e }
       @results = results
     end
@@ -218,6 +219,7 @@ class BaselineLiveCallReplayTest < ActionDispatch::IntegrationTest
     ids = events.select { |e| e["type"] == "tool-calls" }.map { |e| e["payload"]["toolCallList"].first["id"] }
     ids[1..2].each { |id| assert covers?(JSON.parse(normalize(recorded[id])), JSON.parse(normalize(@results[id]))), id }
     assert_equal true, parsed(@results[ids[3]])["ok"]
+    assert_equal "skipped_web_call", parsed(@results[ids[3]])["confirmation_sms"]
 
     assert call.completed?
     assert order.confirmed?

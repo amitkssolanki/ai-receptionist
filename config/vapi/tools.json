@@ -121,7 +121,7 @@
     "type": "function",
     "function": {
       "name": "submit_order",
-      "description": "Finalize and submit the order. Only call this after get_cart, after reading its readback_text to the customer exactly as written, and after the customer clearly said yes. Pass the cart_version that get_cart returned. If it says the cart changed, call get_cart and read the order back again.",
+      "description": "Finalize and submit the order. Only call this after get_cart, after reading its readback_text to the customer exactly as written, and after the customer clearly said yes. Pass the cart_version that get_cart returned. If it says the cart changed, call get_cart and read the order back again. The result's confirmation_sms says whether a text confirmation was queued; only promise a text when it is \"queued\".",
       "parameters": {
         "type": "object",
         "required": [

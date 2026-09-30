@@ -8,7 +8,7 @@ class CallLifecycleRulesTest < ActiveSupport::TestCase
     @restaurant = Restaurant.create!(name: "Rules Life", phone_number: "+15550009595", business_hours: ALWAYS_OPEN_HOURS)
     @burger = @restaurant.menu_categories.create!(name: "Mains", position: 1)
                          .menu_items.create!(restaurant: @restaurant, name: "Burger", price_cents: 1000)
-    @call = CallLifecycle.start(external_call_id: "rules_life", dialed_number: @restaurant.phone_number, caller_number: nil)
+    @call = CallLifecycle.start(external_call_id: "rules_life", dialed_number: @restaurant.phone_number, caller_number: "+15557770404")
   end
 
   def finish(transcript: "AI: bye") = CallLifecycle.finish(external_call_id: "rules_life", transcript: transcript, recording_url: nil)

@@ -218,3 +218,32 @@ console token (R23), end-of-call cost / ended_reason / messages columns - those 
 - Also: customer find-or-create in `start` survives a concurrent create (`RecordNotUnique`/uniqueness `RecordInvalid`).
 - `MenuPerformanceTest` now resets primary-key sequences after its explicit-id inserts (it was order-dependent).
 - Flipped: R12, R13. Step 7 tests unchanged and green.
+
+## Step 9 — SMS guard
+
+- **Detection:** `Customer#sms_capable?` = phone number matches E.164 (`+` country code, 7–15 digits). Browser/web calls
+  carry a synthetic `unknown-<call id>` placeholder, which never matches.
+- **Submit:** the `pending -> confirmed` transition decides. Real number -> `OrderConfirmationSmsJob.enqueue_after_commit`
+  and result `confirmation_sms: "queued"`; web/synthetic caller -> nothing is enqueued, the skip is logged
+  (`[SMS] skipped confirmation for order <id>: caller has no SMS-capable number`, no number) and the result says
+  `confirmation_sms: "skipped_web_call"`. The value lives in the tool result and therefore in
+  `tool_invocations.result`, which is what a console can show; no new table or column. A submit on an already
+  submitted order is idempotent (see below) and says `already_handled`.
+- **Job:** re-checks `sms_capable?` (defence in depth) and sends an itemized body
+  (`1x Margherita Pizza (Extra cheese), ...; Total: $21.50`).
+- **Post-commit, contained:** `enqueue_after_commit` uses `ActiveRecord.after_all_transactions_commit` (the global
+  `enqueue_after_transaction_commit = true` from Step 7 is unchanged) and rescues its own failures, logging only the
+  error class and order id. An enqueue failure therefore never rolls back or alters the confirmed order or the model's
+  answer. (Probe: with a raising adapter and plain `perform_later`, the exception escaped inside the transaction and
+  rolled the order back, so containment is explicit.) A crash between COMMIT and the enqueue still loses the SMS: known
+  limitation, no outbox by design.
+- **R02 flipped here (deviation from the brief's Step 4 deferral, required for "duplicate submit: no second SMS"):**
+  `submit_order` on a confirmed / preparing / ready / completed order returns the existing summary with
+  `already_submitted: true`, writes nothing, queues nothing, and skips the closed-hours/version checks. Cancelled and
+  abandoned orders still refuse with `order_already_submitted`.
+- **Fields owned by other steps, untouched:** cost, ended reason, sanitized messages, console session key and R23 are
+  in the plan's Step 7 row (lifecycle + resolution), not Step 9; they remain open. The console token part of R23 also
+  depends on the console steps (12–14).
+- Flipped: R02, R18. Tests that assert SMS counts now use callers with a real number; web-call variants assert zero.
+  Replay call #7 (a browser call) now expects the order confirmed with the SMS skipped.
+- Prompt and `tools.json` tell the model to promise a text only when `confirmation_sms` is `queued`.

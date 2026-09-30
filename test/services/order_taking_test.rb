@@ -8,8 +8,8 @@ class OrderTakingTest < ActiveSupport::TestCase
     @item = @restaurant.menu_categories.create!(name: "Mains", position: 1)
                        .menu_items.create!(restaurant: @restaurant, name: "Burger", price_cents: 1000)
     @cheese = @item.menu_item_modifiers.create!(name: "Cheese", price_cents: 150)
-    customer = @restaurant.customers.create!(phone_number: "unknown-svc")
-    @call_log = @restaurant.call_logs.create!(external_call_id: "svc_call", customer: customer, phone_number: "unknown-svc")
+    customer = @restaurant.customers.create!(phone_number: "+15557770303")
+    @call_log = @restaurant.call_logs.create!(external_call_id: "svc_call", customer: customer, phone_number: "+15557770303")
     @service = OrderTaking.new(@call_log)
   end
 

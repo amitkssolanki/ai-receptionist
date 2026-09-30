@@ -10,8 +10,8 @@ class OrderTakingCartVersionTest < ActiveSupport::TestCase
     @burger = category.menu_items.create!(restaurant: @restaurant, name: "Burger", price_cents: 1000)
     @cheese = @burger.menu_item_modifiers.create!(name: "Extra cheese", price_cents: 150)
     @fries = category.menu_items.create!(restaurant: @restaurant, name: "Fries", price_cents: 400)
-    customer = @restaurant.customers.create!(phone_number: "unknown-version")
-    @call_log = @restaurant.call_logs.create!(external_call_id: "version_call", customer: customer, phone_number: "unknown-version")
+    customer = @restaurant.customers.create!(phone_number: "+15557770202")
+    @call_log = @restaurant.call_logs.create!(external_call_id: "version_call", customer: customer, phone_number: "+15557770202")
   end
 
   def svc = OrderTaking.new(@call_log.reload)

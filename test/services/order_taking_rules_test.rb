@@ -133,8 +133,17 @@ class OrderTakingRulesTest < ActiveSupport::TestCase
       assert_equal :order_already_submitted, service.update_quantity(order_item_id: line.id, quantity: 2).rejection, status
       assert_equal :order_already_submitted, service.remove_item(order_item_id: line.id).rejection, status
     end
-    assert_equal :order_already_submitted, submit_order.rejection
+    duplicate = submit_order # the kitchen already has it: an idempotent confirmation, not a change
+    assert_not_predicate duplicate, :rejected?
+    assert_equal true, duplicate.payload[:already_submitted]
     assert_equal [ 1, 1000 ], [ order.order_items.sole.quantity, order.total_cents ]
+  end
+
+  test "a cancelled or abandoned order refuses a submit; it is not a confirmation" do
+    add
+    submit_order
+    order.update!(status: :cancelled)
+    assert_equal :order_already_submitted, submit_order.rejection
   end
 
   test "once the call has ended, nothing in the cart can change: no_active_call, and no order is ever created" do
