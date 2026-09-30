@@ -34,3 +34,25 @@ unchanged.
   - `cart_version_before/after` stay NULL until Step 5; `source` is always `vapi`.
   - Recording is after the business change and outside its transaction (there is no transaction yet); the plan's
     same-transaction recording arrives with `ToolRunner` in Step 7.
+
+## Step 2 — service extraction + generic adapter removal (no behavior change on the Vapi path)
+
+- New: `OrderTaking` (cart, add/update/remove, submit; returns `OrderTaking::Result`), `CallLifecycle` (start,
+  transfer, finish), `MenuCatalog` (`full`, the existing get_menu shape; replaces `Restaurant#voice_menu_json`),
+  `Voice::ToolRunner` (arguments → dispatch → error containment → timing → `ToolInvocation`). Under `app/services`.
+- `Api::Vapi::WebhooksController` now only checks the secret, extracts provider fields and calls the services
+ . The ToolInvocation recording added in Step 1 moved into `ToolRunner`.
+- Deleted: `Api::Voice::{Base,Calls,CartItems}Controller`, their routes, and their two controller test files
+  (nothing consumed them).
+- R21/R22 retired in `test/baseline/reliability_characterization_test.rb` (skipped with the reason, kept by name)
+  and replaced by a positive test that the adapter's routes/constants are gone. Frozen originals unchanged.
+- Deviations / details not in the plan:
+  - `OrderTaking` methods take the parsed tool-argument hash (string keys) rather than typed keywords, and raise the
+    same exceptions as before for bad input. This keeps exception text and evaluation order identical (R07, R10);
+    `Voice::ToolArguments` in Step 3 turns this into typed input.
+  - `OrderTaking#cart` (not `read_back`) and `MenuCatalog#full` (not `overview`/`item`): the plan's names belong to
+    the new behavior in Steps 5 and 8.
+  - `OrderTaking::Result` is introduced now (payload + optional rejection code) because the runner needs to tell a
+    refusal from success; it maps to the existing `rejected`/`cart_empty` ToolInvocation status.
+  - Docs that still describe `api/voice/*` (README, `docs/voice_agent/{tools,local_setup,vapi_setup}.md`) are left for
+    Step 17, as planned.

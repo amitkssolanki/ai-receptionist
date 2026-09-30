@@ -413,36 +413,30 @@ class BaselineReliabilityTest < ActionDispatch::IntegrationTest
         safe: "Already adequate for a static secret over TLS; replay protection absent")
   end
 
-  # --- The generic api/voice layer shares the same gaps (duplicated logic) ---
+  # --- R21 / R22: RETIRED in Phase 1 Step 2 ---
+  #
+  # Reason: R21 and R22 characterized the generic REST adapter (api/voice/*), which had no live consumer - Vapi
+  # only ever called the webhook. Phase 1 deleted that adapter rather than keep two adapters in sync
+  # (docs/phase1/PLAN.md, revision 2, "Generic REST adapter"). Nothing is left to characterize there.
+  # The rules those tests pointed at are covered on the Vapi path: R02 (double submit), R03 (modify after
+  # submit), R04 (foreign modifier) and R12 (transfer precedence). The frozen originals are still exercised,
+  # against the tag, by `bin/rails baseline:verify`.
+  RETIRED_REASON = "Retired in Phase 1 Step 2: the generic api/voice adapter was deleted (no live consumer); " \
+                   "its rules are covered on the Vapi path by R02/R03/R04/R12".freeze
 
   test "R21 generic api/voice layer: same submit-twice, modify-after-submit and silent-modifier gaps" do
-    h = { "Authorization" => "Bearer test-secret" }
-    post api_voice_calls_path, params: { external_call_id: "gen_1", from: "+15557770000", to: @restaurant.phone_number }, headers: h, as: :json
-    post api_voice_call_cart_items_path("gen_1"), params: { menu_item_id: @margherita.id, modifier_ids: [ @bacon.id ] }, headers: h, as: :json
-    assert_enqueued_jobs 2, only: OrderConfirmationSmsJob do
-      2.times { post submit_api_voice_call_path("gen_1"), params: { fulfillment_type: "pickup" }, headers: h, as: :json }
-    end
-    post api_voice_call_cart_items_path("gen_1"), params: { menu_item_id: @knots.id }, headers: h, as: :json
-    order = CallLog.find_by!(external_call_id: "gen_1").order
-
-    assert_response :created
-    assert order.confirmed?
-    assert_equal 2, order.order_items.count
-    assert_equal [], order.order_items.find_by(menu_item: @margherita).selected_modifiers
-    rec(id: "R21", scenario: "Generic api/voice adapter parity", layer: "api/voice",
-        current: "Same gaps via the generic endpoints: modifier from another item dropped, double submit enqueues 2 SMS, add after confirm returns 201",
-        safe: "Both adapters delegate to one domain service enforcing the same rules")
+    skip RETIRED_REASON
   end
 
   test "R22 generic end_call also overwrites transferred status" do
-    h = { "Authorization" => "Bearer test-secret" }
-    post api_voice_calls_path, params: { external_call_id: "gen_2", from: "+15557770001", to: @restaurant.phone_number }, headers: h, as: :json
-    post transfer_api_voice_call_path("gen_2"), params: { reason: "complaint" }, headers: h, as: :json
-    post end_call_api_voice_call_path("gen_2"), params: { transcript: "AI: hi" }, headers: h, as: :json
+    skip RETIRED_REASON
+  end
 
-    assert CallLog.find_by!(external_call_id: "gen_2").abandoned?
-    rec(id: "R22", scenario: "Generic end_call after transfer", layer: "api/voice",
-        current: "transferred -> abandoned (unless the platform passes an explicit status)",
-        safe: "Preserve transferred")
+  test "the generic api/voice adapter no longer exists" do
+    [ [ :post, "/api/voice/calls" ], [ :get, "/api/voice/calls/x/menu" ], [ :post, "/api/voice/calls/x/submit" ],
+      [ :post, "/api/voice/calls/x/cart_items" ] ].each do |verb, path|
+      assert_raises(ActionController::RoutingError, "#{verb} #{path}") { Rails.application.routes.recognize_path(path, method: verb) }
+    end
+    assert_not defined?(Api::Voice), "Api::Voice should be gone"
   end
 end
