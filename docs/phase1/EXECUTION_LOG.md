@@ -108,3 +108,33 @@ duplicate-submit/idempotency yet", so plan Step 4's R02 is **not** flipped (see 
     restaurant changed from the seeded `00:00-23:59` for that reason (the last-minute gap would otherwise make the
     suite time-of-day dependent). Frozen originals are untouched and still pass against the tag.
   - The dev database's restaurant keeps its old `00:00-23:59` hours until reseeded/edited in admin.
+
+## Step 5 — cart version and server-owned read-back
+
+- `orders.cart_version` (default 0), `read_back_version`, `read_back_at`. Every authoritative mutation
+  (add / change quantity / remove) bumps `cart_version` by exactly one inside its transaction; refused or failed
+  mutations roll back and never advance it; reads never do.
+- `get_cart` = `OrderTaking#read_back`: returns the cart, `cart_version`, and server-generated `readback_text`
+  (`OrderTaking::Readback`: words not digits, modifiers, total). While the cart is open and non-empty it records
+  `read_back_version = cart_version`.
+- `submit_order` now requires `cart_version`. Missing → `invalid_arguments`; never read back → `readback_required`;
+  argument ≠ current or read-back ≠ current → `cart_changed_since_readback`, whose error object carries the
+  current `cart_version`. Order of checks: closed → empty → state → delivery address → read-back.
+- add/update/remove results carry `confirmation_text` (server-worded, in words) so the model states changes from
+  tool results; all object results now carry `"ok": true` (deferred from Step 3, as noted there). `get_menu` is still
+  a bare list until Step 6.
+- Concurrency: the per-call row lock from Step 4 (call + order rows) serializes mutations, read-backs and submits,
+  so a stale submit racing an add either wins before the add (and the add is refused as already submitted) or loses
+  to it (and is refused as stale). Tested with real threads on committed data (`order_taking_concurrency_test.rb`).
+  No additional locking or event machinery.
+- Files from the plan's Step 5 table, done now: `config/vapi/tools.json` (what gets pasted into Vapi; parity test
+  against `ToolArguments`) and prompt rules in `docs/voice_agent/system_prompt.md`. The dev assistant, `vapi:check`
+  and all Vapi configuration remain Step 11.
+- Flipped: R01 (R15 stays as characterized: both parallel adds execute, the read-back shows quantity 2).
+- Replay (plan Layer 2): `live_call_replay_test.rb` call #7 "identical results" is replaced by (a) verbatim replay:
+  recorded results still covered, submit refused for the missing `cart_version`, cart abandoned; (b) adapted replay
+  (version injected from get_cart): the original confirmed $16 order, with ToolInvocation/timestamp assertions;
+  (c) variants: no get_cart → `readback_required`; add after read-back → `cart_changed_since_readback`. Call #6 is
+  unchanged. The frozen originals still pass verbatim against the tag (`baseline:verify`).
+- Deviations: see "ok:true" above; the brief's replay requirement is met by the plan's Layer 2 restructuring rather
+  than literal unchanged assertions, because the contract changed by design.

@@ -87,11 +87,17 @@ class Api::Vapi::WebhooksControllerTest < ActionDispatch::IntegrationTest
     cart = JSON.parse(JSON.parse(response.body)["results"].first["result"])
     assert_equal 23.0, cart["total"]
 
+    assert_equal 1, cart["cart_version"]
+    post_event(type: "tool-calls", call: { id: "vapi_call_4" }, toolCallList: [ { id: "toolu_2b", function: { name: "get_cart", arguments: {} } } ])
+    read_back = JSON.parse(JSON.parse(response.body)["results"].first["result"])
+    assert_equal 1, read_back["cart_version"]
+    assert_match(/Total twenty-three dollars/, read_back["readback_text"])
+
     assert_enqueued_with(job: OrderConfirmationSmsJob) do
       post_event(
         type: "tool-calls",
         call: { id: "vapi_call_4" },
-        toolCallList: [ { id: "toolu_3", function: { name: "submit_order", arguments: { fulfillment_type: "pickup" } } } ]
+        toolCallList: [ { id: "toolu_3", function: { name: "submit_order", arguments: { fulfillment_type: "pickup", cart_version: 1 } } } ]
       )
     end
     assert_response :success

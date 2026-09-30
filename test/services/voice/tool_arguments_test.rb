@@ -38,6 +38,7 @@ class Voice::ToolArgumentsTest < ActiveSupport::TestCase
     assert_invalid "update_cart_item_quantity", { "order_item_id" => 1 }, /quantity is required/
     assert_invalid "remove_cart_item", {}, /order_item_id is required/
     assert_invalid "submit_order", {}, /fulfillment_type is required/
+    assert_invalid "submit_order", { "fulfillment_type" => "pickup" }, /cart_version is required/
   end
 
   test "optional nulls are simply absent" do
@@ -51,10 +52,10 @@ class Voice::ToolArgumentsTest < ActiveSupport::TestCase
   end
 
   test "enum and text fields" do
-    assert_equal "delivery", parse("submit_order", { "fulfillment_type" => "delivery" }).values[:fulfillment_type]
+    assert_equal "delivery", parse("submit_order", { "fulfillment_type" => "delivery", "cart_version" => 2 }).values[:fulfillment_type]
     assert_invalid "submit_order", { "fulfillment_type" => "teleport" }, /fulfillment_type must be one of: pickup, delivery/
     assert_invalid "submit_order", { "fulfillment_type" => "Pickup" }, /must be one of/
-    assert_invalid "submit_order", { "fulfillment_type" => "pickup", "notes" => 5 }, /notes must be text/
+    assert_invalid "submit_order", { "fulfillment_type" => "pickup", "cart_version" => 1, "notes" => 5 }, /notes must be text/
     assert_invalid "transfer_to_human", { "reason" => { "why" => "x" } }, /reason must be text/
   end
 

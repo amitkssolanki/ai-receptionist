@@ -3,10 +3,11 @@
 # Inputs are already typed (see Voice::ToolArguments). Anything the server refuses comes back as a rejected
 # Result with a code and a speakable message; nothing here leaks exception text.
 class OrderTaking
-  # payload: what the tool reports on success. rejection/message: a code symbol and guidance for the model.
-  Result = Data.define(:payload, :rejection, :message) do
-    def self.ok(payload) = new(payload: payload, rejection: nil, message: nil)
-    def self.rejected(code, message) = new(payload: nil, rejection: code, message: message)
+  # payload: what the tool reports on success. rejection/message/details: a code symbol, guidance for the model,
+  # and any structured facts the model needs to recover (e.g. the current cart_version).
+  Result = Data.define(:payload, :rejection, :message, :details) do
+    def self.ok(payload) = new(payload: payload, rejection: nil, message: nil, details: {})
+    def self.rejected(code, message, details = {}) = new(payload: nil, rejection: code, message: message, details: details)
     def rejected? = !rejection.nil?
   end
 
@@ -20,15 +21,26 @@ class OrderTaking
     delivery_address_required: "Delivery needs an address. Ask the caller for it, then submit the order again.",
     order_already_submitted: "This order has already been submitted and can no longer be changed. Offer to transfer the caller to a person if they need changes.",
     quantity_out_of_range: "Quantity must be a whole number from 1 to #{MAX_LINE_QUANTITY}. For bigger quantities, offer to transfer the caller to staff.",
-    large_order_requires_staff: "That would take the order past #{MAX_ORDER_ITEMS} items, which staff need to handle. Offer to transfer the caller to a person."
+    large_order_requires_staff: "That would take the order past #{MAX_ORDER_ITEMS} items, which staff need to handle. Offer to transfer the caller to a person.",
+    readback_required: "The order hasn't been read back yet. Call get_cart, read its readback_text to the caller exactly as written, " \
+                       "get a clear yes, then call submit_order with the cart_version from get_cart."
   }.freeze
 
   def initialize(call_log)
     @call_log = call_log
   end
 
-  def cart
-    Result.ok(order&.cart_summary || { items: [], total: 0.0 })
+  # The server-generated read-back. Records which cart version was read so submit_order can insist on it.
+  def read_back
+    mutating do
+      cart_order = order
+      next Result.ok(empty_cart) unless cart_order
+
+      if cart_order.cart_open? && cart_order.order_items.any?
+        cart_order.update!(read_back_version: cart_order.cart_version, read_back_at: Time.current)
+      end
+      Result.ok(cart_order.cart_summary.merge(readback_text: Readback.cart(cart_order)))
+    end
   end
 
   def add_item(menu_item_id:, quantity: nil, modifier_ids: [], notes: nil)
@@ -47,15 +59,15 @@ class OrderTaking
       next refuse(:large_order_requires_staff) if item_count + quantity > MAX_ORDER_ITEMS
 
       cart_order = order || open_order
-      cart_order.order_items.create!(
+      added = cart_order.order_items.create!(
         menu_item: menu_item,
         quantity: quantity,
         unit_price_cents: menu_item.price_cents + modifiers.sum(&:price_cents),
         selected_modifiers: modifiers.map { |m| { "name" => m.name, "price_cents" => m.price_cents } },
         notes: notes
       )
-      cart_order.recompute_total!
-      Result.ok(cart_order.cart_summary)
+      cart_order.recompute_total!(bump_version: true)
+      Result.ok(cart_order.cart_summary.merge(confirmation_text: Readback.added(added, cart_order)))
     end
   end
 
@@ -70,8 +82,8 @@ class OrderTaking
       next refuse(:large_order_requires_staff) if item_count - order_item.quantity + quantity > MAX_ORDER_ITEMS
 
       order_item.update!(quantity: quantity)
-      order.recompute_total!
-      Result.ok(order.cart_summary)
+      order.recompute_total!(bump_version: true)
+      Result.ok(order.cart_summary.merge(confirmation_text: Readback.changed(order_item, order)))
     end
   end
 
@@ -84,20 +96,25 @@ class OrderTaking
       next refuse(:item_not_in_cart) unless order_item
 
       order_item.destroy!
-      order.recompute_total!
-      Result.ok(order.cart_summary)
+      order.recompute_total!(bump_version: true)
+      Result.ok(order.cart_summary.merge(confirmation_text: Readback.removed(order_item.menu_item.name, order)))
     end
   end
 
-  # Until Step 5 (read-back) and the duplicate-submit work, re-submitting a confirmed order behaves as it always
-  # has; orders the kitchen has already picked up (or that ended) are refused.
-  def submit(fulfillment_type:, delivery_address: nil, notes: nil)
+  # Submitting requires the cart_version the caller heard read back: the server's current version must equal both
+  # the argument and the last read-back. Until the duplicate-submit work, re-submitting a confirmed order still
+  # behaves as it always has; orders the kitchen has already picked up (or that ended) are refused.
+  def submit(fulfillment_type:, cart_version:, delivery_address: nil, notes: nil)
     mutating do
       cart_order = order
       next refuse(:restaurant_closed, closed_message) unless restaurant.open_now?
       next refuse(:cart_empty) if cart_order.nil? || cart_order.order_items.none?
       next refuse(:order_already_submitted) unless cart_order.cart_open? || cart_order.confirmed?
       next refuse(:delivery_address_required) if fulfillment_type == "delivery" && delivery_address.blank?
+      next refuse(:readback_required) if cart_order.read_back_version.nil?
+      if cart_version != cart_order.cart_version || cart_order.read_back_version != cart_order.cart_version
+        next refuse(:cart_changed_since_readback, changed_since_readback_message(cart_order), cart_version: cart_order.cart_version)
+      end
 
       cart_order.update!(
         fulfillment_type: fulfillment_type,
@@ -114,7 +131,15 @@ class OrderTaking
 
   private
 
-  def refuse(code, message = MESSAGES.fetch(code)) = Result.rejected(code, message)
+  def refuse(code, message = MESSAGES.fetch(code), details = {}) = Result.rejected(code, message, details)
+
+  def empty_cart = { items: [], total: 0.0, cart_version: 0, readback_text: Readback.cart(nil) }
+
+  def changed_since_readback_message(cart_order)
+    "The cart has changed since it was last read back; the current cart_version is #{cart_order.cart_version}. " \
+      "Call get_cart, read the new readback_text to the caller exactly as written, get a clear yes, " \
+      "then call submit_order with cart_version #{cart_order.cart_version}."
+  end
 
   # One transaction per mutation, serialized per call: lock the call row (which also covers creating the order)
   # and the order row. Any exception rolls the whole mutation back - no empty orders, no half-written carts.

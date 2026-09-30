@@ -50,7 +50,7 @@ class Api::Vapi::ToolInvocationsTest < ActionDispatch::IntegrationTest
 
   test "unknown tool and empty-cart submit are recorded as rejected with their structured result" do
     assert_equal "unknown_tool", JSON.parse(tool("make_coffee", {}, id: "tc_unknown")).dig("error", "code")
-    assert_equal "cart_empty", JSON.parse(tool("submit_order", { fulfillment_type: "pickup" }, id: "tc_empty")).dig("error", "code")
+    assert_equal "cart_empty", JSON.parse(tool("submit_order", { fulfillment_type: "pickup", cart_version: 0 }, id: "tc_empty")).dig("error", "code")
 
     unknown, empty = @call_log.tool_invocations.order(:id)
     assert_equal [ "rejected", "unknown_tool" ], [ unknown.status, unknown.error_code ]
@@ -59,7 +59,7 @@ class Api::Vapi::ToolInvocationsTest < ActionDispatch::IntegrationTest
 
   test "an unexpected exception is recorded as error with its class; the model only gets internal_error" do
     original = Order.instance_method(:recompute_total!)
-    Order.define_method(:recompute_total!) { raise "secret detail: connection to db-7 lost" }
+    Order.define_method(:recompute_total!) { |*, **| raise "secret detail: connection to db-7 lost" }
     begin
       result = tool("add_to_cart", { menu_item_id: @item.id }, id: "tc_boom")
     ensure

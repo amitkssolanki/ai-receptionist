@@ -16,6 +16,12 @@ class OrderTakingRulesTest < ActiveSupport::TestCase
 
   def order = @call_log.reload.order
 
+  # Read the cart back, then submit the version that was read (the protocol Step 5 requires).
+  def submit_order(fulfillment_type: "pickup")
+    read_back = OrderTaking.new(@call_log.reload).read_back
+    OrderTaking.new(@call_log.reload).submit(fulfillment_type: fulfillment_type, cart_version: read_back.payload[:cart_version])
+  end
+
   def add(item = @burger, **opts) = OrderTaking.new(@call_log.reload).add_item(menu_item_id: item.id, **opts)
 
   # --- quantity bounds ---
@@ -97,14 +103,14 @@ class OrderTakingRulesTest < ActiveSupport::TestCase
       refused = add(@fries)
       assert_equal :restaurant_closed, refused.rejection
       assert_includes refused.message, "11:00-21:00"
-      assert_equal :restaurant_closed, OrderTaking.new(@call_log.reload).submit(fulfillment_type: "pickup").rejection
+      assert_equal :restaurant_closed, submit_order.rejection
     end
     assert_equal 1, order.order_items.count
     assert_predicate order, :pending?
 
     travel_to zone.local(2026, 9, 30, 12, 0) do
       assert_not_predicate add(@fries), :rejected?
-      assert_not_predicate OrderTaking.new(@call_log.reload).submit(fulfillment_type: "pickup"), :rejected?
+      assert_not_predicate submit_order, :rejected?
     end
   end
 
@@ -117,7 +123,7 @@ class OrderTakingRulesTest < ActiveSupport::TestCase
 
   test "only a pending order accepts cart changes; submit is refused once the kitchen has it" do
     add
-    OrderTaking.new(@call_log.reload).submit(fulfillment_type: "pickup")
+    submit_order
     line = order.order_items.sole
 
     %i[confirmed preparing ready].each do |status|
@@ -127,7 +133,7 @@ class OrderTakingRulesTest < ActiveSupport::TestCase
       assert_equal :order_already_submitted, service.update_quantity(order_item_id: line.id, quantity: 2).rejection, status
       assert_equal :order_already_submitted, service.remove_item(order_item_id: line.id).rejection, status
     end
-    assert_equal :order_already_submitted, OrderTaking.new(@call_log.reload).submit(fulfillment_type: "pickup").rejection
+    assert_equal :order_already_submitted, submit_order.rejection
     assert_equal [ 1, 1000 ], [ order.order_items.sole.quantity, order.total_cents ]
   end
 
@@ -142,7 +148,7 @@ class OrderTakingRulesTest < ActiveSupport::TestCase
 
   test "a failure after the order is created rolls back the order, the call link and the item" do
     original = Order.instance_method(:recompute_total!)
-    Order.define_method(:recompute_total!) { raise "boom" }
+    Order.define_method(:recompute_total!) { |*, **| raise "boom" }
     begin
       assert_raises(RuntimeError) { add }
     ensure
@@ -155,7 +161,7 @@ class OrderTakingRulesTest < ActiveSupport::TestCase
   test "a failure on an existing cart rolls back that mutation only" do
     add
     original = Order.instance_method(:recompute_total!)
-    Order.define_method(:recompute_total!) { raise "boom" }
+    Order.define_method(:recompute_total!) { |*, **| raise "boom" }
     begin
       assert_raises(RuntimeError) { add(@fries) }
     ensure

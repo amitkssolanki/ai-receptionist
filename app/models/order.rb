@@ -41,8 +41,11 @@ class Order < ApplicationRecord
     total_cents / 100.0
   end
 
-  def recompute_total!
-    update!(total_cents: order_items.sum(&:subtotal_cents))
+  # bump_version: true marks an authoritative cart change (add / change / remove); read-backs are tied to it.
+  def recompute_total!(bump_version: false)
+    attrs = { total_cents: order_items.sum(&:subtotal_cents) }
+    attrs[:cart_version] = cart_version + 1 if bump_version
+    update!(attrs)
   end
 
   def cart_summary
@@ -56,7 +59,8 @@ class Order < ApplicationRecord
           subtotal: item.subtotal_cents / 100.0
         }
       end,
-      total: total_cents / 100.0
+      total: total_cents / 100.0,
+      cart_version: cart_version
     }
   end
 

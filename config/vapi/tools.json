@@ -1,0 +1,153 @@
+[
+  {
+    "type": "function",
+    "function": {
+      "name": "get_menu",
+      "description": "Get the restaurant's current menu: categories, items, prices, modifiers, and suggested pairings. Call this before answering any question about what's available or before adding items to the order.",
+      "parameters": {
+        "type": "object",
+        "required": [],
+        "properties": {}
+      }
+    }
+  },
+  {
+    "type": "function",
+    "function": {
+      "name": "add_to_cart",
+      "description": "Add an item to the customer's order. Use the numeric id from get_menu results for menu_item_id and modifier_ids — never guess an id. After it succeeds, state the change using the result's confirmation_text. If it returns an error, follow the error message; do not tell the caller the item was added.",
+      "parameters": {
+        "type": "object",
+        "required": [
+          "menu_item_id"
+        ],
+        "properties": {
+          "menu_item_id": {
+            "type": "integer",
+            "description": "The id of the menu item from get_menu"
+          },
+          "quantity": {
+            "type": "integer",
+            "description": "How many of this item, 1 to 20, defaults to 1"
+          },
+          "modifier_ids": {
+            "type": "array",
+            "items": {
+              "type": "integer"
+            },
+            "description": "Ids of any selected modifiers for this item, from get_menu"
+          },
+          "notes": {
+            "type": "string",
+            "description": "Optional special instructions for this item"
+          }
+        }
+      }
+    }
+  },
+  {
+    "type": "function",
+    "function": {
+      "name": "update_cart_item_quantity",
+      "description": "Change the quantity of an item already in the cart. Use the order_item_id returned by add_to_cart or get_cart.",
+      "parameters": {
+        "type": "object",
+        "required": [
+          "order_item_id",
+          "quantity"
+        ],
+        "properties": {
+          "order_item_id": {
+            "type": "integer"
+          },
+          "quantity": {
+            "type": "integer",
+            "description": "1 to 20"
+          }
+        }
+      }
+    }
+  },
+  {
+    "type": "function",
+    "function": {
+      "name": "remove_cart_item",
+      "description": "Remove an item from the cart entirely. Use the order_item_id returned by add_to_cart or get_cart.",
+      "parameters": {
+        "type": "object",
+        "required": [
+          "order_item_id"
+        ],
+        "properties": {
+          "order_item_id": {
+            "type": "integer"
+          }
+        }
+      }
+    }
+  },
+  {
+    "type": "function",
+    "function": {
+      "name": "get_cart",
+      "description": "Read the cart back. Returns readback_text, which you must say to the customer exactly as written, and cart_version, which you must pass to submit_order. Call it again after any change before submitting.",
+      "parameters": {
+        "type": "object",
+        "required": [],
+        "properties": {}
+      }
+    }
+  },
+  {
+    "type": "function",
+    "function": {
+      "name": "submit_order",
+      "description": "Finalize and submit the order. Only call this after get_cart, after reading its readback_text to the customer exactly as written, and after the customer clearly said yes. Pass the cart_version that get_cart returned. If it says the cart changed, call get_cart and read the order back again.",
+      "parameters": {
+        "type": "object",
+        "required": [
+          "fulfillment_type",
+          "cart_version"
+        ],
+        "properties": {
+          "fulfillment_type": {
+            "type": "string",
+            "enum": [
+              "pickup",
+              "delivery"
+            ]
+          },
+          "cart_version": {
+            "type": "integer",
+            "description": "The cart_version returned by the most recent get_cart"
+          },
+          "delivery_address": {
+            "type": "string",
+            "description": "Required if fulfillment_type is delivery"
+          },
+          "notes": {
+            "type": "string",
+            "description": "Optional order-level notes"
+          }
+        }
+      }
+    }
+  },
+  {
+    "type": "function",
+    "function": {
+      "name": "transfer_to_human",
+      "description": "Log that this call is being handed off to a human. Call this whenever transferring the call, alongside the platform's native transfer action.",
+      "parameters": {
+        "type": "object",
+        "required": [],
+        "properties": {
+          "reason": {
+            "type": "string",
+            "description": "Why the call is being transferred, for the call log"
+          }
+        }
+      }
+    }
+  }
+]

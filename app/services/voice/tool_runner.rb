@@ -15,7 +15,9 @@ module Voice
       internal_error: "Something went wrong on our side. Apologize briefly and offer to transfer the caller to a person."
     }.freeze
 
-    def self.error_json(code, message) = { ok: false, error: { code: code.to_s, message: message } }.to_json
+    def self.error_json(code, message, details = {})
+      { ok: false, error: { code: code.to_s, message: message }.merge(details) }.to_json
+    end
 
     def self.call(call_log:, tool_call:, vapi_timestamp: nil)
       return error_json(:no_active_call, MESSAGES.fetch(:no_active_call)) unless call_log
@@ -55,7 +57,7 @@ module Voice
       return reject(outcome, :invalid_arguments, parsed.error) unless parsed.ok?
 
       result = dispatch(name, parsed.values)
-      return reject(outcome, result.rejection, result.message) if result.rejected?
+      return reject(outcome, result.rejection, result.message, result.details) if result.rejected?
 
       outcome.merge(result: serialize(result.payload))
     rescue ActiveRecord::RecordInvalid => e
@@ -77,18 +79,19 @@ module Voice
       when "add_to_cart" then order_taking.add_item(**values)
       when "update_cart_item_quantity" then order_taking.update_quantity(**values)
       when "remove_cart_item" then order_taking.remove_item(**values)
-      when "get_cart" then order_taking.cart
+      when "get_cart" then order_taking.read_back
       when "submit_order" then order_taking.submit(**values)
       when "transfer_to_human"
         CallLifecycle.transfer(@call_log, values[:reason])
-        Result.ok("Transfer logged.")
+        Result.ok({ message: "Transfer logged." })
       end
     end
 
-    def serialize(payload) = payload.is_a?(String) ? payload : payload.to_json
+    # Successful object payloads carry "ok": true; get_menu's list changes shape in Step 6.
+    def serialize(payload) = payload.is_a?(Hash) ? { ok: true }.merge(payload).to_json : payload.to_json
 
-    def reject(outcome, code, message)
-      outcome.merge(result: self.class.error_json(code, message), status: "rejected", error_code: code.to_s)
+    def reject(outcome, code, message, details = {})
+      outcome.merge(result: self.class.error_json(code, message, details), status: "rejected", error_code: code.to_s)
     end
 
     def record(outcome, started_at:, duration_ms:)

@@ -13,10 +13,10 @@ class OrderTakingTest < ActiveSupport::TestCase
     @service = OrderTaking.new(@call_log)
   end
 
-  test "cart is empty before anything is added" do
-    result = @service.cart
+  test "read_back on an empty cart says so and records nothing" do
+    result = @service.read_back
     assert_not_predicate result, :rejected?
-    assert_equal({ items: [], total: 0.0 }, result.payload)
+    assert_equal({ items: [], total: 0.0, cart_version: 0, readback_text: "The cart is empty." }, result.payload)
   end
 
   test "add_item creates the order, links it to the call, prices modifiers and totals" do
@@ -47,7 +47,7 @@ class OrderTakingTest < ActiveSupport::TestCase
   end
 
   test "submit on an empty cart is a cart_empty rejection, not an exception" do
-    result = @service.submit(fulfillment_type: "pickup")
+    result = @service.submit(fulfillment_type: "pickup", cart_version: 0)
     assert_predicate result, :rejected?
     assert_equal :cart_empty, result.rejection
     assert_equal OrderTaking::MESSAGES[:cart_empty], result.message
@@ -56,7 +56,8 @@ class OrderTakingTest < ActiveSupport::TestCase
   test "submit confirms the order, stamps placed_at and enqueues the SMS" do
     @service.add_item(menu_item_id: @item.id)
     assert_enqueued_jobs 1, only: OrderConfirmationSmsJob do
-      result = @service.submit(fulfillment_type: "delivery", delivery_address: "1 Main St", notes: "ring twice")
+      @service.read_back
+      result = @service.submit(fulfillment_type: "delivery", cart_version: 1, delivery_address: "1 Main St", notes: "ring twice")
       assert_not_predicate result, :rejected?
     end
 
@@ -73,7 +74,7 @@ class OrderTakingTest < ActiveSupport::TestCase
 
     @service.add_item(menu_item_id: @item.id)
     assert_equal :item_not_in_cart, @service.remove_item(order_item_id: 0).rejection
-    assert_equal :delivery_address_required, @service.submit(fulfillment_type: "delivery").rejection
+    assert_equal :delivery_address_required, @service.submit(fulfillment_type: "delivery", cart_version: 1).rejection
     assert_predicate @call_log.reload.order, :pending?
   end
 end

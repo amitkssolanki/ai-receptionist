@@ -79,6 +79,9 @@ class BaselineReliabilityTest < ActionDispatch::IntegrationTest
 
   def cart(call_id) = JSON.parse(tool(call_id, "get_cart"))
 
+  # Step 5: submit_order needs the cart_version of the server's read-back (get_cart).
+  def submit(call_id, args = { fulfillment_type: "pickup" }) = tool(call_id, "submit_order", args.merge(cart_version: cart(call_id)["cart_version"]))
+
   def rec(**row) = BaselineObservations.record(**row)
 
   # Phase 1 Step 3: failures are {"ok":false,"error":{"code","message"}}; returns [code, message].
@@ -96,24 +99,31 @@ class BaselineReliabilityTest < ActionDispatch::IntegrationTest
 
   # --- Confirmation / order lifecycle ---
 
-  test "R01 submit_order is accepted without any prior get_cart read-back" do
+  test "R01 submit_order is refused until the server has read the current cart back" do
     c = start_call
     tool(c.external_call_id, "add_to_cart", { menu_item_id: @margherita.id })
-    result = tool(c.external_call_id, "submit_order", { fulfillment_type: "pickup" })
+    result = tool(c.external_call_id, "submit_order", { fulfillment_type: "pickup", cart_version: 1 })
 
+    assert_equal "readback_required", error_of(result).first
+    assert_no_leak result
+    assert c.reload.order.pending?, "status unchanged"
+    assert_equal 0, enqueued_jobs.count { |j| j["job_class"] == "OrderConfirmationSmsJob" }
+
+    assert_equal "invalid_arguments", error_of(tool(c.external_call_id, "submit_order", { fulfillment_type: "pickup" })).first # version is required
+    assert_nil JSON.parse(submit(c.external_call_id))["error"]
     assert c.reload.order.confirmed?
     rec(id: "R01", scenario: "Submit without read-back", layer: "vapi",
-        current: "Accepted; order confirmed. No get_cart call was required. Result: #{result}",
+        current: "Step 5: refused with readback_required until get_cart has read back the current cart_version; missing cart_version -> invalid_arguments. Refusal: #{result}",
         safe: "Reject unless the cart was read back (via server) after the last change")
   end
 
   test "R02 submitting twice re-confirms, moves placed_at, and enqueues a second SMS" do
     c = start_call
     tool(c.external_call_id, "add_to_cart", { menu_item_id: @margherita.id })
-    tool(c.external_call_id, "submit_order", { fulfillment_type: "pickup" })
+    submit(c.external_call_id)
     first_placed = c.reload.order.placed_at
     travel 1.minute do
-      tool(c.external_call_id, "submit_order", { fulfillment_type: "delivery", delivery_address: "1 Main St" })
+      submit(c.external_call_id, { fulfillment_type: "delivery", delivery_address: "1 Main St" })
     end
     order = c.reload.order
 
@@ -128,7 +138,7 @@ class BaselineReliabilityTest < ActionDispatch::IntegrationTest
   test "R03 a submitted order can no longer be changed by voice tools (confirmed, or after the kitchen moves on)" do
     c = start_call
     tool(c.external_call_id, "add_to_cart", { menu_item_id: @margherita.id })
-    tool(c.external_call_id, "submit_order", { fulfillment_type: "pickup" })
+    submit(c.external_call_id)
     order = c.reload.order
     item_id = order.order_items.sole.id
 
@@ -233,7 +243,7 @@ class BaselineReliabilityTest < ActionDispatch::IntegrationTest
     tool(c.external_call_id, "add_to_cart", { menu_item_id: @margherita.id }) # open: accepted
     @restaurant.update!(business_hours: %w[sun mon tue wed thu fri sat].index_with { "closed" })
     add = tool(c.external_call_id, "add_to_cart", { menu_item_id: @knots.id })
-    submit = tool(c.external_call_id, "submit_order", { fulfillment_type: "pickup" })
+    submit = submit(c.external_call_id)
 
     assert_not @restaurant.reload.open_now?
     [ add, submit ].each do |r|
@@ -245,7 +255,7 @@ class BaselineReliabilityTest < ActionDispatch::IntegrationTest
 
     @restaurant.update!(business_hours: %w[sun mon tue wed thu fri sat].index_with { "11:00-21:00" })
     travel_to ActiveSupport::TimeZone[@restaurant.timezone].local(2026, 9, 30, 15, 0) do
-      assert_nil JSON.parse(tool(c.external_call_id, "submit_order", { fulfillment_type: "pickup" }))["error"]
+      assert_nil JSON.parse(submit(c.external_call_id))["error"]
     end
     assert c.order.reload.confirmed?
     rec(id: "R08", scenario: "Order while restaurant closed", layer: "vapi",
@@ -284,7 +294,7 @@ class BaselineReliabilityTest < ActionDispatch::IntegrationTest
       tool(c.external_call_id, "add_to_cart", { menu_item_id: @margherita.id })
       tool(c.external_call_id, "submit_order", { fulfillment_type: "teleport" })
     end
-    no_address = tool(c.external_call_id, "submit_order", { fulfillment_type: "delivery" })
+    no_address = tool(c.external_call_id, "submit_order", { fulfillment_type: "delivery", cart_version: 1 })
 
     assert_equal "invalid_arguments", error_of(missing).first
     assert_match(/menu_item_id is required/, error_of(missing).last)
@@ -429,7 +439,7 @@ class BaselineReliabilityTest < ActionDispatch::IntegrationTest
     c = start_call("sms_call")
     tool(c.external_call_id, "add_to_cart", { menu_item_id: @margherita.id, modifier_ids: [ @extra_cheese.id ] })
     tool(c.external_call_id, "add_to_cart", { menu_item_id: @knots.id })
-    tool(c.external_call_id, "submit_order", { fulfillment_type: "pickup" })
+    submit(c.external_call_id)
     order_id = c.reload.order.id
 
     assert_nothing_raised { OrderConfirmationSmsJob.perform_now(order_id) } # env unset -> returns early

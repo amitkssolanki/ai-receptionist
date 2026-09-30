@@ -29,6 +29,7 @@ module Voice
       },
       "submit_order" => {
         fulfillment_type: { type: :string, required: true, enum: %w[pickup delivery] },
+        cart_version: { type: :integer, required: true },
         delivery_address: { type: :string },
         notes: { type: :string }
       },

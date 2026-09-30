@@ -22,12 +22,13 @@ class Voice::ToolRunnerTest < ActiveSupport::TestCase
     assert_equal 0.0, JSON.parse(run_tool("remove_cart_item", { "order_item_id" => line.id }))["total"]
   end
 
-  test "submit_order confirms; transfer_to_human replies in plain text" do
+  test "submit_order confirms; transfer_to_human acknowledges" do
     run_tool("add_to_cart", { "menu_item_id" => @item.id })
-    assert_equal 10.0, JSON.parse(run_tool("submit_order", { "fulfillment_type" => "pickup" }))["total"]
+    version = JSON.parse(run_tool("get_cart"))["cart_version"]
+    assert_equal 10.0, JSON.parse(run_tool("submit_order", { "fulfillment_type" => "pickup", "cart_version" => version }))["total"]
     assert_predicate @call_log.reload.order, :confirmed?
 
-    assert_equal "Transfer logged.", run_tool("transfer_to_human", { "reason" => "complaint" })
+    assert_equal({ "ok" => true, "message" => "Transfer logged." }, JSON.parse(run_tool("transfer_to_human", { "reason" => "complaint" })))
     assert_predicate @call_log.reload, :transferred?
   end
 
@@ -39,12 +40,13 @@ class Voice::ToolRunnerTest < ActiveSupport::TestCase
 
   test "each execution is recorded with status and code" do
     run_tool("add_to_cart", { "menu_item_id" => @item.id })
-    run_tool("submit_order", { "fulfillment_type" => "pickup" }, id: "tc_ok")
+    version = JSON.parse(run_tool("get_cart"))["cart_version"]
+    run_tool("submit_order", { "fulfillment_type" => "pickup", "cart_version" => version }, id: "tc_ok")
     run_tool("nope", id: "tc_unknown")
     run_tool("add_to_cart", {}, id: "tc_err")
 
     rows = @call_log.tool_invocations.index_by(&:tool_call_id)
-    assert_equal 4, rows.size
+    assert_equal 5, rows.size
     assert_equal "ok", rows["tc_ok"].status
     assert_equal [ "rejected", "unknown_tool" ], [ rows["tc_unknown"].status, rows["tc_unknown"].error_code ]
     assert_equal [ "rejected", "invalid_arguments" ], [ rows["tc_err"].status, rows["tc_err"].error_code ]
@@ -58,7 +60,7 @@ class Voice::ToolRunnerTest < ActiveSupport::TestCase
       [ "add_to_cart", { "menu_item_id" => @item.id, "quantity" => -3 } ], [ "add_to_cart", { "menu_item_id" => @item.id, "modifier_ids" => "a" } ],
       [ "update_cart_item_quantity", { "order_item_id" => 1, "quantity" => 2 } ], [ "remove_cart_item", { "order_item_id" => 1 } ],
       [ "submit_order", {} ], [ "submit_order", { "fulfillment_type" => "teleport" } ],
-      [ "submit_order", { "fulfillment_type" => "delivery" } ], [ "transfer_to_human", { "reason" => 5 } ],
+      [ "submit_order", { "fulfillment_type" => "delivery", "cart_version" => 1 } ], [ "transfer_to_human", { "reason" => 5 } ],
       [ "nope", {} ], [ nil, {} ]
     ]
     battery.each_with_index do |(name, args), i|
@@ -71,7 +73,7 @@ class Voice::ToolRunnerTest < ActiveSupport::TestCase
   test "a model validation that slips past the rules becomes invalid_arguments naming fields, not exception text" do
     record = OrderItem.new.tap { |r| r.errors.add(:quantity, "secret model message") }
     original = Order.instance_method(:recompute_total!)
-    Order.define_method(:recompute_total!) { raise ActiveRecord::RecordInvalid, record }
+    Order.define_method(:recompute_total!) { |*, **| raise ActiveRecord::RecordInvalid, record }
     begin
       result = run_tool("add_to_cart", { "menu_item_id" => @item.id })
     ensure
