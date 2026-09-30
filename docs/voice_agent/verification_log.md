@@ -315,3 +315,10 @@ shows at least one caller turn after the last `get_cart` result (missing or unre
 structure of the real submits: calls #1 and #2 and Call #6's first submit would have been refused; Call #6's second submit (after
 the caller's "Yes, that's right.") would have been accepted. No live call has been made with the gate yet; the next one (Call #7)
 is the first. Prompt, tools and the live assistant are unchanged.
+
+## 2026-09-30 — Prompt SMS wording aligned (dev assistant v4 → v5)
+The system prompt's SMS sentences now match what the model receives (`confirmation_sms: "queued"` only when a text was queued;
+otherwise say nothing about texts); `skipped_web_call` / `already_handled` are no longer mentioned. Only `model.messages` changed on
+the live dev assistant (verified before/after); runtime model, reasoning effort, tools, voice and transcriber are unchanged. The next
+live call (Call #7) is the first with this prompt and with the enforced confirmation gate, so it changes two things relative to
+Call #6; the gate is server-side and its effect is recorded per submit.

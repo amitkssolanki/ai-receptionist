@@ -52,9 +52,19 @@ class Voice::ToolContractTest < ActiveSupport::TestCase
     prompt = Rails.root.join("docs/voice_agent/system_prompt.md").read
     TOOLS.each_key { |name| assert_includes prompt, name, "the prompt never mentions #{name}" }
     [ "cart_version", "readback_text", "confirmation_text", "confirmation_sms", "\"ok\": false", "get_menu_item",
-      "source of truth", "queued", "never say a text was delivered" ].each do |phrase|
+      "source of truth", "queued", "never say a text has already arrived" ].each do |phrase|
       assert_includes prompt.downcase, phrase.downcase, "the prompt lacks: #{phrase}"
     end
+  end
+
+  # submit_order tells the model about SMS only with confirmation_sms: "queued" (see OrderTaking#sms_note); the prompt must
+  # describe that contract and never the server-internal SMS states the model no longer receives.
+  test "the prompt's SMS guidance matches the model-facing submit_order result" do
+    prompt = Rails.root.join("docs/voice_agent/system_prompt.md").read.gsub(/\s+/, " ")
+    assert_includes prompt, "`confirmation_sms` appears in the submit_order result only when a confirmation text was queued."
+    assert_includes prompt, "If it is not there, don't mention texts."
+    assert_includes prompt, "otherwise say nothing about texts"
+    assert_no_match(/skipped_web_call|already_handled/, prompt)
   end
 
   test "the prompt and tool descriptions carry the rules learned from the first live call" do

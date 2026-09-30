@@ -579,3 +579,13 @@ Verified against the live Vapi API (read-only) and locally; **no call was made a
 - **Known leftover, not changed here:** the system prompt still explains `skipped_web_call` and `already_handled`. The model no
   longer receives those values; removing the sentence is a prompt change (a live-assistant change and an experiment variable) to
   schedule separately.
+
+## Prompt aligned with the SMS boundary
+
+- The system prompt no longer names `skipped_web_call` or `already_handled` (the model stopped receiving them in the SMS-boundary
+  change). It now says: `confirmation_sms` appears only when a text was queued; only then say "we'll text you a confirmation"
+  (never that a text arrived); if it is absent, don't mention texts. Nothing else in the prompt changed.
+- The live dev assistant's system prompt was updated to match (v4 → v5, one `PATCH` of the complete `model` object; a before/after
+  comparison of the whole assistant differs only in `model.messages`; model, reasoning effort `minimal`, tools, voice and
+  transcriber identical); `vapi:check` clean. The `submit_order` tool description was left as is (it never named the internal
+  values). No Rails, gate, schema or dashboard change.
