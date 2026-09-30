@@ -589,3 +589,16 @@ Verified against the live Vapi API (read-only) and locally; **no call was made a
   comparison of the whole assistant differs only in `model.messages`; model, reasoning effort `minimal`, tools, voice and
   transcriber identical); `vapi:check` clean. The `submit_order` tool description was left as is (it never named the internal
   values). No Rails, gate, schema or dashboard change.
+
+## Acceptance follow-up: criterion #18 and the README
+
+- **#18:** the criterion ("new service files ≥ 95 %") has no tooling exclusion, so the three files below the bar got tests of their
+  real behaviour: the evidence builders are rebuilt from a fresh run and compared with the committed files, `generate` is run into a
+  temporary directory with its manifest checked (it now takes a `dir:` keyword, default unchanged), the suite-summary parser is
+  exercised with the subprocess replaced, and `VapiConfig::Client`'s real transport is exercised with `Net::HTTP` replaced (bearer
+  GET over TLS, timeouts, HTTP and network errors without the key). All three files 100 %; every `app/services` file ≥ 95 %;
+  overall 93.5 %.
+- **README** rewritten for the Phase 1 architecture (plan step 17). `docs/voice_agent/tools.md`, `vapi_setup.md` and parts of
+  `local_setup.md` remain stale and are flagged in the README.
+- One standalone run of the reliability suite had 1 failure that did not recur in 30 further runs; the failing test was not captured
+  and the cause is not known. Recorded in `ACCEPTANCE.md`; not investigated further here.

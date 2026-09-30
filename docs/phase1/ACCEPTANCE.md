@@ -1,12 +1,14 @@
 # Phase 1 acceptance report
 
-Status as of 2026-09-30, branch `phase-1-reliability-console` (not pushed), after commit `1f1fb5b`. Source of truth for the
+Status as of 2026-09-30, branch `phase-1-reliability-console` (not pushed); first written after commit `1f1fb5b`, updated after
+commit `1918acb` (criterion #18 and the README). Source of truth for the
 criteria: `docs/phase1/PLAN.md` §14. Evidence: this repository, `docs/phase1/EXECUTION_LOG.md`, `docs/phase1/evidence/`,
 `docs/voice_agent/verification_log.md`, and the verification run recorded in §11 below.
 
-**Verdict: Phase 1 is not complete by the letter of `PLAN.md` §14.** 16 of 20 criteria are met; 4 are incomplete or not
-demonstrated (§2): CI has never run on the branch (#9, #17), three tooling files are below the 95 % per-file coverage bar (#18), and
-the scripted unclear-upsell live attempt was never made (#20). Plan step 17 (README update) is also not done (§14).
+**Verdict: Phase 1 is not complete by the letter of `PLAN.md` §14.** 17 of 20 criteria are met; 3 are incomplete or not
+demonstrated (§2): CI has never run on the branch (#9, #17) and the scripted unclear-upsell live attempt has not been made (#20).
+Criterion #18 was completed in the update (tests for the evidence builders and the Vapi client transport). Plan step 17 is partly done:
+the README is rewritten; `docs/voice_agent/tools.md`, `vapi_setup.md` and parts of `local_setup.md` are still stale (§14).
 
 ---
 
@@ -38,8 +40,8 @@ idempotent tool execution, a live console, layered evaluation (contract tests, r
 | 14 | Secrets scan passes | **Complete** | `test/security/secrets_scan_test.rb`; `console_broadcaster_test.rb` "nothing sensitive is broadcast…"; `console_controller_test.rb` "only the public key and assistant id reach the browser" |
 | 15 | `vapi:check` passes; baseline assistant unchanged | **Complete** | `vapi:check` OK (§11); baseline `8f2053ae…` `updatedAt` 2026-08-06T02:49:50.807Z, identical to Phase 0 |
 | 16 | Webhook rejects missing/wrong secrets; no default outside `test` | **Complete** | `webhook_security_test.rb` (8 tests, incl. "the known old default is never accepted") |
-| 17 | Tests, RuboCop, Brakeman, bundler-audit, importmap audit green; **CI green** | **Incomplete (CI)** | All local checks green (§11). CI not demonstrated: branch never pushed |
-| 18 | Coverage ≥ 65.7 % baseline; new service files ≥ 95 % | **Incomplete** | Overall 88.8 % of `app/**/*.rb` (1347/1517). Business/voice services 96.5–100 %. Below 95 %: `evaluation.rb` 85.7 %, `evaluation/evidence.rb` 19.8 % (generation paths run via rake, not tests), `vapi_config/client.rb` 80.0 % (live HTTP path stubbed) |
+| 17 | Tests, RuboCop, Brakeman, bundler-audit, importmap audit green; **CI green** | **Incomplete (CI)** | All local checks green (§11). CI not demonstrated: branch never pushed. One standalone run of the reliability suite had 1 failure that did not recur in 30 further standalone runs or in the full suites; the failing test was not captured and the cause is unknown |
+| 18 | Coverage ≥ 65.7 % baseline; new service files ≥ 95 % | **Complete** (update) | The criterion has no exclusion for tooling, so all new `app/services` files count. Added tests of real behaviour (commit `161485a`): `evaluation.rb` 85.7 → 100 %, `evaluation/evidence.rb` 19.8 → 100 %, `vapi_config/client.rb` 80.0 → 100 %. Every `app/services` file is now ≥ 95 % (lowest `voice/turn_evidence.rb` 96.5 %); overall 93.5 % of `app/**/*.rb` (Phase 0: 65.7 %). Measured with stdlib `Coverage`, single process |
 | 19 | Verification log records the outcome of every Phase 0 UNKNOWN touched | **Complete** (see note) | Recorded: metadata arrival (yes), webhook secret over ngrok (works), tool contract accepted, end-of-call fields (arrive, ~57 s late once), live assistant state, `PATCH` of `model` preserves other top-level fields, public-key restrictions/spend limit not API-readable. Note: tool-call-ID reuse on redelivery was **not observed** (no redelivery in 7 live calls; 0 duplicates absorbed from redelivery) — first recorded here. Not touched (deferred/out of scope): HMAC, JWT algorithm, web-call transfer, recording retention, `silenceTimeoutSeconds` |
 | 20 | A live call shows a tool-backed order end to end, **and** the scripted unclear-upsell attempt is recorded | **Incomplete** | First half met (Calls #2, #6, #7). The unclear-upsell attempt (the garlic-knots "That should be" case) was never scripted live; the live script used a clear "Yes, add the garlic knots." |
 
@@ -115,18 +117,18 @@ path.**
 
 | Check | Result |
 |---|---|
-| Full suite `bin/rails test` | 398 runs, 3,450 assertions, 0 failures, 0 errors, 2 skips (retired R21/R22) |
+| Full suite `bin/rails test` | 406 runs, 3,524 assertions, 0 failures, 0 errors, 2 skips (retired R21/R22) — update run |
 | Replay suite (`live_call_replay_test.rb`) | 6 runs, 0 failures |
-| Reliability R-suite | 25 runs, 0 failures, 2 skips (R21/R22 retired) |
-| Evaluation harness + evidence (`test/services/evaluation`) | 18 runs, 0 failures; committed evidence matches a fresh run (15 scenarios; both safety invariants hold in 15/15) |
+| Reliability R-suite | 25 runs, 0 failures, 2 skips (R21/R22 retired); one earlier standalone run had 1 failure, not reproduced in 30 reruns (cause unknown) |
+| Evaluation harness + evidence (`test/services/evaluation`) | 23 runs, 0 failures (update run); committed evidence matches a fresh run (15 scenarios; both safety invariants hold in 15/15); the evidence builders are now tested directly |
 | JavaScript console modules (node) | pass |
 | `bin/rails baseline:verify` | OK — frozen originals pass against `portfolio-baseline` (25 runs) |
-| Line coverage (stdlib `Coverage`) | 88.8 % of `app/**/*.rb` (Phase 0: 65.7 %) |
+| Line coverage (stdlib `Coverage`) | 93.5 % of `app/**/*.rb` (Phase 0: 65.7 %); every `app/services` file ≥ 95 % |
 | CI | **not run** (branch not pushed) |
 
 ## 12. Security and reliability checks
 
-RuboCop: 141 files, no offenses. Brakeman: 0 warnings. bundler-audit: no vulnerabilities. importmap audit: no vulnerable packages.
+RuboCop: 142 files, no offenses. Brakeman: 0 warnings. bundler-audit: no vulnerabilities. importmap audit: no vulnerable packages.
 `vapi:check`: OK (tools, prompt, events, limits, webhook; secret matches). Webhook fails closed without a ≥16-character secret; the old
 default is never accepted; no payload values are logged; production forces TLS; secrets scan and page/broadcast leak tests pass; tool
 responses carry no exception text or SQL; the gate stores no transcript text.
@@ -147,7 +149,8 @@ responses carry no exception text or SQL; the gate stores no transcript text.
 
 - Not built by design (`PLAN.md` §15): second provider, payments, multi-restaurant, HMAC (Phase 4 optional), JWT, Vapi write
   automation, SMS status tracking, recording redirect, server-side live transcripts, LLM judge, web-call transfer, and the rest of §15.
-- Not done yet: plan step 17 (README still describes the removed `api/voice` layer, "23 tests" and call transfer); Layer 3a/3b
+- Not done yet: the rest of plan step 17 (`docs/voice_agent/tools.md`, `vapi_setup.md` and parts of `local_setup.md` still describe
+  the removed `api/voice` layer; the README was rewritten in the update); Layer 3a/3b
   live-model sampling (plan §8, Phase 2); a real-phone SMS test; a live observation of the gate refusing; the unclear-upsell live
   attempt.
 
@@ -156,13 +159,11 @@ responses carry no exception text or SQL; the gate stores no transcript text.
 **No, not by `PLAN.md` §14.** Remaining blockers, exactly:
 
 1. **#9 / #17 — CI:** push the branch (or otherwise run CI) and get a green run of the test, lint and security jobs.
-2. **#18 — per-file coverage:** `app/services/evaluation.rb` (85.7 %), `app/services/evaluation/evidence.rb` (19.8 %) and
-   `app/services/vapi_config/client.rb` (80.0 %) are below 95 %; either raise them or record a decision that tooling files are out of
-   the criterion's scope.
-3. **#20 — unclear-upsell live attempt:** one scripted live call reproducing the unclear upsell reply, recorded in the verification
+2. **#20 — unclear-upsell live attempt:** one scripted live call reproducing the unclear upsell reply, recorded in the verification
    log.
 
-Also outstanding against the plan's step list (not a §14 criterion): **step 17**, the README update.
+(#18 was resolved in the update.) Also outstanding against the plan's step list (not a §14 criterion): the rest of **step 17**
+(`tools.md`, `vapi_setup.md`, `local_setup.md`). Unexplained: one intermittent reliability-suite failure (§2, #17), not reproduced.
 
 ## Portfolio conclusion
 

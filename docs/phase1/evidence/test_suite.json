@@ -1,15 +1,15 @@
 {
-  "generated_at": "2026-09-30T17:51:01Z",
+  "generated_at": "2026-09-30T18:21:54Z",
   "git": {
-    "commit": "ee96de7",
+    "commit": "1918acb",
     "uncommitted_tracked_changes": true
   },
   "results": {
     "full_test_suite": {
       "command": "bin/rails test",
       "passed": true,
-      "runs": 397,
-      "assertions": 3438,
+      "runs": 406,
+      "assertions": 3524,
       "failures": 0,
       "errors": 0,
       "skips": 2
