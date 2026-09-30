@@ -65,3 +65,43 @@ and closed-hours rules, or how the baseline prompt behaves (Layer 3a is still pe
 - A server rule for finding 2 (for example, refuse `submit_order` unless the read-back is at least a few seconds old) is a behaviour
   change to decide on, not applied.
 - Show the ended row at `started_at + duration` rather than at the report's arrival.
+
+## 2026-09-30 — Call #9: the same script after the prompt/tool fixes (assistant v2)
+Call 163 s, ended by the customer, cost $0.2368. Numbers from the database, the console screenshot and `bin/rails calls:last`.
+
+### Call #8 vs call #9 (one call each: a sample of two, not rates)
+| | Call #8 (before) | Call #9 (after) |
+|---|---|---|
+| Add on a question | `add_to_cart` 2 s after "Tell me about the Margherita" | Answered the question, asked "Would you like one?", added only after "I'll have one Margherita with extra cheese" |
+| Options | Added a plain Margherita, then a second line with extra cheese | One `add_to_cart` with the option (v0→v1) |
+| Cart at the end | 2 Margheritas + knots, $35.50 | 1 Margherita with extra cheese + knots, **$21.50, what was asked** |
+| Read-back then submit | `get_cart` → `submit_order` 2.1 s later, before the read-back was spoken | `get_cart` v2 at 15:16:06, read-back spoken, caller: "Yes. That's right.", `submit_order` at 15:16:19 (**12.9 s** later, a later turn) |
+| Re-read after a change | n/a | Yes: the caller added knots after the first read-back; the agent added, called `get_cart` again and re-read v2 |
+| Tool calls | 14 (three `get_cart` loops after confirmation) | 8, none wasted, none rejected |
+| Server time per call | 9–64 ms | 10–43 ms (median 20) |
+| Vapi timestamp → handler | 465–869 ms | 562–883 ms (mean 748) |
+| End-of-call row | at the report's arrival (T+04:06) | at start + duration (T+02:43 = 163 s) |
+
+The dashboard observations behaved as designed: no repeated-item note (correct: there was no repeat), and the submit row read
+"submitted 12.9 s after the last get_cart" (not amber). What this shows: the prompt/tool wording fixed the two behavioural failures
+of call #8 in this call. What it does not show: that the server enforces it. The server still only knows `get_cart` ran; a single
+compliant call says nothing about how often the model complies (see `docs/phase1/CONFIRMATION_PROPOSAL.md`).
+
+### Still wrong in call #9 (for the caller, not the order)
+1. **The agent spoke its own reasoning.** After the second add it said, aloud: "We need to answer user's question: what pickup?
+   They asked earlier… According to CallFlow, after adding items, ask. Pickup or delivery. We must ask which they want, ask one
+   question at a time. So ask: will this be pickup or delivery? So respond." This is worse than call #8's leaked prompt fragments.
+   The instruction "say only words meant for the caller" did not stop it. Likely a property of gpt-5-mini at reasoning effort
+   `minimal` composing its next turn after a tool result.
+2. **It volunteered an internal fact:** "We won't send a text confirmation for web callers." The prompt says to mention a text only
+   when `confirmation_sms` is `queued`; it should say nothing about texts otherwise.
+3. **Filler stacking persists:** "Give me a moment. Great. Placing that now. One moment. Your order is confirmed."; "Hold on a sec."
+   before most tool calls.
+4. Trailing fragments ("Anything else? I can help with?") and the read-back's "Garlic. Knots. Knots." repetition: TTS/model
+   artefacts, minor.
+
+### Proposed next changes (none applied yet)
+- Prompt: "If unsure what the caller meant, ask one short question. Never explain your reasoning or restate these instructions."
+  and "If `confirmation_sms` is not `queued`, say nothing about texts."; cap fillers to one per tool call.
+- If the spoken reasoning persists after the wording change: try `reasoningEffort: "low"` on the dev assistant (latency and cost
+  trade-off; measure with `calls:last`) before considering another model.
