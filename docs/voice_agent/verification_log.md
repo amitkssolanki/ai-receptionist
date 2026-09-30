@@ -176,3 +176,55 @@ drawn from this call**, and it is not counted in any comparison. The experiment 
   "⚠ no server record of this tool call was observed", an empty order board ("No cart yet"), server tools ✓0 ⛔0 ✖0, and the agent's
   "Adding that to your order right now." flagged as a claim not reflected in the server order.
 - Server state: call #10 `abandoned`, 0 `tool_invocations`, no order.
+
+## Call numbering (owner's live-test numbering vs Vapi/DB call ids)
+| Owner's call | Vapi/DB call | Status |
+|---|---|---|
+| Call #1 | call #8 | valid |
+| Call #2 | call #9 | valid |
+| Call #3 | call #10 | **invalid infrastructure run** (see above) |
+| Call #4 | call #11 | valid; did not reach a read-back or submit (below) |
+| Call #5 | the next live call | — |
+
+## 2026-09-30 — Call #4 (Vapi/DB call #11): announced read-back never executed; no submit
+Same script, prompt, tools, model and reasoning effort as Call #2, with the shadow turn evidence in place and `bin/dev` restarted
+after the migration. Call 110 s, ended by the customer, cost $0.1373, assistant v2. Sources: the database (`tool_invocations`,
+`orders`, `call_logs`), `bin/rails calls:last`, the console screenshot, and Vapi's stored call record (`GET /call/{id}`, read-only).
+
+**What it established**
+- **Infrastructure worked.** Rails received 4 tool-call webhooks (`get_menu`, `get_menu_item`, `add_to_cart`, `add_to_cart`),
+  answered all 4 successfully and recorded all 4 (0 rejected, 0 errors); no errors in the server log.
+- **The authoritative order was correct throughout:** order #7, 1 × Margherita Pizza with Extra cheese and 1 × Garlic Knots,
+  $21.50, cart version 2 (v0→v1→v2). The call ended **abandoned**; the order is `abandoned`, read-back `not delivered`, never submitted.
+- **No `get_cart` read-back was executed and no `submit_order` occurred**, so the turn-evidence instrumentation recorded **no live
+  submit sample** from this call.
+
+**Model behaviour observed (from Vapi's stored record; one call, not a rate)**
+1. **An announced read-back with no tool call.** The agent said "Great. Pickup. Let me read the order back: One moment. Getting your
+   cart." In the model's own history (`messagesOpenAIFormatted`) that completion has **no tool call**. No `get_cart` request reached
+   Rails, and the agent was then silent until the caller ended the call (about 38 s later). Same shape as the Phase 0 baseline
+   call #6 (announced "let me pull up the menu", no tool call), but here the assistant had all 8 tools attached.
+2. **"Added…" spoken before the tool result existed**, for both cart additions: the completion that *requested* `add_to_cart` already
+   contained the claim ("Give me a moment. Added 1 Margherita pizza, with extra cheese." → `add_to_cart`; "This will just take a sec.
+   Added 1 garlic knots." → `add_to_cart`). Both adds then succeeded, so the claims happened to match the server order and the
+   console's unbacked-claim heuristic (which looks for a cart change near the claim) correctly did not flag them. The prompt asks the
+   agent to state a change only after the tool result confirms it.
+3. It asked "pickup or delivery?" although the caller had already said "…for pickup"; the caller answered "Pickup?".
+4. The caller's speech was captured well enough for the intended requests (speech-to-text: "Think about the margarita", "Add the
+   garlic now"); the agent acted on them as intended. It pre-empted script step 5 by announcing the read-back itself.
+5. Vapi billed `reasoningTokens = 0` again (`reasoningEffort: minimal`).
+
+**What NOT to conclude from Call #4**
+- It does **not** provide a turn-evidence result (no submit).
+- It does **not** test whether `submit_order` comes before the caller's confirmation.
+- It does **not** show that `reasoningEffort: minimal` caused these failures; no variable was changed, so there is nothing to
+  attribute. It is one more failure observed under the unchanged current configuration, consistent with (not proof of) the
+  hypothesis that the current runtime model/configuration has reliability problems.
+
+**Experiment integrity:** unchanged from Call #2 — the Vapi assistant (dev, v2; `vapi:check` clean), runtime model
+(`openai/gpt-5-mini`), reasoning effort (`minimal`), prompt, tools, SMS behaviour, filler behaviour and server-side order logic; the
+turn-evidence implementation is unchanged since it was added (`0ed5ce4`); the only code change since Call #2 besides it is the
+unrecorded-fallback fix (`7e4ccb5`), which acts only when a tool invocation cannot be recorded (not the case in this call).
+
+**Next:** Call #5 with the exact same script and configuration, to obtain one current-configuration call that reaches
+`submit_order` and so observe the live turn-evidence instrumentation.
