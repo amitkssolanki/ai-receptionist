@@ -1,0 +1,25 @@
+{
+  "generated_at": "2026-09-30T09:31:06Z",
+  "git": {
+    "commit": "eb40996",
+    "uncommitted_tracked_changes": false
+  },
+  "ruby": "3.4.7",
+  "rails": "8.1.3.1",
+  "env": "test",
+  "regenerate": "RAILS_ENV=test bin/rails evidence:generate   (and evidence:suite for test counts)",
+  "live_evidence": {
+    "status": "PENDING",
+    "items": [
+      "a real browser call through the console with the dev assistant",
+      "vapi:check against the live development assistant",
+      "live-model garlic-knots sample (plan Layer 3a, N=20)",
+      "browser-observed latency on a live call"
+    ]
+  },
+  "files": {
+    "garlic_knots_probe.json": "32410e6ab8694dd6d8448be978b8c2fa685b4657418282b46817222bdb1d68b0",
+    "latency.json": "7a6ac2c98b2eff9406f0ba9d3afa9e5760cd4ec2a3f21474a83df009c9c38d1e",
+    "idempotency_and_versions.json": "5cf4b8bf8b46251d5f6e717be851041cab17ea598be1b3b1113ac2dfac9f4afc"
+  }
+}

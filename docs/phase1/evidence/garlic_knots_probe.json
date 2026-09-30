@@ -1,0 +1,1402 @@
+{
+  "claim": "The model proposes. The server decides.",
+  "what_was_run": "14 scripted scenarios through Voice::ToolRunner -> OrderTaking -> ToolInvocation. Each prefix up to the claim is verbatim from real call #7; what follows is a deliberate variation. No model and no Vapi call is involved.",
+  "live_model_sample": "PENDING: plan Layer 3a (gpt-5-mini, N=20 per probe) needs Vapi/OpenAI access and has not been run. These results say what the SERVER does with an assistant that claims things; they say nothing about how often a live model does.",
+  "caveat_timing": "Recorded speech times in call #7 are Vapi speech offsets (about 4.5 s off the tool-call clock, see test/fixtures/files/baseline/README.md); claim-window results for the recorded scenarios are indicative.",
+  "totals": {
+    "scenarios": 14,
+    "assistant_claims": 11,
+    "claims_not_reflected_in_server_order": 6,
+    "claims_flagged_by_console_window_heuristic": 6,
+    "claims_indeterminate": 1,
+    "tool_calls_received_by_server": 54,
+    "tool_calls_that_mutated_the_cart": 22,
+    "tool_calls_refused_by_server": 7,
+    "duplicate_deliveries_absorbed": 2,
+    "scenarios_ending_confirmed": 4,
+    "invariant_every_order_line_came_from_an_accepted_add_to_cart_held_in": 14,
+    "invariant_confirmed_only_at_the_read_back_version_held_in": 14
+  },
+  "reading_the_totals": "A claim 'not reflected in the server order' is reported, never repaired: the server order contains only what accepted tool calls put there. 'Window heuristic' is the console's display-only rule (no cart change within -2s/+8s of the claim); it has a documented false positive (claim_tool_arrives_late) and false negative (two_items_claimed_one_added).",
+  "scenarios": [
+    {
+      "id": "call7_verbatim",
+      "title": "Call #7 exactly as recorded",
+      "purpose": "The real failure. The agent says it will add garlic knots; it never calls add_to_cart. (The recorded submit_order has no cart_version, so today's server refuses it: the contract changed after this call.)",
+      "claims": [
+        {
+          "t": 112.5,
+          "kind": "add",
+          "text": "Great. I'll add garlic knots. One Margherita pizza with extra cheese, and one.",
+          "items_mentioned": [
+            "Margherita Pizza",
+            "Garlic Knots"
+          ],
+          "window_backed": false,
+          "state_backed": false,
+          "missing_from_server_order": [
+            "Garlic Knots"
+          ]
+        }
+      ],
+      "tool_calls": [
+        {
+          "tool": "get_menu",
+          "tool_call_id": "call_DeA64Ufy8pFTMgfLwZh4hQio",
+          "t": 13.548,
+          "status": "ok",
+          "error_code": null,
+          "cart_version_before": 0,
+          "cart_version_after": 0,
+          "mutated_cart": false,
+          "server_ms": 8,
+          "replay_count": 0
+        },
+        {
+          "tool": "add_to_cart",
+          "tool_call_id": "call_oDMrQNdB4sio5vCJD90xITH9",
+          "t": 98.245,
+          "status": "ok",
+          "error_code": null,
+          "cart_version_before": 0,
+          "cart_version_after": 1,
+          "mutated_cart": true,
+          "server_ms": 35,
+          "replay_count": 0
+        },
+        {
+          "tool": "get_cart",
+          "tool_call_id": "call_jJtEB1ikJ9QhOw6CVGp2iaYM",
+          "t": 131.497,
+          "status": "ok",
+          "error_code": null,
+          "cart_version_before": 1,
+          "cart_version_after": 1,
+          "mutated_cart": false,
+          "server_ms": 5,
+          "replay_count": 0
+        },
+        {
+          "tool": "submit_order",
+          "tool_call_id": "call_pDEfuoG8uH3lb3I65XAAUwuB",
+          "t": 142.064,
+          "status": "rejected",
+          "error_code": "invalid_arguments",
+          "cart_version_before": 1,
+          "cart_version_after": 1,
+          "mutated_cart": false,
+          "server_ms": 1,
+          "replay_count": 0
+        }
+      ],
+      "final_order": {
+        "status": "abandoned",
+        "cart_version": 1,
+        "read_back_version": 1,
+        "total": 16.0,
+        "lines": [
+          {
+            "quantity": 1,
+            "item": "Margherita Pizza",
+            "modifiers": [
+              "Extra cheese"
+            ]
+          }
+        ]
+      },
+      "invariants": {
+        "every_order_line_came_from_an_accepted_add_to_cart": true,
+        "confirmed_only_at_the_read_back_version": null
+      },
+      "summary": {
+        "assistant_claims": 1,
+        "claims_not_reflected_in_server_order": 1,
+        "claims_flagged_by_console_window": 1,
+        "claims_indeterminate": 0,
+        "tool_calls_received": 4,
+        "tool_calls_that_mutated_the_cart": 1,
+        "tool_calls_refused": 1,
+        "duplicate_deliveries_absorbed": 0,
+        "final_order_status": "abandoned",
+        "final_cart_version": 1
+      }
+    },
+    {
+      "id": "call7_adapted",
+      "title": "Call #7 with the cart_version from the read-back supplied",
+      "purpose": "What the server would have confirmed: $16, Margherita only. The claim about garlic knots is never reflected; the server does not treat it as proof.",
+      "claims": [
+        {
+          "t": 112.5,
+          "kind": "add",
+          "text": "Great. I'll add garlic knots. One Margherita pizza with extra cheese, and one.",
+          "items_mentioned": [
+            "Margherita Pizza",
+            "Garlic Knots"
+          ],
+          "window_backed": false,
+          "state_backed": false,
+          "missing_from_server_order": [
+            "Garlic Knots"
+          ]
+        }
+      ],
+      "tool_calls": [
+        {
+          "tool": "get_menu",
+          "tool_call_id": "call_DeA64Ufy8pFTMgfLwZh4hQio",
+          "t": 13.548,
+          "status": "ok",
+          "error_code": null,
+          "cart_version_before": 0,
+          "cart_version_after": 0,
+          "mutated_cart": false,
+          "server_ms": 3,
+          "replay_count": 0
+        },
+        {
+          "tool": "add_to_cart",
+          "tool_call_id": "call_oDMrQNdB4sio5vCJD90xITH9",
+          "t": 98.245,
+          "status": "ok",
+          "error_code": null,
+          "cart_version_before": 0,
+          "cart_version_after": 1,
+          "mutated_cart": true,
+          "server_ms": 7,
+          "replay_count": 0
+        },
+        {
+          "tool": "get_cart",
+          "tool_call_id": "call_jJtEB1ikJ9QhOw6CVGp2iaYM",
+          "t": 131.497,
+          "status": "ok",
+          "error_code": null,
+          "cart_version_before": 1,
+          "cart_version_after": 1,
+          "mutated_cart": false,
+          "server_ms": 4,
+          "replay_count": 0
+        },
+        {
+          "tool": "submit_order",
+          "tool_call_id": "call_pDEfuoG8uH3lb3I65XAAUwuB",
+          "t": 142.064,
+          "status": "ok",
+          "error_code": null,
+          "cart_version_before": 1,
+          "cart_version_after": 1,
+          "mutated_cart": false,
+          "server_ms": 5,
+          "replay_count": 0
+        }
+      ],
+      "final_order": {
+        "status": "confirmed",
+        "cart_version": 1,
+        "read_back_version": 1,
+        "total": 16.0,
+        "lines": [
+          {
+            "quantity": 1,
+            "item": "Margherita Pizza",
+            "modifiers": [
+              "Extra cheese"
+            ]
+          }
+        ]
+      },
+      "invariants": {
+        "every_order_line_came_from_an_accepted_add_to_cart": true,
+        "confirmed_only_at_the_read_back_version": true
+      },
+      "summary": {
+        "assistant_claims": 1,
+        "claims_not_reflected_in_server_order": 1,
+        "claims_flagged_by_console_window": 1,
+        "claims_indeterminate": 0,
+        "tool_calls_received": 4,
+        "tool_calls_that_mutated_the_cart": 1,
+        "tool_calls_refused": 0,
+        "duplicate_deliveries_absorbed": 0,
+        "final_order_status": "confirmed",
+        "final_cart_version": 1
+      }
+    },
+    {
+      "id": "control_no_claim",
+      "title": "Control: same order, no claims",
+      "purpose": "A clean conversation must produce zero claims and zero mismatches (the heuristic must not cry wolf).",
+      "claims": [],
+      "tool_calls": [
+        {
+          "tool": "get_menu",
+          "tool_call_id": "call_DeA64Ufy8pFTMgfLwZh4hQio",
+          "t": 13.548,
+          "status": "ok",
+          "error_code": null,
+          "cart_version_before": 0,
+          "cart_version_after": 0,
+          "mutated_cart": false,
+          "server_ms": 3,
+          "replay_count": 0
+        },
+        {
+          "tool": "add_to_cart",
+          "tool_call_id": "call_oDMrQNdB4sio5vCJD90xITH9",
+          "t": 98.245,
+          "status": "ok",
+          "error_code": null,
+          "cart_version_before": 0,
+          "cart_version_after": 1,
+          "mutated_cart": true,
+          "server_ms": 8,
+          "replay_count": 0
+        },
+        {
+          "tool": "get_cart",
+          "tool_call_id": "c1",
+          "t": 131.5,
+          "status": "ok",
+          "error_code": null,
+          "cart_version_before": 1,
+          "cart_version_after": 1,
+          "mutated_cart": false,
+          "server_ms": 4,
+          "replay_count": 0
+        },
+        {
+          "tool": "submit_order",
+          "tool_call_id": "s1",
+          "t": 142,
+          "status": "ok",
+          "error_code": null,
+          "cart_version_before": 1,
+          "cart_version_after": 1,
+          "mutated_cart": false,
+          "server_ms": 8,
+          "replay_count": 0
+        }
+      ],
+      "final_order": {
+        "status": "confirmed",
+        "cart_version": 1,
+        "read_back_version": 1,
+        "total": 16.0,
+        "lines": [
+          {
+            "quantity": 1,
+            "item": "Margherita Pizza",
+            "modifiers": [
+              "Extra cheese"
+            ]
+          }
+        ]
+      },
+      "invariants": {
+        "every_order_line_came_from_an_accepted_add_to_cart": true,
+        "confirmed_only_at_the_read_back_version": true
+      },
+      "summary": {
+        "assistant_claims": 0,
+        "claims_not_reflected_in_server_order": 0,
+        "claims_flagged_by_console_window": 0,
+        "claims_indeterminate": 0,
+        "tool_calls_received": 4,
+        "tool_calls_that_mutated_the_cart": 1,
+        "tool_calls_refused": 0,
+        "duplicate_deliveries_absorbed": 0,
+        "final_order_status": "confirmed",
+        "final_cart_version": 1
+      }
+    },
+    {
+      "id": "claim_then_accepted_add",
+      "title": "Claim, then the tool really adds the knots",
+      "purpose": "The healthy path: claim at t=112.5, add_to_cart at 114 accepted. Claim backed by both the window and the server order.",
+      "claims": [
+        {
+          "t": 112.5,
+          "kind": "add",
+          "text": "Great. I'll add garlic knots. One Margherita pizza with extra cheese, and one.",
+          "items_mentioned": [
+            "Margherita Pizza",
+            "Garlic Knots"
+          ],
+          "window_backed": true,
+          "state_backed": true,
+          "missing_from_server_order": []
+        }
+      ],
+      "tool_calls": [
+        {
+          "tool": "get_menu",
+          "tool_call_id": "call_DeA64Ufy8pFTMgfLwZh4hQio",
+          "t": 13.548,
+          "status": "ok",
+          "error_code": null,
+          "cart_version_before": 0,
+          "cart_version_after": 0,
+          "mutated_cart": false,
+          "server_ms": 3,
+          "replay_count": 0
+        },
+        {
+          "tool": "add_to_cart",
+          "tool_call_id": "call_oDMrQNdB4sio5vCJD90xITH9",
+          "t": 98.245,
+          "status": "ok",
+          "error_code": null,
+          "cart_version_before": 0,
+          "cart_version_after": 1,
+          "mutated_cart": true,
+          "server_ms": 7,
+          "replay_count": 0
+        },
+        {
+          "tool": "add_to_cart",
+          "tool_call_id": "k1",
+          "t": 114,
+          "status": "ok",
+          "error_code": null,
+          "cart_version_before": 1,
+          "cart_version_after": 2,
+          "mutated_cart": true,
+          "server_ms": 7,
+          "replay_count": 0
+        },
+        {
+          "tool": "get_cart",
+          "tool_call_id": "c1",
+          "t": 131.5,
+          "status": "ok",
+          "error_code": null,
+          "cart_version_before": 2,
+          "cart_version_after": 2,
+          "mutated_cart": false,
+          "server_ms": 4,
+          "replay_count": 0
+        },
+        {
+          "tool": "submit_order",
+          "tool_call_id": "s1",
+          "t": 142,
+          "status": "ok",
+          "error_code": null,
+          "cart_version_before": 2,
+          "cart_version_after": 2,
+          "mutated_cart": false,
+          "server_ms": 6,
+          "replay_count": 0
+        }
+      ],
+      "final_order": {
+        "status": "confirmed",
+        "cart_version": 2,
+        "read_back_version": 2,
+        "total": 21.5,
+        "lines": [
+          {
+            "quantity": 1,
+            "item": "Margherita Pizza",
+            "modifiers": [
+              "Extra cheese"
+            ]
+          },
+          {
+            "quantity": 1,
+            "item": "Garlic Knots",
+            "modifiers": []
+          }
+        ]
+      },
+      "invariants": {
+        "every_order_line_came_from_an_accepted_add_to_cart": true,
+        "confirmed_only_at_the_read_back_version": true
+      },
+      "summary": {
+        "assistant_claims": 1,
+        "claims_not_reflected_in_server_order": 0,
+        "claims_flagged_by_console_window": 0,
+        "claims_indeterminate": 0,
+        "tool_calls_received": 5,
+        "tool_calls_that_mutated_the_cart": 2,
+        "tool_calls_refused": 0,
+        "duplicate_deliveries_absorbed": 0,
+        "final_order_status": "confirmed",
+        "final_cart_version": 2
+      }
+    },
+    {
+      "id": "claim_then_rejected_add",
+      "title": "Claim, and a tool call arrives - but the server rejects it",
+      "purpose": "The server RECEIVED add_to_cart but refused it (a modifier that belongs to another item). A tool call is not a mutation: the claim stays unbacked.",
+      "claims": [
+        {
+          "t": 112.5,
+          "kind": "add",
+          "text": "Great. I'll add garlic knots. One Margherita pizza with extra cheese, and one.",
+          "items_mentioned": [
+            "Margherita Pizza",
+            "Garlic Knots"
+          ],
+          "window_backed": false,
+          "state_backed": false,
+          "missing_from_server_order": [
+            "Garlic Knots"
+          ]
+        }
+      ],
+      "tool_calls": [
+        {
+          "tool": "get_menu",
+          "tool_call_id": "call_DeA64Ufy8pFTMgfLwZh4hQio",
+          "t": 13.548,
+          "status": "ok",
+          "error_code": null,
+          "cart_version_before": 0,
+          "cart_version_after": 0,
+          "mutated_cart": false,
+          "server_ms": 3,
+          "replay_count": 0
+        },
+        {
+          "tool": "add_to_cart",
+          "tool_call_id": "call_oDMrQNdB4sio5vCJD90xITH9",
+          "t": 98.245,
+          "status": "ok",
+          "error_code": null,
+          "cart_version_before": 0,
+          "cart_version_after": 1,
+          "mutated_cart": true,
+          "server_ms": 7,
+          "replay_count": 0
+        },
+        {
+          "tool": "add_to_cart",
+          "tool_call_id": "k1",
+          "t": 114,
+          "status": "rejected",
+          "error_code": "invalid_modifier",
+          "cart_version_before": 1,
+          "cart_version_after": 1,
+          "mutated_cart": false,
+          "server_ms": 3,
+          "replay_count": 0
+        }
+      ],
+      "final_order": {
+        "status": "abandoned",
+        "cart_version": 1,
+        "read_back_version": null,
+        "total": 16.0,
+        "lines": [
+          {
+            "quantity": 1,
+            "item": "Margherita Pizza",
+            "modifiers": [
+              "Extra cheese"
+            ]
+          }
+        ]
+      },
+      "invariants": {
+        "every_order_line_came_from_an_accepted_add_to_cart": true,
+        "confirmed_only_at_the_read_back_version": null
+      },
+      "summary": {
+        "assistant_claims": 1,
+        "claims_not_reflected_in_server_order": 1,
+        "claims_flagged_by_console_window": 1,
+        "claims_indeterminate": 0,
+        "tool_calls_received": 3,
+        "tool_calls_that_mutated_the_cart": 1,
+        "tool_calls_refused": 1,
+        "duplicate_deliveries_absorbed": 0,
+        "final_order_status": "abandoned",
+        "final_cart_version": 1
+      }
+    },
+    {
+      "id": "claim_tool_arrives_late",
+      "title": "Claim, and the tool call comes 12.5 s later",
+      "purpose": "Documents the heuristic's false positive: the add is accepted, but outside the +8 s window, so the console flags the claim although the server order does contain the knots.",
+      "claims": [
+        {
+          "t": 112.5,
+          "kind": "add",
+          "text": "Great. I'll add garlic knots. One Margherita pizza with extra cheese, and one.",
+          "items_mentioned": [
+            "Margherita Pizza",
+            "Garlic Knots"
+          ],
+          "window_backed": false,
+          "state_backed": true,
+          "missing_from_server_order": []
+        }
+      ],
+      "tool_calls": [
+        {
+          "tool": "get_menu",
+          "tool_call_id": "call_DeA64Ufy8pFTMgfLwZh4hQio",
+          "t": 13.548,
+          "status": "ok",
+          "error_code": null,
+          "cart_version_before": 0,
+          "cart_version_after": 0,
+          "mutated_cart": false,
+          "server_ms": 3,
+          "replay_count": 0
+        },
+        {
+          "tool": "add_to_cart",
+          "tool_call_id": "call_oDMrQNdB4sio5vCJD90xITH9",
+          "t": 98.245,
+          "status": "ok",
+          "error_code": null,
+          "cart_version_before": 0,
+          "cart_version_after": 1,
+          "mutated_cart": true,
+          "server_ms": 6,
+          "replay_count": 0
+        },
+        {
+          "tool": "add_to_cart",
+          "tool_call_id": "k1",
+          "t": 125,
+          "status": "ok",
+          "error_code": null,
+          "cart_version_before": 1,
+          "cart_version_after": 2,
+          "mutated_cart": true,
+          "server_ms": 6,
+          "replay_count": 0
+        }
+      ],
+      "final_order": {
+        "status": "abandoned",
+        "cart_version": 2,
+        "read_back_version": null,
+        "total": 21.5,
+        "lines": [
+          {
+            "quantity": 1,
+            "item": "Margherita Pizza",
+            "modifiers": [
+              "Extra cheese"
+            ]
+          },
+          {
+            "quantity": 1,
+            "item": "Garlic Knots",
+            "modifiers": []
+          }
+        ]
+      },
+      "invariants": {
+        "every_order_line_came_from_an_accepted_add_to_cart": true,
+        "confirmed_only_at_the_read_back_version": null
+      },
+      "summary": {
+        "assistant_claims": 1,
+        "claims_not_reflected_in_server_order": 0,
+        "claims_flagged_by_console_window": 1,
+        "claims_indeterminate": 0,
+        "tool_calls_received": 3,
+        "tool_calls_that_mutated_the_cart": 2,
+        "tool_calls_refused": 0,
+        "duplicate_deliveries_absorbed": 0,
+        "final_order_status": "abandoned",
+        "final_cart_version": 2
+      }
+    },
+    {
+      "id": "two_items_claimed_one_added",
+      "title": "Claims knots AND fries, adds only knots",
+      "purpose": "Documents the heuristic's false negative: a cart change backs the claim in time, but the server order lacks the fries. The state comparison catches it.",
+      "claims": [
+        {
+          "t": 112.5,
+          "kind": "add",
+          "text": "Great. I'll add garlic knots and French fries.",
+          "items_mentioned": [
+            "French Fries",
+            "Garlic Knots"
+          ],
+          "window_backed": true,
+          "state_backed": false,
+          "missing_from_server_order": [
+            "French Fries"
+          ]
+        }
+      ],
+      "tool_calls": [
+        {
+          "tool": "get_menu",
+          "tool_call_id": "call_DeA64Ufy8pFTMgfLwZh4hQio",
+          "t": 13.548,
+          "status": "ok",
+          "error_code": null,
+          "cart_version_before": 0,
+          "cart_version_after": 0,
+          "mutated_cart": false,
+          "server_ms": 3,
+          "replay_count": 0
+        },
+        {
+          "tool": "add_to_cart",
+          "tool_call_id": "call_oDMrQNdB4sio5vCJD90xITH9",
+          "t": 98.245,
+          "status": "ok",
+          "error_code": null,
+          "cart_version_before": 0,
+          "cart_version_after": 1,
+          "mutated_cart": true,
+          "server_ms": 6,
+          "replay_count": 0
+        },
+        {
+          "tool": "add_to_cart",
+          "tool_call_id": "k1",
+          "t": 114,
+          "status": "ok",
+          "error_code": null,
+          "cart_version_before": 1,
+          "cart_version_after": 2,
+          "mutated_cart": true,
+          "server_ms": 6,
+          "replay_count": 0
+        }
+      ],
+      "final_order": {
+        "status": "abandoned",
+        "cart_version": 2,
+        "read_back_version": null,
+        "total": 21.5,
+        "lines": [
+          {
+            "quantity": 1,
+            "item": "Margherita Pizza",
+            "modifiers": [
+              "Extra cheese"
+            ]
+          },
+          {
+            "quantity": 1,
+            "item": "Garlic Knots",
+            "modifiers": []
+          }
+        ]
+      },
+      "invariants": {
+        "every_order_line_came_from_an_accepted_add_to_cart": true,
+        "confirmed_only_at_the_read_back_version": null
+      },
+      "summary": {
+        "assistant_claims": 1,
+        "claims_not_reflected_in_server_order": 1,
+        "claims_flagged_by_console_window": 0,
+        "claims_indeterminate": 0,
+        "tool_calls_received": 3,
+        "tool_calls_that_mutated_the_cart": 2,
+        "tool_calls_refused": 0,
+        "duplicate_deliveries_absorbed": 0,
+        "final_order_status": "abandoned",
+        "final_cart_version": 2
+      }
+    },
+    {
+      "id": "remove_claimed_without_tool",
+      "title": "Claims to have removed the pizza, calls no tool",
+      "purpose": "A removal claim with no remove_cart_item call: the pizza is still in the server order.",
+      "claims": [
+        {
+          "t": 105,
+          "kind": "remove",
+          "text": "I've removed the Margherita pizza from your order.",
+          "items_mentioned": [
+            "Margherita Pizza"
+          ],
+          "window_backed": false,
+          "state_backed": false,
+          "missing_from_server_order": [
+            "Margherita Pizza"
+          ]
+        }
+      ],
+      "tool_calls": [
+        {
+          "tool": "get_menu",
+          "tool_call_id": "call_DeA64Ufy8pFTMgfLwZh4hQio",
+          "t": 13.548,
+          "status": "ok",
+          "error_code": null,
+          "cart_version_before": 0,
+          "cart_version_after": 0,
+          "mutated_cart": false,
+          "server_ms": 2,
+          "replay_count": 0
+        },
+        {
+          "tool": "add_to_cart",
+          "tool_call_id": "call_oDMrQNdB4sio5vCJD90xITH9",
+          "t": 98.245,
+          "status": "ok",
+          "error_code": null,
+          "cart_version_before": 0,
+          "cart_version_after": 1,
+          "mutated_cart": true,
+          "server_ms": 5,
+          "replay_count": 0
+        }
+      ],
+      "final_order": {
+        "status": "abandoned",
+        "cart_version": 1,
+        "read_back_version": null,
+        "total": 16.0,
+        "lines": [
+          {
+            "quantity": 1,
+            "item": "Margherita Pizza",
+            "modifiers": [
+              "Extra cheese"
+            ]
+          }
+        ]
+      },
+      "invariants": {
+        "every_order_line_came_from_an_accepted_add_to_cart": true,
+        "confirmed_only_at_the_read_back_version": null
+      },
+      "summary": {
+        "assistant_claims": 1,
+        "claims_not_reflected_in_server_order": 1,
+        "claims_flagged_by_console_window": 1,
+        "claims_indeterminate": 0,
+        "tool_calls_received": 2,
+        "tool_calls_that_mutated_the_cart": 1,
+        "tool_calls_refused": 0,
+        "duplicate_deliveries_absorbed": 0,
+        "final_order_status": "abandoned",
+        "final_cart_version": 1
+      }
+    },
+    {
+      "id": "change_claimed_and_done",
+      "title": "Claims a quantity change and the tool makes it",
+      "purpose": "A change claim that IS backed: update_cart_item_quantity accepted right after.",
+      "claims": [
+        {
+          "t": 105,
+          "kind": "change",
+          "text": "I've changed that to two.",
+          "items_mentioned": [],
+          "window_backed": true,
+          "state_backed": null,
+          "missing_from_server_order": []
+        }
+      ],
+      "tool_calls": [
+        {
+          "tool": "get_menu",
+          "tool_call_id": "call_DeA64Ufy8pFTMgfLwZh4hQio",
+          "t": 13.548,
+          "status": "ok",
+          "error_code": null,
+          "cart_version_before": 0,
+          "cart_version_after": 0,
+          "mutated_cart": false,
+          "server_ms": 2,
+          "replay_count": 0
+        },
+        {
+          "tool": "add_to_cart",
+          "tool_call_id": "call_oDMrQNdB4sio5vCJD90xITH9",
+          "t": 98.245,
+          "status": "ok",
+          "error_code": null,
+          "cart_version_before": 0,
+          "cart_version_after": 1,
+          "mutated_cart": true,
+          "server_ms": 5,
+          "replay_count": 0
+        },
+        {
+          "tool": "update_cart_item_quantity",
+          "tool_call_id": "u1",
+          "t": 106,
+          "status": "ok",
+          "error_code": null,
+          "cart_version_before": 1,
+          "cart_version_after": 2,
+          "mutated_cart": true,
+          "server_ms": 4,
+          "replay_count": 0
+        }
+      ],
+      "final_order": {
+        "status": "abandoned",
+        "cart_version": 2,
+        "read_back_version": null,
+        "total": 32.0,
+        "lines": [
+          {
+            "quantity": 2,
+            "item": "Margherita Pizza",
+            "modifiers": [
+              "Extra cheese"
+            ]
+          }
+        ]
+      },
+      "invariants": {
+        "every_order_line_came_from_an_accepted_add_to_cart": true,
+        "confirmed_only_at_the_read_back_version": null
+      },
+      "summary": {
+        "assistant_claims": 1,
+        "claims_not_reflected_in_server_order": 0,
+        "claims_flagged_by_console_window": 0,
+        "claims_indeterminate": 1,
+        "tool_calls_received": 3,
+        "tool_calls_that_mutated_the_cart": 2,
+        "tool_calls_refused": 0,
+        "duplicate_deliveries_absorbed": 0,
+        "final_order_status": "abandoned",
+        "final_cart_version": 2
+      }
+    },
+    {
+      "id": "submit_without_read_back",
+      "title": "Claims, adds, then submits without ever reading the cart back",
+      "purpose": "Skipping get_cart: the server refuses the submit (readback_required); the order is never confirmed.",
+      "claims": [
+        {
+          "t": 112.5,
+          "kind": "add",
+          "text": "Great. I'll add garlic knots. One Margherita pizza with extra cheese, and one.",
+          "items_mentioned": [
+            "Margherita Pizza",
+            "Garlic Knots"
+          ],
+          "window_backed": true,
+          "state_backed": true,
+          "missing_from_server_order": []
+        }
+      ],
+      "tool_calls": [
+        {
+          "tool": "get_menu",
+          "tool_call_id": "call_DeA64Ufy8pFTMgfLwZh4hQio",
+          "t": 13.548,
+          "status": "ok",
+          "error_code": null,
+          "cart_version_before": 0,
+          "cart_version_after": 0,
+          "mutated_cart": false,
+          "server_ms": 3,
+          "replay_count": 0
+        },
+        {
+          "tool": "add_to_cart",
+          "tool_call_id": "call_oDMrQNdB4sio5vCJD90xITH9",
+          "t": 98.245,
+          "status": "ok",
+          "error_code": null,
+          "cart_version_before": 0,
+          "cart_version_after": 1,
+          "mutated_cart": true,
+          "server_ms": 6,
+          "replay_count": 0
+        },
+        {
+          "tool": "add_to_cart",
+          "tool_call_id": "k1",
+          "t": 114,
+          "status": "ok",
+          "error_code": null,
+          "cart_version_before": 1,
+          "cart_version_after": 2,
+          "mutated_cart": true,
+          "server_ms": 6,
+          "replay_count": 0
+        },
+        {
+          "tool": "submit_order",
+          "tool_call_id": "s1",
+          "t": 120,
+          "status": "rejected",
+          "error_code": "readback_required",
+          "cart_version_before": 2,
+          "cart_version_after": 2,
+          "mutated_cart": false,
+          "server_ms": 3,
+          "replay_count": 0
+        }
+      ],
+      "final_order": {
+        "status": "abandoned",
+        "cart_version": 2,
+        "read_back_version": null,
+        "total": 21.5,
+        "lines": [
+          {
+            "quantity": 1,
+            "item": "Margherita Pizza",
+            "modifiers": [
+              "Extra cheese"
+            ]
+          },
+          {
+            "quantity": 1,
+            "item": "Garlic Knots",
+            "modifiers": []
+          }
+        ]
+      },
+      "invariants": {
+        "every_order_line_came_from_an_accepted_add_to_cart": true,
+        "confirmed_only_at_the_read_back_version": null
+      },
+      "summary": {
+        "assistant_claims": 1,
+        "claims_not_reflected_in_server_order": 0,
+        "claims_flagged_by_console_window": 0,
+        "claims_indeterminate": 0,
+        "tool_calls_received": 4,
+        "tool_calls_that_mutated_the_cart": 2,
+        "tool_calls_refused": 1,
+        "duplicate_deliveries_absorbed": 0,
+        "final_order_status": "abandoned",
+        "final_cart_version": 2
+      }
+    },
+    {
+      "id": "stale_submit_after_change",
+      "title": "Read back at v1, change the cart, submit the old version",
+      "purpose": "The model read back v1, the cart moved to v2, and the model submits v1 (then v2 without re-reading): both refused.",
+      "claims": [],
+      "tool_calls": [
+        {
+          "tool": "get_menu",
+          "tool_call_id": "call_DeA64Ufy8pFTMgfLwZh4hQio",
+          "t": 13.548,
+          "status": "ok",
+          "error_code": null,
+          "cart_version_before": 0,
+          "cart_version_after": 0,
+          "mutated_cart": false,
+          "server_ms": 3,
+          "replay_count": 0
+        },
+        {
+          "tool": "add_to_cart",
+          "tool_call_id": "call_oDMrQNdB4sio5vCJD90xITH9",
+          "t": 98.245,
+          "status": "ok",
+          "error_code": null,
+          "cart_version_before": 0,
+          "cart_version_after": 1,
+          "mutated_cart": true,
+          "server_ms": 7,
+          "replay_count": 0
+        },
+        {
+          "tool": "get_cart",
+          "tool_call_id": "c1",
+          "t": 100,
+          "status": "ok",
+          "error_code": null,
+          "cart_version_before": 1,
+          "cart_version_after": 1,
+          "mutated_cart": false,
+          "server_ms": 3,
+          "replay_count": 0
+        },
+        {
+          "tool": "add_to_cart",
+          "tool_call_id": "k1",
+          "t": 114,
+          "status": "ok",
+          "error_code": null,
+          "cart_version_before": 1,
+          "cart_version_after": 2,
+          "mutated_cart": true,
+          "server_ms": 8,
+          "replay_count": 0
+        },
+        {
+          "tool": "submit_order",
+          "tool_call_id": "s1",
+          "t": 120,
+          "status": "rejected",
+          "error_code": "cart_changed_since_readback",
+          "cart_version_before": 2,
+          "cart_version_after": 2,
+          "mutated_cart": false,
+          "server_ms": 3,
+          "replay_count": 0
+        },
+        {
+          "tool": "submit_order",
+          "tool_call_id": "s2",
+          "t": 121,
+          "status": "rejected",
+          "error_code": "cart_changed_since_readback",
+          "cart_version_before": 2,
+          "cart_version_after": 2,
+          "mutated_cart": false,
+          "server_ms": 2,
+          "replay_count": 0
+        }
+      ],
+      "final_order": {
+        "status": "abandoned",
+        "cart_version": 2,
+        "read_back_version": 1,
+        "total": 21.5,
+        "lines": [
+          {
+            "quantity": 1,
+            "item": "Margherita Pizza",
+            "modifiers": [
+              "Extra cheese"
+            ]
+          },
+          {
+            "quantity": 1,
+            "item": "Garlic Knots",
+            "modifiers": []
+          }
+        ]
+      },
+      "invariants": {
+        "every_order_line_came_from_an_accepted_add_to_cart": true,
+        "confirmed_only_at_the_read_back_version": null
+      },
+      "summary": {
+        "assistant_claims": 0,
+        "claims_not_reflected_in_server_order": 0,
+        "claims_flagged_by_console_window": 0,
+        "claims_indeterminate": 0,
+        "tool_calls_received": 6,
+        "tool_calls_that_mutated_the_cart": 2,
+        "tool_calls_refused": 2,
+        "duplicate_deliveries_absorbed": 0,
+        "final_order_status": "abandoned",
+        "final_cart_version": 2
+      }
+    },
+    {
+      "id": "late_duplicate_get_cart",
+      "title": "A late duplicate of an old get_cart tries to refresh the read-back",
+      "purpose": "Replaying get_cart returns the STORED v1 result and does not make the stale read-back current: the later submit of v2 is refused.",
+      "claims": [],
+      "tool_calls": [
+        {
+          "tool": "get_menu",
+          "tool_call_id": "call_DeA64Ufy8pFTMgfLwZh4hQio",
+          "t": 13.548,
+          "status": "ok",
+          "error_code": null,
+          "cart_version_before": 0,
+          "cart_version_after": 0,
+          "mutated_cart": false,
+          "server_ms": 3,
+          "replay_count": 0
+        },
+        {
+          "tool": "add_to_cart",
+          "tool_call_id": "call_oDMrQNdB4sio5vCJD90xITH9",
+          "t": 98.245,
+          "status": "ok",
+          "error_code": null,
+          "cart_version_before": 0,
+          "cart_version_after": 1,
+          "mutated_cart": true,
+          "server_ms": 6,
+          "replay_count": 0
+        },
+        {
+          "tool": "get_cart",
+          "tool_call_id": "c1",
+          "t": 118,
+          "status": "ok",
+          "error_code": null,
+          "cart_version_before": 1,
+          "cart_version_after": 1,
+          "mutated_cart": false,
+          "server_ms": 4,
+          "replay_count": 1
+        },
+        {
+          "tool": "add_to_cart",
+          "tool_call_id": "k1",
+          "t": 114,
+          "status": "ok",
+          "error_code": null,
+          "cart_version_before": 1,
+          "cart_version_after": 2,
+          "mutated_cart": true,
+          "server_ms": 6,
+          "replay_count": 0
+        },
+        {
+          "tool": "submit_order",
+          "tool_call_id": "s1",
+          "t": 120,
+          "status": "rejected",
+          "error_code": "cart_changed_since_readback",
+          "cart_version_before": 2,
+          "cart_version_after": 2,
+          "mutated_cart": false,
+          "server_ms": 3,
+          "replay_count": 0
+        }
+      ],
+      "final_order": {
+        "status": "abandoned",
+        "cart_version": 2,
+        "read_back_version": 1,
+        "total": 21.5,
+        "lines": [
+          {
+            "quantity": 1,
+            "item": "Margherita Pizza",
+            "modifiers": [
+              "Extra cheese"
+            ]
+          },
+          {
+            "quantity": 1,
+            "item": "Garlic Knots",
+            "modifiers": []
+          }
+        ]
+      },
+      "invariants": {
+        "every_order_line_came_from_an_accepted_add_to_cart": true,
+        "confirmed_only_at_the_read_back_version": null
+      },
+      "summary": {
+        "assistant_claims": 0,
+        "claims_not_reflected_in_server_order": 0,
+        "claims_flagged_by_console_window": 0,
+        "claims_indeterminate": 0,
+        "tool_calls_received": 5,
+        "tool_calls_that_mutated_the_cart": 2,
+        "tool_calls_refused": 1,
+        "duplicate_deliveries_absorbed": 1,
+        "final_order_status": "abandoned",
+        "final_cart_version": 2
+      }
+    },
+    {
+      "id": "duplicate_claimed_add",
+      "title": "The claimed add is delivered twice with the same tool call id",
+      "purpose": "One execution, one knots, cart_version moves once, replay_count 1.",
+      "claims": [
+        {
+          "t": 112.5,
+          "kind": "add",
+          "text": "Great. I'll add garlic knots. One Margherita pizza with extra cheese, and one.",
+          "items_mentioned": [
+            "Margherita Pizza",
+            "Garlic Knots"
+          ],
+          "window_backed": true,
+          "state_backed": true,
+          "missing_from_server_order": []
+        }
+      ],
+      "tool_calls": [
+        {
+          "tool": "get_menu",
+          "tool_call_id": "call_DeA64Ufy8pFTMgfLwZh4hQio",
+          "t": 13.548,
+          "status": "ok",
+          "error_code": null,
+          "cart_version_before": 0,
+          "cart_version_after": 0,
+          "mutated_cart": false,
+          "server_ms": 3,
+          "replay_count": 0
+        },
+        {
+          "tool": "add_to_cart",
+          "tool_call_id": "call_oDMrQNdB4sio5vCJD90xITH9",
+          "t": 98.245,
+          "status": "ok",
+          "error_code": null,
+          "cart_version_before": 0,
+          "cart_version_after": 1,
+          "mutated_cart": true,
+          "server_ms": 7,
+          "replay_count": 0
+        },
+        {
+          "tool": "add_to_cart",
+          "tool_call_id": "k1",
+          "t": 114.4,
+          "status": "ok",
+          "error_code": null,
+          "cart_version_before": 1,
+          "cart_version_after": 2,
+          "mutated_cart": true,
+          "server_ms": 6,
+          "replay_count": 1
+        }
+      ],
+      "final_order": {
+        "status": "abandoned",
+        "cart_version": 2,
+        "read_back_version": null,
+        "total": 21.5,
+        "lines": [
+          {
+            "quantity": 1,
+            "item": "Margherita Pizza",
+            "modifiers": [
+              "Extra cheese"
+            ]
+          },
+          {
+            "quantity": 1,
+            "item": "Garlic Knots",
+            "modifiers": []
+          }
+        ]
+      },
+      "invariants": {
+        "every_order_line_came_from_an_accepted_add_to_cart": true,
+        "confirmed_only_at_the_read_back_version": null
+      },
+      "summary": {
+        "assistant_claims": 1,
+        "claims_not_reflected_in_server_order": 0,
+        "claims_flagged_by_console_window": 0,
+        "claims_indeterminate": 0,
+        "tool_calls_received": 3,
+        "tool_calls_that_mutated_the_cart": 2,
+        "tool_calls_refused": 0,
+        "duplicate_deliveries_absorbed": 1,
+        "final_order_status": "abandoned",
+        "final_cart_version": 2
+      }
+    },
+    {
+      "id": "claim_after_confirmation",
+      "title": "After the order is confirmed the agent claims another add",
+      "purpose": "The confirmed order is locked: the late add is refused (order_already_submitted), the claim is unbacked, the order is unchanged.",
+      "claims": [
+        {
+          "t": 110,
+          "kind": "add",
+          "text": "I've added garlic knots to your order.",
+          "items_mentioned": [
+            "Garlic Knots"
+          ],
+          "window_backed": false,
+          "state_backed": false,
+          "missing_from_server_order": [
+            "Garlic Knots"
+          ]
+        }
+      ],
+      "tool_calls": [
+        {
+          "tool": "get_menu",
+          "tool_call_id": "call_DeA64Ufy8pFTMgfLwZh4hQio",
+          "t": 13.548,
+          "status": "ok",
+          "error_code": null,
+          "cart_version_before": 0,
+          "cart_version_after": 0,
+          "mutated_cart": false,
+          "server_ms": 2,
+          "replay_count": 0
+        },
+        {
+          "tool": "add_to_cart",
+          "tool_call_id": "call_oDMrQNdB4sio5vCJD90xITH9",
+          "t": 98.245,
+          "status": "ok",
+          "error_code": null,
+          "cart_version_before": 0,
+          "cart_version_after": 1,
+          "mutated_cart": true,
+          "server_ms": 6,
+          "replay_count": 0
+        },
+        {
+          "tool": "get_cart",
+          "tool_call_id": "c1",
+          "t": 100,
+          "status": "ok",
+          "error_code": null,
+          "cart_version_before": 1,
+          "cart_version_after": 1,
+          "mutated_cart": false,
+          "server_ms": 3,
+          "replay_count": 0
+        },
+        {
+          "tool": "submit_order",
+          "tool_call_id": "s1",
+          "t": 105,
+          "status": "ok",
+          "error_code": null,
+          "cart_version_before": 1,
+          "cart_version_after": 1,
+          "mutated_cart": false,
+          "server_ms": 4,
+          "replay_count": 0
+        },
+        {
+          "tool": "add_to_cart",
+          "tool_call_id": "k1",
+          "t": 111,
+          "status": "rejected",
+          "error_code": "order_already_submitted",
+          "cart_version_before": 1,
+          "cart_version_after": 1,
+          "mutated_cart": false,
+          "server_ms": 2,
+          "replay_count": 0
+        }
+      ],
+      "final_order": {
+        "status": "confirmed",
+        "cart_version": 1,
+        "read_back_version": 1,
+        "total": 16.0,
+        "lines": [
+          {
+            "quantity": 1,
+            "item": "Margherita Pizza",
+            "modifiers": [
+              "Extra cheese"
+            ]
+          }
+        ]
+      },
+      "invariants": {
+        "every_order_line_came_from_an_accepted_add_to_cart": true,
+        "confirmed_only_at_the_read_back_version": true
+      },
+      "summary": {
+        "assistant_claims": 1,
+        "claims_not_reflected_in_server_order": 1,
+        "claims_flagged_by_console_window": 1,
+        "claims_indeterminate": 0,
+        "tool_calls_received": 5,
+        "tool_calls_that_mutated_the_cart": 1,
+        "tool_calls_refused": 1,
+        "duplicate_deliveries_absorbed": 0,
+        "final_order_status": "confirmed",
+        "final_cart_version": 1
+      }
+    }
+  ]
+}

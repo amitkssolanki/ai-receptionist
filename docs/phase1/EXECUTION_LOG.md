@@ -399,3 +399,27 @@ What the console now shows, all rendered from committed database state (never fr
   flagged; a reload rebuilt the page from the database. The browser-side transcript and tool-call announcements in that
   exercise were **synthetic** (fed to the controller); no Vapi call, key or assistant was involved.
 - Polish found in that run: the events table scrolls horizontally instead of squeezing on narrow screens; panels have spacing.
+
+## Step 14 (brief numbering) — reliability evaluation and evidence
+
+Live model / Vapi execution was not possible (no credentials). The harness is built on recordings and scripted variations and
+says so in every output.
+
+- `Evaluation` (`app/services/evaluation/`): `World` (the real Taj Zayka menu from the frozen snapshot, created per
+  scenario), `Scenarios` (14 scripted scenarios; every conversation prefix up to the claim is verbatim from call #7),
+  `Runner` (runs each through `Voice::ToolRunner` inside a rolled-back transaction; separates claims / tool calls received /
+  cart mutations / authoritative order), `Evidence` (writes the JSON files).
+- Two safety invariants are checked in every scenario and held in all 14: every order line came from an accepted
+  `add_to_cart`; an order is confirmed only at the read-back version.
+- Result of the set (counts, not rates): 11 assistant claims; 6 not reflected in the server order (the recorded garlic knots
+  claim is one: server order stays $16 Margherita-only, confirmed, while the agent claimed knots); 54 tool calls received,
+  22 mutated the cart, 7 refused (rejected modifier, missing/stale read-back, closed order); 2 duplicate deliveries absorbed;
+  a late duplicate `get_cart` left `read_back_version` at 1 and the later submit of v2 was refused.
+- Honest limits shown by the scenarios themselves: the console's window heuristic has a false positive
+  (`claim_tool_arrives_late`: add accepted 12.5 s after the claim) and a false negative (`two_items_claimed_one_added`: a cart
+  change backs the claim in time but the fries are missing). The item-aware state comparison (Ruby only, used by this
+  harness; the console page and the review page do not show it) catches the second; neither is authoritative.
+- Evidence files: `docs/phase1/evidence/` (see its README): probe, latency, idempotency/cart versions, test counts, manifest.
+  `evidence_test.rb` keeps them from going stale and keeps live items marked PENDING.
+- PENDING (not done, not faked): a real browser call through the console; `vapi:check` against the live dev assistant; the
+  Layer 3a live-model sample; browser-observed latency on a live call; metadata arrival of the console token at the webhook.

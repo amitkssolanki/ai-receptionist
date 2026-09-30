@@ -1,0 +1,64 @@
+{
+  "what_it_measures": "Server-side execution time of each tool call as recorded in ToolInvocation.duration_ms (argument parsing, business logic, audit row in one transaction), measured on the machine that generated this file, test database, single process.",
+  "not_measured": "Vapi round-trip latency, STT/LLM/TTS time, network, or the browser-observed latency (those need a live call: PENDING).",
+  "after_phase1": {
+    "add_to_cart": {
+      "runs": 22,
+      "median_ms": 6,
+      "max_ms": 35,
+      "min_ms": 2
+    },
+    "get_cart": {
+      "runs": 6,
+      "median_ms": 4,
+      "max_ms": 5,
+      "min_ms": 3
+    },
+    "get_menu": {
+      "runs": 14,
+      "median_ms": 3,
+      "max_ms": 8,
+      "min_ms": 2
+    },
+    "submit_order": {
+      "runs": 9,
+      "median_ms": 3,
+      "max_ms": 8,
+      "min_ms": 1
+    },
+    "update_cart_item_quantity": {
+      "runs": 1,
+      "median_ms": 4,
+      "max_ms": 4,
+      "min_ms": 4
+    }
+  },
+  "baseline_one_sample_for_reference": {
+    "get_menu": {
+      "server_total_ms": 267,
+      "queries": 53,
+      "response_bytes": 4554
+    },
+    "add_to_cart": {
+      "server_total_ms": 115,
+      "queries": 11,
+      "response_bytes": 149
+    },
+    "get_cart": {
+      "server_total_ms": 19,
+      "queries": 4,
+      "response_bytes": 149
+    },
+    "submit_order": {
+      "server_total_ms": 74,
+      "queries": 6,
+      "response_bytes": 149
+    },
+    "note": "Phase 0, one real call; server_total_ms is the whole Rails request on the dev server, so it is not like-for-like with duration_ms. The menu payload went from 4,554 bytes / 53 queries to about 1.5 KB / 3 queries (see the Step 6 log entry)."
+  },
+  "measured_on": {
+    "ruby": "3.4.7",
+    "rails": "8.1.3.1",
+    "env": "test"
+  }
+}
