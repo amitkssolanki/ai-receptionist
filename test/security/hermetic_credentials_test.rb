@@ -12,6 +12,9 @@ class HermeticCredentialsTest < ActiveSupport::TestCase
   end
 
   test "the Rails secret key base is still available (only vapi.* is hidden)" do
-    assert_predicate Rails.application.credentials.secret_key_base, :present?
+    assert_predicate Rails.application.secret_key_base, :present?
+    # Where the encrypted credentials can be read (a developer machine with the master key), their other keys survive the
+    # hiding. CI has no master key, so there is nothing to decrypt there.
+    assert_predicate Rails.application.credentials.secret_key_base, :present? if Rails.application.credentials.key.present?
   end
 end
