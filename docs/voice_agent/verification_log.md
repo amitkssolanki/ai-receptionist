@@ -186,7 +186,8 @@ drawn from this call**, and it is not counted in any comparison. The experiment 
 | Call #4 | call #11 | valid; did not reach a read-back or submit (below) |
 | Call #5 | call #12 | valid; configured `low` (v3) but **runtime `minimal`**; stalled on the first turn (below) |
 | Call #6 | call #13 | valid; configured `low` (v3) but **runtime `minimal`**; first live turn-evidence sample (below) |
-| Call #7 | the next live call | — |
+| Call #7 | call #14 | valid; `minimal`; first call with the enforced gate and the aligned SMS prompt; gate passed (below) |
+| Call #8 | the next live call | — |
 
 ## 2026-09-30 — Call #4 (Vapi/DB call #11): announced read-back never executed; no submit
 Same script, prompt, tools, model and reasoning effort as Call #2, with the shadow turn evidence in place and `bin/dev` restarted
@@ -322,3 +323,36 @@ otherwise say nothing about texts); `skipped_web_call` / `already_handled` are n
 the live dev assistant (verified before/after); runtime model, reasoning effort, tools, voice and transcriber are unchanged. The next
 live call (Call #7) is the first with this prompt and with the enforced confirmation gate, so it changes two things relative to
 Call #6; the gate is server-side and its effect is recorded per submit.
+
+## 2026-09-30 — Call #7 (Vapi/DB call #14): the model waited; the gate passed
+Same script (the caller also answered the agent's unscripted questions). Dev assistant v5: configured `minimal`, the enforced
+confirmation gate and the aligned SMS prompt in place. Call 154 s, ended by the customer, cost $0.2145. Sources: the database
+(`tool_invocations` incl. `turn_evidence`, `orders`, `call_logs`), `bin/rails calls:last`, the console screenshot, Vapi's stored call
+record (`GET /call/{id}`) and per-call logs (`GET /call/{id}/call-logs`), and the live submit webhook retained by the ngrok inspector
+(all read-only).
+
+**What it established**
+- Server: 6 tool calls, all accepted (`get_menu`, `get_menu_item`, `add_to_cart` v0→v1, `add_to_cart` v1→v2, `get_cart` read-back
+  v2, `submit_order` confirmed v2); no duplicate submit. Final authoritative order #9: **1 × Margherita Pizza with Extra cheese,
+  1 × Garlic Knots, $21.50, CONFIRMED at v2**, read-back v2.
+- **Confirmation occurred correctly.** Recorded turn evidence: history present, **1 caller turn** after the last `get_cart` result,
+  the submit issued by a **later model completion** (not the one that answered the `get_cart` result); the gate passed. Vapi's
+  per-call log shows the model request that produced `submit_order` ended with the caller's "Yes. That's right." — the model had the
+  caller's answer before it decided.
+- "Added…" was spoken after the relevant `add_to_cart` result, in a separate completion (per the model inputs in Vapi's log).
+- No SMS promise was made ("We'll have that ready for pickup"); the model received no SMS field (web call).
+- Conversation requests: 19 OpenAI requests, all `reasoning_effort: "minimal"`; Vapi reported `reasoningTokens = 0`.
+
+**Conversational-quality observations (not reliability failures):** the agent asked for a name ("John" was the caller's answer)
+and for pickup notes, which the script does not include; it repeated its greeting in the middle of a menu answer ("…Thanks for
+calling Taj Zeka, this is. Your AI host. How can I help?"); fillers ("Give me a moment", "This will just take a sec") remain.
+
+**Evidence limitations**
+- Vapi's history in the submit webhook split the caller's single reply into two entries around the submit: "Yes." before the submit
+  request (stamped 0.15 s earlier) and "That's right." after it, while the model's input received the whole reply before it
+  responded. The ordering was sufficient for this call; the timestamps in that history must not be read as precise speech timing.
+- Vapi also made **two Azure OpenAI requests with `reasoning_effort: "low"`** during this call (full conversation and tools); their
+  purpose and whether their output was used are not known. No cause is asserted. Together with Calls #5–#6, the configured value is
+  not a reliable description of the runtime requests; reasoning effort remains unreliable as an experiment variable.
+- One compliant call is not a rate. Among the calls that reached `submit_order`, 3 of 4 (Calls #1, #2, #6) submitted prematurely.
+  The gate's **refusal** path has not yet occurred on a live call; it is covered by the replay of the recorded premature submits.
