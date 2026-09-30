@@ -184,8 +184,9 @@ drawn from this call**, and it is not counted in any comparison. The experiment 
 | Call #2 | call #9 | valid |
 | Call #3 | call #10 | **invalid infrastructure run** (see above) |
 | Call #4 | call #11 | valid; did not reach a read-back or submit (below) |
-| Call #5 | call #12 | valid; first call on reasoning effort `low` (v3); stalled on the first turn (below) |
-| Call #6 | the next live call | — |
+| Call #5 | call #12 | valid; configured `low` (v3) but **runtime `minimal`**; stalled on the first turn (below) |
+| Call #6 | call #13 | valid; configured `low` (v3) but **runtime `minimal`**; first live turn-evidence sample (below) |
+| Call #7 | the next live call | — |
 
 ## 2026-09-30 — Call #4 (Vapi/DB call #11): announced read-back never executed; no submit
 Same script, prompt, tools, model and reasoning effort as Call #2, with the shadow turn evidence in place and `bin/dev` restarted
@@ -237,6 +238,7 @@ The single experiment variable changed after Call #4. One `PATCH /assistant/f858
 matches and `vapi:check` is clean. The frozen baseline assistant `8f2053ae…` was not touched. Everything else is unchanged:
 runtime model `openai/gpt-5-mini`, prompt, tools, SMS, fillers, server-side order logic and the turn-evidence instrumentation.
 Calls from Call #5 onward run on v3 (`low`); Calls #1–#4 (Vapi/DB calls #8–#11) ran on `minimal`.
+**Correction (after Call #6): the runtime did not change.** Vapi's per-call logs show every OpenAI request in Calls #5 and #6 was sent with `reasoning_effort: "minimal"` although the assistant was configured `low` (entry "Reasoning-effort trial: configured `low`, runtime `minimal`" below). The setting was restored to `minimal` (v4).
 
 ## 2026-09-30 — Call #5 (Vapi/DB call #12): first call on `low`; stalled on the first turn
 First call after the reasoning-effort change (dev assistant v3, `reasoningEffort: low`; recorded `assistant_version` v3). Same
@@ -260,3 +262,49 @@ call" behaviour already seen in Call #4 (and in baseline call #6), now under `lo
 **Experiment integrity:** only the planned variable differs from Calls #1–#4 (reasoning effort `low`, v3); the runtime model, prompt,
 tools, SMS, fillers, server-side order logic and turn-evidence instrumentation are unchanged; the server needed no restart (no schema
 change since the restart before Call #4).
+
+## 2026-09-30 — Call #6 (Vapi/DB call #13): first live turn-evidence sample; premature submit again
+Same script. Dev assistant v3 (configured `low`; runtime `minimal`, see the next entry). Call 114 s, ended by the customer, cost
+$0.1648. Sources: the database (`tool_invocations`, including `turn_evidence`), `bin/rails calls:last`, the console screenshot, and
+Vapi's stored call record (`GET /call/{id}`, read-only). Structure-only copies of both live submit webhooks:
+`test/fixtures/files/vapi/live_submit_webhook_call13_{first,second}.json`.
+
+- Server: 7 tool calls, all accepted: `get_menu`, `get_menu_item`, `add_to_cart` v0→v1 (Margherita + extra cheese), `add_to_cart`
+  v1→v2 (garlic knots), `get_cart` (read-back v2), `submit_order` (confirmed v2), `submit_order` (already submitted, nothing changed).
+  Order #8 CONFIRMED v2, $21.50.
+- **First submit — premature.** Recorded turn evidence: history present (27 messages), **0 caller turns** since the last `get_cart`
+  result, the submit issued by the completion that answered that result, 1,164 ms after it. The agent had started the read-back
+  ("One Margherita pizza with extra cheese, and one garlic—") when the order was confirmed; "…Knots. Total $21.50. Did I get that
+  right?" was spoken after the submit, and the caller's "Yes, that's right." came about 12 s after the order was already confirmed.
+- **Second submit — after the caller's answer.** 1 caller turn since the last `get_cart` result, a later completion. The existing
+  idempotency absorbed it: "already submitted · nothing changed" (the first live duplicate-submit absorption).
+- The agent then said "We'll text you a confirmation when it's ready." although the first submit had returned
+  `confirmation_sms: skipped_web_call` (no text is sent for a web call). The second such SMS misstatement (Call #2 volunteered
+  "We won't send a text…").
+- Vapi reported `reasoningTokens = 0` for the whole call.
+
+## 2026-09-30 — Reasoning-effort trial: configured `low`, runtime `minimal`
+- Source: Vapi's per-call logs (`GET /call/{id}/call-logs`, read-only), which record each OpenAI HTTP request Vapi made. The webhook
+  payloads Vapi sent us during the same calls carry the **configured** assistant (`assistant.model.reasoningEffort: "low"`, version
+  v3); the browser console sent no model override (only `clientMessages` and `metadata`).
+- Observed requests: Call #2 (call #9, configured `minimal`): 38 × `reasoning_effort: "minimal"`. Call #5 (call #12, configured `low`):
+  6 × `"minimal"`. Call #6 (call #13, configured `low`): 32 × `"minimal"`.
+- Runtime by call: **Calls #1–#4: configured and runtime `minimal`. Calls #5–#6: configured `low`, observed runtime `minimal`.**
+  Calls #5 and #6 are therefore additional `minimal` samples and give **no evidence about the effect of `low`**.
+- `vapi:check` validates the configured assistant state, not the request Vapi actually sends downstream; it cannot detect this.
+- The cause is not known (forcing, translation, a preset or some other override are all possible); no cause is asserted here.
+- The dev assistant was restored to `reasoningEffort: minimal` (v3 → v4) with one `PATCH` of its complete `model` object; a before/after
+  comparison of the whole assistant differs only in `model.reasoningEffort`; `config/vapi/assistant.json` matches; `vapi:check` clean.
+  The frozen baseline assistant was not touched.
+
+## 2026-09-30 — Turn evidence, first live results (Calls #1, #2 and #6)
+- Every call that reached `submit_order` — Calls #1, #2 and #6 (Vapi/DB calls #8, #9 and #13) — submitted with **0 caller turns
+  after the final `get_cart` result** (Calls #1 and #2 from Vapi's stored records and the live webhooks retained by the ngrok
+  inspector; Call #6 recorded live by the instrumentation). A **3/3 observed premature-submit pattern** among calls that reached
+  submission.
+- In Call #6 the caller's confirmation arrived afterwards and the model issued a second submit, which the existing idempotency
+  absorbed. The live caller-turn signal distinguished the two submits correctly (0 turns vs 1 turn); this validates the signal live.
+- **Instrumentation limitation — `speech_chars`:** at submit time Vapi's webhook history can lag behind speech that later appears in
+  the final call record (Call #6: 0 characters recorded at submit, while the final record places part of the read-back in that
+  completion). `speech_chars` is unreliable and must not be used as an enforcement signal. The caller-turn count and the
+  same-model-completion structure agreed between the live history and the final record and remain the useful structural evidence.

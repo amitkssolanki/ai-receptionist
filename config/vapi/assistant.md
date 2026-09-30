@@ -6,7 +6,7 @@ write automation). After any change, run `bin/rails vapi:check`; it is read-only
 | Setting | Value | Source |
 |---|---|---|
 | Name | `Taj Zayka Receptionist (dev)` | `config/vapi/assistant.json` |
-| Model | openai `gpt-5-mini`, reasoning effort `low` | `assistant.json` (the baseline assistant uses `minimal`; changed for the dev assistant on 2026-09-30, see the verification log) |
+| Model | openai `gpt-5-mini`, reasoning effort `minimal` | `assistant.json` (same as the baseline assistant; a trial of `low` was reverted on 2026-09-30 because Vapi's runtime requests still used `minimal` - see the verification log) |
 | Voice | provider `vapi`, voice `Elliot` | `assistant.json` |
 | Transcriber | `soniox` `stt-rt-v5`, language `en` | `assistant.json` |
 | First message | as in `assistant.json` | `assistant.json` |

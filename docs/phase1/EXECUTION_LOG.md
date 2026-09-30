@@ -522,3 +522,13 @@ Verified against the live Vapi API (read-only) and locally; **no call was made a
 - One variable changed, by owner decision: `reasoningEffort` on the dev assistant `f858bbe9…` (v2 → v3), via one `PATCH` of the
   complete current `model` object (only `reasoningEffort` differed; verified by a before/after comparison of the whole assistant).
   `config/vapi/assistant.json` and `assistant.md` updated to match; `vapi:check` clean. Baseline assistant untouched. No code change.
+
+## After Call #6: reasoning effort restored to `minimal`; first live turn-evidence results
+
+- Vapi's per-call logs showed the `low` trial never reached the model: every OpenAI request in Calls #5 and #6 used
+  `reasoning_effort: "minimal"` while the assistant was configured `low`. Restored the dev assistant to `minimal` (v3 → v4; one
+  `PATCH` of the complete `model` object, only `reasoningEffort` differed; `vapi:check` clean; baseline untouched) and
+  `config/vapi/assistant.json` / `assistant.md` to match. `vapi:check` checks configuration, not the downstream request.
+- Turn evidence: 3/3 calls that reached `submit_order` (Calls #1, #2, #6) did so with 0 caller turns after the last `get_cart`
+  result; Call #6's second submit (after the caller's yes) was absorbed by idempotency. `speech_chars` is unreliable at submit time
+  and is not to be used for enforcement. Details in `docs/voice_agent/verification_log.md`.
