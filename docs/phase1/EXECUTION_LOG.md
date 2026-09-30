@@ -472,3 +472,19 @@ Verified against the live Vapi API (read-only) and locally; **no call was made a
   the signed token never reaches the webhook; `bin/rails calls:last` (payload-free call summary) and this runbook.
 - Known, not changed: the development restaurant's hours are still `00:00-23:59` (seeds now use `00:00-24:00`), so orders are
   refused during 23:59:00-23:59:59 local time.
+
+## After call #8: prompt/tool fixes, dashboard observations, confirmation proposal
+
+- **Prompt and tool descriptions** (repo, then the dev assistant): never add on a question; ask about options before adding and add
+  once with them; to change options remove the line and re-add (no duplicate line); read-back and submit are different turns and
+  `get_cart` + `submit_order` are never chained; say `readback_text` in one piece; never read instructions aloud. Tests assert each
+  rule is present in the prompt and in the relevant tool descriptions.
+- **Dev assistant updated** with one `PATCH /assistant/f858bbe9…` sending only `model` (prompt + tools); name, voice, transcriber,
+  first message, max duration, server messages and server settings verified unchanged; the baseline and Riley were not touched;
+  `vapi:check` with the host pinned: OK.
+- **Dashboard observations** (display only, from server facts): the order board notes a menu item on more than one line; an
+  accepted add that leaves the same item on two lines says so on its event row; every submit row states how long after the last
+  `get_cart` it arrived (amber under 10 s: an aid for the eye, not a rule, nothing is refused); the "call ended" row is placed at
+  start + duration instead of when Vapi's report arrived. Checked on the real call #8 data.
+- **Not done, by decision:** no minimum-gap rule. The proposal for making customer confirmation a server-enforced state is in
+  `docs/phase1/CONFIRMATION_PROPOSAL.md` (not implemented).
