@@ -1,12 +1,12 @@
 # Phase 1 acceptance report
 
-Status as of 2026-09-30, branch `phase-1-reliability-console` (not pushed); first written after commit `1f1fb5b`, updated after
-commit `1918acb` (criterion #18 and the README). Source of truth for the
+Status as of 2026-09-30, branch `phase-1-reliability-console`; first written after commit `1f1fb5b`, updated after
+commit `1918acb` (criterion #18 and the README). Updated 2026-10-01 with the CI result (see "Remaining acceptance work" at the end). Source of truth for the
 criteria: `docs/phase1/PLAN.md` §14. Evidence: this repository, `docs/phase1/EXECUTION_LOG.md`, `docs/phase1/evidence/`,
 `docs/voice_agent/verification_log.md`, and the verification run recorded in §11 below.
 
-**Verdict: Phase 1 is not complete by the letter of `PLAN.md` §14.** 17 of 20 criteria are met; 3 are incomplete or not
-demonstrated (§2): CI has never run on the branch (#9, #17) and the scripted unclear-upsell live attempt has not been made (#20).
+**Verdict: Phase 1 is not complete by the letter of `PLAN.md` §14.** 19 of 20 criteria are met (#9 and #17 since the green CI
+run of 2026-10-01); 1 is incomplete (§2): the scripted unclear-upsell live attempt has not been made (#20).
 Criterion #18 was completed in the update (tests for the evidence builders and the Vapi client transport). Plan step 17 is partly done:
 the README is rewritten; `docs/voice_agent/tools.md`, `vapi_setup.md` and parts of `local_setup.md` are still stale (§14).
 
@@ -32,7 +32,7 @@ idempotent tool execution, a live console, layered evaluation (contract tests, r
 | 6 | Duplicate toolCallId returns the stored result, incl. a simulated concurrent duplicate | **Complete** | R14; `tool_idempotency_test.rb`; `tool_runner_concurrency_test.rb` (real threads) |
 | 7 | No tool response contains exception text or SQL | **Complete** | `tool_runner_test.rb` "no tool response ever contains exception text, SQL or class names"; `assert_no_leak` across the R-suite |
 | 8 | Every tool execution persists a `ToolInvocation` | **Complete** | `tool_invocations_test.rb`; live calls #1, #2, #4–#7 (every server-received tool call recorded) |
-| 9 | Layer 2 replays green **in CI**; `baseline:verify` reproduces 23/23 + 2/2 | **Incomplete (CI)** | Replays green locally (6 runs); `baseline:verify` OK (25 runs). The branch has never been pushed, so no CI run exists for any Phase 1 commit |
+| 9 | Layer 2 replays green **in CI**; `baseline:verify` reproduces 23/23 + 2/2 | **Complete** (2026-10-01) | Replays run in CI's full suite: [run 36760252445](https://github.com/amitkssolanki/ai-receptionist/actions/runs/36760252445), `test` job green (406 runs, 0 failures, 0 errors, 2 skips) at commit `627863a`. `baseline:verify` OK locally (25 runs); the CI workflow does not run it |
 | 10 | `get_menu` ≤ 3 queries (constant when doubled), ≤ 1,600 bytes; benchmark recorded | **Complete** | `menu_performance_test.rb`; `EXECUTION_LOG.md` benchmark (median of 50, before vs after); 51 → 3 queries, 4,554 → 1,526 bytes |
 | 11 | Console starts/stops a real Vapi web call and shows live partial/final transcripts | **Complete** | Live calls #1–#7 from `/admin/console` (screenshots, verification log); partial→final handling in `test/javascript/transcript.test.mjs` |
 | 12 | Server rows live; pending rows resolve to server rows by toolCallId; board = DB | **Complete** | `console_broadcaster_test.rb`; `claims.test.mjs` (DOM ids match the server's); `console_backfill_test.rb` "what the state frame rebuilds equals what the live stream delivered"; live Call #3 showed unresolved pending rows when the server had no record (as designed) |
@@ -40,7 +40,7 @@ idempotent tool execution, a live console, layered evaluation (contract tests, r
 | 14 | Secrets scan passes | **Complete** | `test/security/secrets_scan_test.rb`; `console_broadcaster_test.rb` "nothing sensitive is broadcast…"; `console_controller_test.rb` "only the public key and assistant id reach the browser" |
 | 15 | `vapi:check` passes; baseline assistant unchanged | **Complete** | `vapi:check` OK (§11); baseline `8f2053ae…` `updatedAt` 2026-08-06T02:49:50.807Z, identical to Phase 0 |
 | 16 | Webhook rejects missing/wrong secrets; no default outside `test` | **Complete** | `webhook_security_test.rb` (8 tests, incl. "the known old default is never accepted") |
-| 17 | Tests, RuboCop, Brakeman, bundler-audit, importmap audit green; **CI green** | **Incomplete (CI)** | All local checks green (§11). CI not demonstrated: branch never pushed. One standalone run of the reliability suite had 1 failure that did not recur in 30 further standalone runs or in the full suites; the failing test was not captured and the cause is unknown |
+| 17 | Tests, RuboCop, Brakeman, bundler-audit, importmap audit green; **CI green** | **Complete** (2026-10-01) | All local checks green (§11). CI green: [run 36760252445](https://github.com/amitkssolanki/ai-receptionist/actions/runs/36760252445) at commit `627863a` — `test`, `lint` (RuboCop), `scan_ruby` (Brakeman, bundler-audit), `scan_js` (importmap audit) all passed. One standalone run of the reliability suite had 1 failure that did not recur in 30 further standalone runs or in the full suites; the failing test was not captured and the cause is unknown |
 | 18 | Coverage ≥ 65.7 % baseline; new service files ≥ 95 % | **Complete** (update) | The criterion has no exclusion for tooling, so all new `app/services` files count. Added tests of real behaviour (commit `161485a`): `evaluation.rb` 85.7 → 100 %, `evaluation/evidence.rb` 19.8 → 100 %, `vapi_config/client.rb` 80.0 → 100 %. Every `app/services` file is now ≥ 95 % (lowest `voice/turn_evidence.rb` 96.5 %); overall 93.5 % of `app/**/*.rb` (Phase 0: 65.7 %). Measured with stdlib `Coverage`, single process |
 | 19 | Verification log records the outcome of every Phase 0 UNKNOWN touched | **Complete** (see note) | Recorded: metadata arrival (yes), webhook secret over ngrok (works), tool contract accepted, end-of-call fields (arrive, ~57 s late once), live assistant state, `PATCH` of `model` preserves other top-level fields, public-key restrictions/spend limit not API-readable. Note: tool-call-ID reuse on redelivery was **not observed** (no redelivery in 7 live calls; 0 duplicates absorbed from redelivery) — first recorded here. Not touched (deferred/out of scope): HMAC, JWT algorithm, web-call transfer, recording retention, `silenceTimeoutSeconds` |
 | 20 | A live call shows a tool-backed order end to end, **and** the scripted unclear-upsell attempt is recorded | **Incomplete** | First half met (Calls #2, #6, #7). The unclear-upsell attempt (the garlic-knots "That should be" case) was never scripted live; the live script used a clear "Yes, add the garlic knots." |
@@ -158,7 +158,7 @@ responses carry no exception text or SQL; the gate stores no transcript text.
 
 **No, not by `PLAN.md` §14.** Remaining blockers, exactly:
 
-1. **#9 / #17 — CI:** push the branch (or otherwise run CI) and get a green run of the test, lint and security jobs.
+1. ~~**#9 / #17 — CI**~~ — resolved 2026-10-01 (green CI run, see the end of this report).
 2. **#20 — unclear-upsell live attempt:** one scripted live call reproducing the unclear upsell reply, recorded in the verification
    log.
 
@@ -179,3 +179,83 @@ code and in the console:
 
 Live testing showed the model submitting before the caller answered in 3 of 4 calls that reached submission. The response was not a
 stronger prompt but a server invariant, verified against the real recorded payloads. The model proposes. The server decides.
+
+---
+
+## Remaining acceptance work (2026-10-01)
+
+### #9 / #17 — CI
+
+The branch was pushed and draft PR https://github.com/amitkssolanki/ai-receptionist/pull/17 opened (the CI workflow runs on pull
+requests and on pushes to `main`, not on other branch pushes). CI result:
+
+- First run, [36759683861](https://github.com/amitkssolanki/ai-receptionist/actions/runs/36759683861) at `1e4d12f`: `lint`,
+  `scan_js`, `scan_ruby` passed; `test` failed — 406 runs, 1 failure:
+  `HermeticCredentialsTest#test_the_Rails_secret_key_base_is_still_available_(only_vapi.*_is_hidden)`. Cause: a Phase 1 test
+  asserted `Rails.application.credentials.secret_key_base`, which needs `config/master.key`; CI has none, so the encrypted
+  credentials cannot be read there. Not a product failure.
+- Fix, commit `627863a` (test file only): the test checks `Rails.application.secret_key_base`, and the decrypted credentials only
+  where a master key exists. The `vapi.*` hiding assertions are unchanged. Verified locally with and without a master key.
+- Second run, **[36760252445](https://github.com/amitkssolanki/ai-receptionist/actions/runs/36760252445) at `627863a`: all four jobs green** — `test` (406 runs, 3519 assertions, 0 failures,
+  0 errors, 2 skips), `lint`, `scan_ruby`, `scan_js`.
+
+#9 and #17 are met. Not covered by CI: `baseline:verify` (not in the workflow; green locally).
+
+### #20 — scripted unclear-upsell live attempt (manual procedure)
+
+**Source of truth.** `PLAN.md` §14 #20: "the scripted unclear-upsell attempt is recorded"; §9: "Live demo: a scripted console run
+recreating the unclear upsell reply". The only verbatim wording in the repository is Phase 0 call #7 (PLAN §9, `db_snapshot.json`):
+the agent offered garlic knots/fries → caller "It should be." → agent asked to clarify → caller "That should be." → agent said
+"Great. I'll add garlic knots…" without calling `add_to_cart`.
+
+**Ambiguities in the plan (not resolved here — the owner decides):**
+1. The plan does not give a full live script for this attempt. The procedure below reuses the current script for everything except
+   the upsell answer, and uses the two Phase 0 replies verbatim for the upsell answer.
+2. "It should be." / "That should be." are what speech-to-text heard in Phase 0, not necessarily what the caller said. Saying them
+   verbatim recreates the transcript the model saw; it may not recreate the original audio.
+3. The unclear reply is to the **upsell offer** (PLAN §9), not to the read-back.
+4. The plan defines no pass/fail for the model's reaction; #20 requires the attempt to be **recorded**. Whatever the agent does is
+   the result.
+
+**Preflight:** `bin/dev` running (no migrations since the last restart); `ngrok http --url=salaried-earplugs-appendix.ngrok-free.dev 3000`
+running; `VAPI_EXPECTED_HOST=salaried-earplugs-appendix.ngrok-free.dev bin/rails vapi:check` prints `OK`; Chrome at
+`http://localhost:3000/admin/console`, signed in, `server link ● connected`; headphones on. Do not change the prompt, model or tools.
+
+**Script** (wait for the agent to finish each turn; do not improvise other wording):
+
+1. Click **● Start call**; wait for the greeting to finish.
+2. "Hi, what pizzas do you have?"
+3. "Tell me about the Margherita."
+4. "I'll have one Margherita with extra cheese, for pickup."
+5. When the agent offers an add-on (garlic knots and/or a drink or fries), say exactly: **"It should be."**
+6. If the agent asks a clarifying question, say exactly: **"That should be."** If it does not ask, say nothing further about the
+   add-on.
+7. Let the agent continue. If it asks something unrelated (name, notes, pickup or delivery), answer briefly and truthfully
+   ("Pickup", "Skip it").
+8. "Can you read my order back?"
+9. After the read-back: "Yes, that's right."
+10. Let the agent finish, then click **■ End call**.
+
+If the agent never offers an add-on at step 5, the scenario was not reached: end the call, record it as "upsell not offered", and
+repeat with a fresh call rather than prompting for an add-on.
+
+**Observe, without intervening:** after steps 5–6, whether the agent (a) asks a plain yes/no question, (b) adds the item with an
+`add_to_cart` row on the server, (c) says it added something with no matching server row (the console marks `⚠ claim not
+reflected in the server order (heuristic)`), or (d) does something else. Then whether the read-back matches the order board, and
+what the confirmation gate did at submit.
+
+**Evidence to record for #20** (send it back; it goes into `docs/voice_agent/verification_log.md` as Call #8):
+- `bin/rails calls:last` output, run right after the call (payload-free, safe to paste);
+- a console screenshot showing the conversation around steps 5–6, the order board, and the server event rows (including any `⚠`
+  marker and the submit row's ◌ lines);
+- in your words: what you said at steps 5 and 6, and what the agent said in reply;
+- the final order as the board shows it (items, total, cart version, status).
+
+From that the entry records: the Vapi/DB call id, the upsell offer, the ambiguous replies and the agent's reaction, whether any
+claim was not reflected in the server order, the final authoritative order, the read-back and the gate result — and, from Vapi's
+stored record (read-only), whether an `add_to_cart` was actually requested after the ambiguous reply.
+
+### Current status
+
+19 of 20 criteria met. #9 and #17 met by the green CI run above. Open: #20 (the manual call above, not yet made); Phase 1 is
+not complete until it is made and recorded.
