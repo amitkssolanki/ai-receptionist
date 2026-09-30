@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_07_19_151814) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_30_140000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -124,6 +124,31 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_19_151814) do
     t.datetime "updated_at", null: false
   end
 
+  create_table "tool_invocations", force: :cascade do |t|
+    t.jsonb "arguments"
+    t.bigint "call_log_id", null: false
+    t.integer "cart_version_after"
+    t.integer "cart_version_before"
+    t.datetime "created_at", null: false
+    t.integer "duration_ms", null: false
+    t.string "error_class"
+    t.string "error_code"
+    t.datetime "finished_at", precision: 3, null: false
+    t.bigint "order_id"
+    t.integer "replay_count", default: 0, null: false
+    t.jsonb "result"
+    t.string "source", default: "vapi", null: false
+    t.datetime "started_at", precision: 3, null: false
+    t.string "status", null: false
+    t.string "tool_call_id", null: false
+    t.string "tool_name", null: false
+    t.datetime "updated_at", null: false
+    t.datetime "vapi_requested_at", precision: 3
+    t.index ["call_log_id", "started_at"], name: "index_tool_invocations_on_call_log_id_and_started_at"
+    t.index ["call_log_id", "tool_call_id"], name: "index_tool_invocations_on_call_log_id_and_tool_call_id", unique: true
+    t.index ["order_id"], name: "index_tool_invocations_on_order_id"
+  end
+
   create_table "users", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.string "email", default: "", null: false
@@ -152,5 +177,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_19_151814) do
   add_foreign_key "order_items", "orders"
   add_foreign_key "orders", "customers"
   add_foreign_key "orders", "restaurants"
+  add_foreign_key "tool_invocations", "call_logs"
+  add_foreign_key "tool_invocations", "orders"
   add_foreign_key "users", "restaurants"
 end

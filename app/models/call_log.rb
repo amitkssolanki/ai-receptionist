@@ -2,6 +2,7 @@ class CallLog < ApplicationRecord
   belongs_to :restaurant
   belongs_to :customer, optional: true
   belongs_to :order, optional: true
+  has_many :tool_invocations, dependent: :destroy
 
   enum :status, {
     in_progress: "in_progress",

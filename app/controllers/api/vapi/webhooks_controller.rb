@@ -97,32 +97,71 @@ class Api::Vapi::WebhooksController < ActionController::API
     tool_calls = message["toolCallList"] || []
 
     results = tool_calls.map do |tool_call|
-      { toolCallId: tool_call["id"], result: dispatch_tool(call_log, tool_call) }
+      { toolCallId: tool_call["id"], result: dispatch_tool(call_log, tool_call, message["timestamp"]) }
     end
 
     render json: { results: results }
   end
 
-  def dispatch_tool(call_log, tool_call)
+  # Runs one tool and, when there is a call to attach it to, records the execution in tool_invocations. The record
+  # is bookkeeping only: it never changes the result the model receives.
+  def dispatch_tool(call_log, tool_call, vapi_timestamp = nil)
     return "No active call found for this request." unless call_log
 
-    name = tool_call.dig("function", "name") || tool_call["name"]
-    arguments = tool_call.dig("function", "arguments") || tool_call["arguments"] || {}
-    arguments = JSON.parse(arguments) if arguments.is_a?(String)
+    started_at = Time.current
+    clock = Process.clock_gettime(Process::CLOCK_MONOTONIC)
+    outcome = execute_tool(call_log, tool_call)
+    duration_ms = ((Process.clock_gettime(Process::CLOCK_MONOTONIC) - clock) * 1000).round
 
-    case name
-    when "get_menu" then call_log.restaurant.voice_menu_json.to_json
-    when "add_to_cart" then add_to_cart(call_log, arguments).to_json
-    when "update_cart_item_quantity" then update_cart_item_quantity(call_log, arguments).to_json
-    when "remove_cart_item" then remove_cart_item(call_log, arguments).to_json
-    when "get_cart" then (call_log.order&.cart_summary || { items: [], total: 0.0 }).to_json
-    when "submit_order" then submit_order(call_log, arguments).to_json
-    when "transfer_to_human" then transfer_to_human(call_log, arguments)
-    else "Unknown tool: #{name}"
-    end
+    record_invocation(call_log, tool_call, outcome, started_at: started_at, duration_ms: duration_ms, vapi_timestamp: vapi_timestamp)
+    outcome[:result]
+  end
+
+  # Returns { name:, arguments:, result:, status:, error_code:, error_class: }.
+  def execute_tool(call_log, tool_call)
+    outcome = { name: nil, arguments: nil, status: "ok" }
+    name = outcome[:name] = tool_call.dig("function", "name") || tool_call["name"]
+    arguments = outcome[:arguments] = tool_call.dig("function", "arguments") || tool_call["arguments"] || {}
+
+    arguments = outcome[:arguments] = JSON.parse(arguments) if arguments.is_a?(String)
+
+    outcome[:result] =
+      case name
+      when "get_menu" then call_log.restaurant.voice_menu_json.to_json
+      when "add_to_cart" then add_to_cart(call_log, arguments).to_json
+      when "update_cart_item_quantity" then update_cart_item_quantity(call_log, arguments).to_json
+      when "remove_cart_item" then remove_cart_item(call_log, arguments).to_json
+      when "get_cart" then (call_log.order&.cart_summary || { items: [], total: 0.0 }).to_json
+      when "submit_order"
+        submitted = submit_order(call_log, arguments)
+        outcome.merge!(status: "rejected", error_code: "cart_empty") if submitted.key?(:error)
+        submitted.to_json
+      when "transfer_to_human" then transfer_to_human(call_log, arguments)
+      else
+        outcome.merge!(status: "rejected", error_code: "unknown_tool")
+        "Unknown tool: #{name}"
+      end
+    outcome
   rescue => e
     Rails.logger.error("[Vapi] tool #{name} failed: #{e.class}: #{e.message}")
-    "Sorry, something went wrong handling that - #{e.message}"
+    outcome.merge(
+      result: "Sorry, something went wrong handling that - #{e.message}",
+      status: "error", error_class: e.class.name
+    )
+  end
+
+  def record_invocation(call_log, tool_call, outcome, started_at:, duration_ms:, vapi_timestamp:)
+    tool_call_id = tool_call["id"]
+    return Rails.logger.warn("[Vapi] tool call without an id on call #{call_log.external_call_id}; not recorded") if tool_call_id.blank?
+
+    ToolInvocation.record!(
+      call_log: call_log, order: call_log.reload.order, tool_call_id: tool_call_id, tool_name: outcome[:name].to_s,
+      arguments: outcome[:arguments], result: outcome[:result], status: outcome[:status],
+      error_code: outcome[:error_code], error_class: outcome[:error_class], started_at: started_at,
+      duration_ms: duration_ms, vapi_requested_at: (Time.zone.at(vapi_timestamp.to_i / 1000, vapi_timestamp.to_i % 1000, :millisecond) if vapi_timestamp.is_a?(Numeric))
+    )
+  rescue => e
+    Rails.logger.error("[Vapi] could not record tool invocation #{tool_call_id}: #{e.class}: #{e.message}")
   end
 
   def add_to_cart(call_log, arguments)
