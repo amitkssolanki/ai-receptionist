@@ -325,37 +325,40 @@ class BaselineReliabilityTest < ActionDispatch::IntegrationTest
 
   # --- Lifecycle events ---
 
-  test "R12 end-of-call-report overwrites a transferred call's status" do
+  test "R12 a transferred call stays transferred when the end-of-call report arrives; the reason is kept" do
     c = start_call
     tool(c.external_call_id, "transfer_to_human", { reason: "caller asked for a person" })
     assert c.reload.transferred?
     vapi(type: "end-of-call-report", call: { id: c.external_call_id }, artifact: { transcript: "AI: hi" })
 
-    assert c.reload.abandoned?
-    assert_includes c.transcript.to_s, "AI: hi"
-    assert_not_includes c.transcript.to_s, "Transferred to human"
+    assert c.reload.transferred?
+    assert_equal "caller asked for a person", c.transfer_reason
+    assert c.transferred_at.present?
+    assert c.ended_at.present?
+    assert_equal "AI: hi", c.transcript, "the report's transcript is stored; the transfer is its own facts, not a transcript line"
     rec(id: "R12", scenario: "Transferred call followed by end-of-call", layer: "vapi",
-        current: "Status transferred -> abandoned; the '[Transferred to human: ...]' note is also overwritten by the report's transcript",
+        current: "Step 8: status stays transferred (transferred > completed > abandoned); transferred_at and transfer_reason are columns the report cannot overwrite",
         safe: "Preserve transferred status and the transfer note")
   end
 
-  test "R13 duplicate call-start: sequential duplicate is ignored, check-then-create race returns 422" do
+  test "R13 duplicate call-start: a sequential duplicate and a check-then-create race both answer 200 with one CallLog" do
     c = start_call("dup_call")
     start_call("dup_call")
+    assert_response :success
     assert_equal 1, CallLog.where(external_call_id: "dup_call").count
 
     # Simulate the race window: a second request passes the exists? check before the first commits.
-    original = CallLog.method(:exists?)
     CallLog.define_singleton_method(:exists?) { |*| false }
     begin
       vapi(type: "status-update", status: "in-progress", call: { id: "dup_call", type: "webCall" })
     ensure
       CallLog.singleton_class.send(:remove_method, :exists?)
     end
-    assert_equal original.call(external_call_id: "dup_call"), true
-    assert_response :unprocessable_entity
+    assert_response :success
+    assert_equal 1, CallLog.where(external_call_id: "dup_call").count
+    assert_equal 1, Customer.where(phone_number: "unknown-dup_call").count
     rec(id: "R13", scenario: "Duplicate call-start event", layer: "vapi",
-        current: "Sequential duplicate: ignored (1 CallLog). Racing duplicate: CallLog.create! raises uniqueness RecordInvalid -> HTTP #{response.status}",
+        current: "Step 8: create-or-find. Sequential and racing duplicates are absorbed: HTTP #{response.status}, one CallLog, one customer",
         safe: "Create-or-find; always 200 for a duplicate start")
     assert c
   end

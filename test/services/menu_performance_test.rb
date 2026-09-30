@@ -22,6 +22,8 @@ class MenuPerformanceTest < ActiveSupport::TestCase
     end
     menu["modifiers"].each { |m| MenuItemModifier.create!(m.slice("id", "menu_item_id", "name", "price_cents", "position")) }
     menu["upsells"].each { |u| MenuItemUpsell.create!(u.slice("id", "menu_item_id", "upsell_item_id")) }
+    # Rows above were inserted with explicit ids; move the sequences past them so later creates don't collide.
+    %w[restaurants menu_categories menu_items menu_item_modifiers menu_item_upsells].each { |t| ActiveRecord::Base.connection.reset_pk_sequence!(t) }
     @catalog = MenuCatalog.new(@restaurant)
   end
 

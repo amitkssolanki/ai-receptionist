@@ -22,6 +22,7 @@ class OrderTaking
     order_already_submitted: "This order has already been submitted and can no longer be changed. Offer to transfer the caller to a person if they need changes.",
     quantity_out_of_range: "Quantity must be a whole number from 1 to #{MAX_LINE_QUANTITY}. For bigger quantities, offer to transfer the caller to staff.",
     large_order_requires_staff: "That would take the order past #{MAX_ORDER_ITEMS} items, which staff need to handle. Offer to transfer the caller to a person.",
+    no_active_call: "This call has already ended, so the order can't be changed. Apologize and offer to transfer the caller to a person.",
     readback_required: "The order hasn't been read back yet. Call get_cart, read its readback_text to the caller exactly as written, " \
                        "get a clear yes, then call submit_order with the cart_version from get_cart."
   }.freeze
@@ -146,6 +147,8 @@ class OrderTaking
   # and the order row. Any exception rolls the whole mutation back - no empty orders, no half-written carts.
   def mutating(&block)
     @call_log.with_lock do
+      next refuse(:no_active_call) if @call_log.ended_at # a finished call never gets a new or changed cart
+
       order&.lock!
       block.call
     end

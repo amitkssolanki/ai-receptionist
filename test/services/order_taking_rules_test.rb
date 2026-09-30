@@ -137,11 +137,23 @@ class OrderTakingRulesTest < ActiveSupport::TestCase
     assert_equal [ 1, 1000 ], [ order.order_items.sole.quantity, order.total_cents ]
   end
 
-  test "a cart abandoned at call end accepts no more changes" do
+  test "once the call has ended, nothing in the cart can change: no_active_call, and no order is ever created" do
     add
     CallLifecycle.finish(external_call_id: @call_log.external_call_id, transcript: nil, recording_url: nil)
     assert_predicate order, :abandoned?
-    assert_equal :order_already_submitted, add(@fries).rejection
+    line = order.order_items.sole
+    service = OrderTaking.new(@call_log.reload)
+    assert_equal :no_active_call, service.add_item(menu_item_id: @fries.id).rejection
+    assert_equal :no_active_call, service.update_quantity(order_item_id: line.id, quantity: 2).rejection
+    assert_equal :no_active_call, service.remove_item(order_item_id: line.id).rejection
+    assert_equal :no_active_call, service.read_back.rejection
+    assert_equal [ 1, 1 ], [ order.order_items.count, order.cart_version ]
+  end
+
+  test "a call that ended without a cart does not get one afterwards" do
+    CallLifecycle.finish(external_call_id: @call_log.external_call_id, transcript: nil, recording_url: nil)
+    assert_equal :no_active_call, add.rejection
+    assert_equal 0, Order.count
   end
 
   # --- atomicity ---

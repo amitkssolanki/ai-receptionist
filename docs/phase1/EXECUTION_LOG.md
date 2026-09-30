@@ -192,3 +192,29 @@ the same file run against a worktree of `portfolio-baseline` for "before", media
 - Deviations: none from the plan. Two details: every tool call on a call now serializes on the call row lock (the
   plan's idempotency design needs this or the unique-index wait); the audit-failure path above is a deliberate
   reading of "an audit failure cannot alter the model response" given atomicity.
+
+## Step 8 — call lifecycle: locking, transfer precedence, idempotent events (R12, R13)
+
+Scope: the lifecycle items from the review brief. Not done here (not requested): console session key / signed
+console token (R23), end-of-call cost / ended_reason / messages columns - those remain in the plan for later.
+
+- **Locking:** `CallLifecycle.transfer` and `.finish` now run under `call_log.with_lock`; `finish` then locks the
+  order (`call_logs` -> `orders`, never the reverse; a test records every `FOR UPDATE` statement and asserts the
+  order). A tool call and a lifecycle event can no longer decide about the same call/order at once.
+- **Status rules** (documented atop `CallLifecycle`): transfer -> `transferred` from any status (even after the call
+  ended; transferred > completed > abandoned; second transfer is a no-op, first reason kept); finish -> `transferred`
+  if transferred, else `completed` if an order was submitted (`Order#submitted?`: past pending and not abandoned, so a
+  kitchen-advanced order still counts), else `abandoned`; an open cart becomes `abandoned` (items kept), a submitted
+  order is never touched; a repeated finish is a no-op (first end-of-call report wins).
+- **Transfer facts:** `call_logs.transferred_at` / `transfer_reason` (new migration). The `[Transferred to human]`
+  transcript line is gone, so the end-of-call transcript cannot overwrite it; the admin call page shows the reason.
+- **Ended calls:** cart tools (`add`, `update`, `remove`, `get_cart`, `submit`) on a call with `ended_at` answer
+  `no_active_call`, so a late or racing tool can never create an order nobody will finish. Replays of earlier tool calls
+  still return their stored result (the replay lookup runs first). `transfer_to_human` is still honoured after the
+  call ended, by precedence. (No new error code: `no_active_call` already exists in the plan.)
+- **Identifiers:** `start` is keyed by the call id (unique index; create-or-find, duplicates and races are absorbed,
+  HTTP 200 - R13 flipped, previously 422 on the race); `finish` by the call id (one report per call, `ended_at` is the
+  guard); transfer by its toolCallId (Step 7). No event is keyed by timestamp or payload hash.
+- Also: customer find-or-create in `start` survives a concurrent create (`RecordNotUnique`/uniqueness `RecordInvalid`).
+- `MenuPerformanceTest` now resets primary-key sequences after its explicit-id inserts (it was order-dependent).
+- Flipped: R12, R13. Step 7 tests unchanged and green.

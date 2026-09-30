@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_30_150000) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_30_160000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -26,6 +26,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_30_150000) do
     t.datetime "started_at"
     t.string "status", default: "in_progress", null: false
     t.text "transcript"
+    t.string "transfer_reason"
+    t.datetime "transferred_at", precision: 3
     t.datetime "updated_at", null: false
     t.index ["customer_id"], name: "index_call_logs_on_customer_id"
     t.index ["external_call_id"], name: "index_call_logs_on_external_call_id", unique: true

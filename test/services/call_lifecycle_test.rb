@@ -34,14 +34,17 @@ class CallLifecycleTest < ActiveSupport::TestCase
     assert_nil CallLog.find_by(external_call_id: "life_4")
   end
 
-  test "transfer marks the call transferred and appends the reason to the transcript" do
+  test "transfer marks the call transferred and records when and why (the first reason is kept)" do
     call_log = start
     CallLifecycle.transfer(call_log, "caller asked for a person")
     assert_predicate call_log.reload, :transferred?
-    assert_equal "[Transferred to human: caller asked for a person]", call_log.transcript
+    assert_equal "caller asked for a person", call_log.transfer_reason
+    first_at = call_log.transferred_at
+    assert_predicate first_at, :present?
+    assert_nil call_log.transcript, "a transfer is facts on the call, not a transcript line"
 
-    CallLifecycle.transfer(call_log, nil)
-    assert_equal "[Transferred to human: caller asked for a person]\n[Transferred to human]", call_log.reload.transcript
+    travel(1.minute) { CallLifecycle.transfer(call_log, "another reason") }
+    assert_equal [ "caller asked for a person", first_at ], [ call_log.reload.transfer_reason, call_log.transferred_at ]
   end
 
   test "finish completes a call with a confirmed order and abandons one without" do

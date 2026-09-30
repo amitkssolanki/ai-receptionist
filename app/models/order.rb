@@ -35,6 +35,9 @@ class Order < ApplicationRecord
   # The cart can change only while the order is still pending.
   def cart_open? = pending?
 
+  # Placed by the caller: anything past pending that wasn't merely an abandoned cart.
+  def submitted? = !pending? && !abandoned?
+
   def allowed_next_statuses = TRANSITIONS.fetch(status, [])
 
   def total
