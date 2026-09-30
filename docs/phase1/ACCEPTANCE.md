@@ -1,12 +1,12 @@
 # Phase 1 acceptance report
 
 Status as of 2026-09-30, branch `phase-1-reliability-console`; first written after commit `1f1fb5b`, updated after
-commit `1918acb` (criterion #18 and the README). Updated 2026-10-01 with the CI result (see "Remaining acceptance work" at the end). Source of truth for the
+commit `1918acb` (criterion #18 and the README). Updated 2026-10-01 with the CI result and the #20 live call (see "Remaining acceptance work" at the end). Source of truth for the
 criteria: `docs/phase1/PLAN.md` §14. Evidence: this repository, `docs/phase1/EXECUTION_LOG.md`, `docs/phase1/evidence/`,
 `docs/voice_agent/verification_log.md`, and the verification run recorded in §11 below.
 
-**Verdict: Phase 1 is not complete by the letter of `PLAN.md` §14.** 19 of 20 criteria are met (#9 and #17 since the green CI
-run of 2026-10-01); 1 is incomplete (§2): the scripted unclear-upsell live attempt has not been made (#20).
+**Verdict: Phase 1 is complete against `PLAN.md` §14: 20 of 20 criteria are met** (as of 2026-10-01: #9 and #17 by the green
+CI run, #20 by the scripted unclear-upsell live call, Call #9). The earlier verdict (17 of 20) is kept in the history of this file.
 Criterion #18 was completed in the update (tests for the evidence builders and the Vapi client transport). Plan step 17 is partly done:
 the README is rewritten; `docs/voice_agent/tools.md`, `vapi_setup.md` and parts of `local_setup.md` are still stale (§14).
 
@@ -43,7 +43,7 @@ idempotent tool execution, a live console, layered evaluation (contract tests, r
 | 17 | Tests, RuboCop, Brakeman, bundler-audit, importmap audit green; **CI green** | **Complete** (2026-10-01) | All local checks green (§11). CI green: [run 36760252445](https://github.com/amitkssolanki/ai-receptionist/actions/runs/36760252445) at commit `627863a` — `test`, `lint` (RuboCop), `scan_ruby` (Brakeman, bundler-audit), `scan_js` (importmap audit) all passed. One standalone run of the reliability suite had 1 failure that did not recur in 30 further standalone runs or in the full suites; the failing test was not captured and the cause is unknown |
 | 18 | Coverage ≥ 65.7 % baseline; new service files ≥ 95 % | **Complete** (update) | The criterion has no exclusion for tooling, so all new `app/services` files count. Added tests of real behaviour (commit `161485a`): `evaluation.rb` 85.7 → 100 %, `evaluation/evidence.rb` 19.8 → 100 %, `vapi_config/client.rb` 80.0 → 100 %. Every `app/services` file is now ≥ 95 % (lowest `voice/turn_evidence.rb` 96.5 %); overall 93.5 % of `app/**/*.rb` (Phase 0: 65.7 %). Measured with stdlib `Coverage`, single process |
 | 19 | Verification log records the outcome of every Phase 0 UNKNOWN touched | **Complete** (see note) | Recorded: metadata arrival (yes), webhook secret over ngrok (works), tool contract accepted, end-of-call fields (arrive, ~57 s late once), live assistant state, `PATCH` of `model` preserves other top-level fields, public-key restrictions/spend limit not API-readable. Note: tool-call-ID reuse on redelivery was **not observed** (no redelivery in 7 live calls; 0 duplicates absorbed from redelivery) — first recorded here. Not touched (deferred/out of scope): HMAC, JWT algorithm, web-call transfer, recording retention, `silenceTimeoutSeconds` |
-| 20 | A live call shows a tool-backed order end to end, **and** the scripted unclear-upsell attempt is recorded | **Incomplete** | First half met (Calls #2, #6, #7). The unclear-upsell attempt (the garlic-knots "That should be" case) was never scripted live; the live script used a clear "Yes, add the garlic knots." |
+| 20 | A live call shows a tool-backed order end to end, **and** the scripted unclear-upsell attempt is recorded | **Complete** (2026-10-01) | First half: Calls #2, #6, #7, #9. Scripted unclear-upsell attempt recorded: Call #9 (Vapi/DB call #16). Garlic knots offered; the reply was transcribed as "Should be—"; the model said "One moment." and nothing else — no clarifying question, no `add_to_cart`, no claim; order #10 confirmed at v1 without garlic knots. Attempt 1 (Call #8) did not reach the offer. See `verification_log.md` |
 
 ## 3. What live testing discovered
 
@@ -156,11 +156,10 @@ responses carry no exception text or SQL; the gate stores no transcript text.
 
 ## 15. Is Phase 1 complete?
 
-**No, not by `PLAN.md` §14.** Remaining blockers, exactly:
+**Yes, as of 2026-10-01** (see the end of this report). The blockers as listed before then:
 
 1. ~~**#9 / #17 — CI**~~ — resolved 2026-10-01 (green CI run, see the end of this report).
-2. **#20 — unclear-upsell live attempt:** one scripted live call reproducing the unclear upsell reply, recorded in the verification
-   log.
+2. ~~**#20 — unclear-upsell live attempt**~~ — resolved 2026-10-01 (Call #9, recorded in the verification log).
 
 (#18 was resolved in the update.) Also outstanding against the plan's step list (not a §14 criterion): the rest of **step 17**
 (`tools.md`, `vapi_setup.md`, `local_setup.md`). Unexplained: one intermittent reliability-suite failure (§2, #17), not reproduced.
@@ -257,11 +256,22 @@ stored record (read-only), whether an `add_to_cart` was actually requested after
 
 ### Current status
 
-19 of 20 criteria met. #9 and #17 met by the green CI run above. Open: #20; Phase 1 is not complete until the scripted attempt
-is made and recorded.
+**20 of 20 criteria met; Phase 1 is complete against `PLAN.md` §14.** #9 and #17 are met by the green CI run above, and #20 by
+Call #9 below. Still outstanding outside §14: the rest of plan step 17 (`tools.md`, `vapi_setup.md`, `local_setup.md`), and the
+unexplained one-off reliability-suite failure (§2, #17).
 
 #20 attempts so far:
 - **Attempt 1 — Call #8 (Vapi/DB call #15), 2026-10-01: upsell not offered (scenario not reached).** Speech-to-text heard the
   scripted "Hi, what pizzas do you have?" as "What business do you have?" four times; the model answered each time by repeating its
   greeting and called no tool. No cart, no order, no add-on offer, so the unclear reply was never said. Details in
-  `docs/voice_agent/verification_log.md`. The next attempt is a fresh call (Call #9).
+  `docs/voice_agent/verification_log.md`.
+- **Attempt 2 — Call #9 (Vapi/DB call #16), 2026-10-01: recorded; satisfies #20.**
+  - The model offered garlic knots after the `add_to_cart` result: "Would you like garlic knots with that?"
+  - The scripted reply was "It should be."; speech-to-text recorded "Should be—", and that is what the model received.
+  - The model answered "One moment." and then nothing: no clarifying yes/no question (which the prompt asks for), no
+    `add_to_cart`, and no claim of adding anything. "That should be." was not needed.
+  - The caller moved on 21 s later. Read-back: 1 × Margherita Pizza with extra cheese, $16.00.
+  - After "Yes, that's right." the gate passed (1 caller turn after the read-back). Order #10 CONFIRMED at v1, $16.00, no
+    garlic knots. No `⚠ claim not reflected` marker in the console screenshot.
+  - Outcome: safe (the server state is exactly what was ordered), but the unclear answer was dropped, not clarified.
+  - `PLAN.md` defines no pass/fail for the model's reaction, so none is asserted here. Details: `docs/voice_agent/verification_log.md`.

@@ -378,3 +378,40 @@ by the customer, cost $0.0535. Sources: `bin/rails calls:last`, the console scre
 responded to a question it could not map to the menu by repeating the greeting instead of answering or asking what the caller
 meant. The greeting repetition was also seen mid-answer in Call #7. The server was not involved in either failure. No prompt,
 model, transcriber or server change was made. A restart would not have changed anything: the server received no tool call.
+
+## 2026-10-01 — Call #9 (Vapi/DB call #16): criterion #20 attempt 2 — unclear upsell reply made and recorded
+Second attempt at the scripted unclear-upsell call (`docs/phase1/ACCEPTANCE.md`, "#20"), same script, preflight unchanged since
+Call #8 (dev assistant v5, `gpt-5-mini`, configured `minimal`, Soniox `stt-rt-v5`; no change to prompt, model, tools or server).
+Call 133 s, ended by the customer, cost $0.1757. No other Vapi call was made between Calls #8 and #9. Sources: `bin/rails
+calls:last`, the console screenshot, the database (`tool_invocations`, `orders`), Vapi's stored call record (`GET /call/{id}`) and
+per-call logs (`GET /call/{id}/call-logs`), all read-only.
+
+**The ambiguous exchange** (transcripts are Vapi's speech-to-text; model inputs and outputs from Vapi's per-call log)
+- **Add-on offered.** After the `add_to_cart` result (v0→v1), the model's completion was: "Added one Margherita Pizza with extra
+  cheese. The total is now sixteen dollars. Would you like garlic knots with that?"
+- **Unclear reply.** The scripted reply was "It should be."; the transcriber recorded **"Should be—"**, and that is the caller turn
+  the model received.
+- **Agent's reaction.** The model's whole response was **"One moment."**: text only, no tool call. It did not ask the plain yes/no
+  question the prompt requires for an unclear answer ("If the caller's answer to an offer is unclear, ask a plain yes/no question"),
+  did not add the garlic knots, and did not say it had. Nothing followed "One moment.": no further model request was made until the
+  caller spoke again 21 s later. Because no clarifying question was asked, the scripted second reply ("That should be.") was not used.
+- **Server.** No `add_to_cart` or other mutation after the unclear reply; the next tool call was `get_cart`. The cart stayed at v1.
+- **Claims.** Every cart or order statement came in a completion made after the matching tool result ("Added one Margherita…"
+  after `add_to_cart`; the read-back after `get_cart`; "Your order's all set" after `submit_order`). No `⚠ claim not reflected`
+  marker is visible in the console screenshot, and no garlic-knots claim was made.
+
+**Rest of the call**
+- Server: 5 tool calls, all accepted (`get_menu`, `get_menu_item`, `add_to_cart` v0→v1, `get_cart` read-back v1, `submit_order`
+  confirmed v1). Final authoritative order #10: **1 × Margherita Pizza with Extra cheese, $16.00, CONFIRMED at v1**, pickup, read-back
+  delivered for v1; SMS not sent (web call, no phone number).
+- Confirmation gate: passed. 1 caller turn ("Yes, that's right.") after the last `get_cart` result; the submit was issued by a
+  later model completion, whose input ended with that reply.
+- Conversation requests: 12 OpenAI requests (`gpt-5-mini`), all `reasoning_effort: "minimal"`; no other-provider model requests
+  appear in the per-call log. 48,526 prompt and 245 completion tokens.
+
+**Observations (recorded, not acted on)**
+- The first line was misheard again ("Okay. What did that do you have?"); this time the model called `get_menu`.
+- "One moment." followed by nothing is a stall: a filler that promised an action which never came. The outcome was safe (no item
+  added, the read-back and order match the server) but the unclear answer was dropped rather than clarified; the caller was never
+  asked whether they wanted garlic knots.
+- One attempt is not a rate; this shows one behaviour of the model on one unclear reply, not how it handles unclear replies generally.
