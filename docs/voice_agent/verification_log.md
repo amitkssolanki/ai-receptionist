@@ -184,7 +184,8 @@ drawn from this call**, and it is not counted in any comparison. The experiment 
 | Call #2 | call #9 | valid |
 | Call #3 | call #10 | **invalid infrastructure run** (see above) |
 | Call #4 | call #11 | valid; did not reach a read-back or submit (below) |
-| Call #5 | the next live call | — |
+| Call #5 | call #12 | valid; first call on reasoning effort `low` (v3); stalled on the first turn (below) |
+| Call #6 | the next live call | — |
 
 ## 2026-09-30 — Call #4 (Vapi/DB call #11): announced read-back never executed; no submit
 Same script, prompt, tools, model and reasoning effort as Call #2, with the shadow turn evidence in place and `bin/dev` restarted
@@ -236,3 +237,26 @@ The single experiment variable changed after Call #4. One `PATCH /assistant/f858
 matches and `vapi:check` is clean. The frozen baseline assistant `8f2053ae…` was not touched. Everything else is unchanged:
 runtime model `openai/gpt-5-mini`, prompt, tools, SMS, fillers, server-side order logic and the turn-evidence instrumentation.
 Calls from Call #5 onward run on v3 (`low`); Calls #1–#4 (Vapi/DB calls #8–#11) ran on `minimal`.
+
+## 2026-09-30 — Call #5 (Vapi/DB call #12): first call on `low`; stalled on the first turn
+First call after the reasoning-effort change (dev assistant v3, `reasoningEffort: low`; recorded `assistant_version` v3). Same
+script and everything else unchanged. Call 36 s (the browser showed 00:28 when it ended), ended by the customer, cost $0.0346.
+Sources: the database, `bin/rails calls:last`, the console screenshot, and Vapi's stored call record (`GET /call/{id}`, read-only).
+
+**What happened**
+- The caller's first line (script step 1, "Hi, what pizzas do you have?") was transcribed as "Got it. What is it? First, do you
+  have—" — garbled and cut off; the greeting had just finished ("…this is your. AI host. How can I help?").
+- The agent answered "One moment." In the model's own history (`messagesOpenAIFormatted`) that completion has **no tool call**.
+  Nothing reached Rails, and the agent was silent until the caller ended the call.
+- Server: the call start, a status update and the end-of-call report were received and handled (the report arrived after the
+  browser showed the call ended, as seen before); no tool calls, no errors, no order. Call #12 is `abandoned`, 0 tool invocations.
+- Vapi reported `reasoningTokens = 0` for this call, as on `minimal`. With a single short completion this says little; if a full-length
+  call on `low` also reports 0, whether Vapi applies the setting needs checking before the change can be evaluated.
+
+**What NOT to conclude:** no turn-evidence result (no submit); nothing about submit ordering; nothing about the effect of `low` — one
+very short call that failed on a garbled first utterance is not a comparison. It is another instance of the "announced, then no tool
+call" behaviour already seen in Call #4 (and in baseline call #6), now under `low`.
+
+**Experiment integrity:** only the planned variable differs from Calls #1–#4 (reasoning effort `low`, v3); the runtime model, prompt,
+tools, SMS, fillers, server-side order logic and turn-evidence instrumentation are unchanged; the server needed no restart (no schema
+change since the restart before Call #4).
