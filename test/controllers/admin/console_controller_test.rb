@@ -41,7 +41,7 @@ class Admin::ConsoleControllerTest < ActionDispatch::IntegrationTest
     sign_in @user
     get admin_console_path
     assert_response :success
-    assert_select "[data-controller=voice-console]"
+    assert_select "[data-controller~=voice-console]"
     assert_select "button[data-action='voice-console#start']:not([disabled])"
     assert_select "button[data-action='voice-console#end'][disabled]"
     assert_select "#console-setup", count: 0
@@ -85,7 +85,7 @@ class Admin::ConsoleControllerTest < ActionDispatch::IntegrationTest
     get admin_console_path
     key = css_select("[data-voice-console-session-key-value]").first["data-voice-console-session-key-value"]
     assert_match(/\A[0-9a-f]{32}\z/, key)
-    assert_no_match(/--[0-9a-f]{40}/, response.body, "no signed token in the HTML")
+    assert_no_match(/console_token|vapi_console/, response.body, "no console token in the HTML: it is fetched when the call starts")
     get admin_console_path
     other = css_select("[data-voice-console-session-key-value]").first["data-voice-console-session-key-value"]
     assert_not_equal key, other, "a new session key per page"

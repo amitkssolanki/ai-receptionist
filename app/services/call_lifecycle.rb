@@ -36,10 +36,15 @@ class CallLifecycle
     begin
       CallLog.transaction(requires_new: true) do
         customer = customer_for(restaurant, caller_number)
-        restaurant.call_logs.create!(
+        created = restaurant.call_logs.create!(
           external_call_id: external_call_id, customer: customer, phone_number: caller_number, started_at: Time.current,
           console_session_key: console&.fetch(:session_key)
         )
+        ConsoleBroadcaster.after_commit do
+          ConsoleBroadcaster.call_attached(created)
+          ConsoleBroadcaster.lifecycle(created, :started)
+        end
+        created
       end
     rescue ActiveRecord::RecordNotUnique, ActiveRecord::RecordInvalid
       raise unless CallLog.find_by(external_call_id: external_call_id) # a duplicate start lost the race; anything else is real
@@ -63,6 +68,7 @@ class CallLifecycle
       next if call_log.transferred_at
 
       call_log.update!(status: :transferred, transferred_at: Time.current, transfer_reason: reason.presence&.first(REASON_LIMIT))
+      ConsoleBroadcaster.after_commit { ConsoleBroadcaster.lifecycle(call_log.reload, :transferred) }
     end
   end
 
@@ -79,6 +85,7 @@ class CallLifecycle
                        **outcome_attributes(outcome))
       # A cart still open when the call ends was never submitted: keep its items, but it is no longer a live cart.
       order.update!(status: :abandoned) if order&.cart_open?
+      ConsoleBroadcaster.after_commit { ConsoleBroadcaster.lifecycle(call_log.reload, :ended) }
     end
   end
 

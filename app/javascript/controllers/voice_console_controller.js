@@ -134,6 +134,18 @@ export default class extends Controller {
     }
   }
 
+  // The console-sync controller found an assistant line claiming an order change that no server event backed.
+  markUnbacked(event) {
+    const element = this.rowElements.get(event.detail.rowId)
+    if (!element || element.querySelector("[data-unbacked]")) return
+
+    const flag = document.createElement("span")
+    flag.dataset.unbacked = "true"
+    flag.className = "ml-2 rounded bg-amber-900/60 px-1.5 py-0.5 text-xs text-amber-200"
+    flag.textContent = "⚠ claim not reflected in the server order (heuristic)"
+    element.children[2].appendChild(flag)
+  }
+
   // --- rendering (DOM built with textContent only) ---
 
   renderRow(row) {

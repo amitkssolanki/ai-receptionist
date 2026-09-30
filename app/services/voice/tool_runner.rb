@@ -85,6 +85,7 @@ module Voice
 
     def replay(existing)
       existing.register_replay!
+      ConsoleBroadcaster.after_commit { ConsoleBroadcaster.tool_call(existing) }
       Rails.logger.info("[Vapi] replayed tool call #{tool_call_id} on call #{@call_log.external_call_id} (x#{existing.replay_count}); stored result returned")
       existing.result
     end
@@ -96,9 +97,10 @@ module Voice
       outcome = execute
       duration_ms = ((Process.clock_gettime(Process::CLOCK_MONOTONIC) - clock) * 1000).round
 
+      recorded = nil
       begin
         ApplicationRecord.transaction(requires_new: true) do
-          ToolInvocation.record!(
+          recorded = ToolInvocation.record!(
             call_log: @call_log, order: @call_log.reload.order, tool_call_id: tool_call_id,
             tool_name: outcome[:name].to_s.strip.presence&.first(100) || "(none)",
             arguments: outcome[:arguments], result: outcome[:result], status: outcome[:status],
@@ -112,6 +114,7 @@ module Voice
       rescue => e
         raise AuditFailure, "audit insert failed"
       end
+      ConsoleBroadcaster.after_commit { ConsoleBroadcaster.tool_call(recorded) }
       outcome[:result]
     end
 

@@ -1,7 +1,12 @@
 <% content_for :title, "Voice Console" %>
 
+<%# Bootstrap stream: the server tells this page when its call has been attached (the signed name is only ever rendered here). %>
+<%= turbo_stream_from :console_session, @session_key, channel: ConsoleChannel %>
+
 <div
-  data-controller="voice-console"
+  data-controller="voice-console console-sync"
+  data-console-sync-claim-patterns-value="<%= ClaimDetector.browser_patterns.to_json %>"
+  data-action="voice-console:tool-calls->console-sync#pending voice-console:transcript-final->console-sync#transcriptFinal voice-console:call-start->console-sync#callStart console-sync:unbacked-claim->voice-console#markUnbacked"
   data-state="idle"
   <% if @voice %>
     data-voice-console-public-key-value="<%= @voice[:public_key] %>"
@@ -18,6 +23,7 @@
         <span data-voice-console-target="status" class="font-semibold text-gray-400">READY</span>
         <span data-voice-console-target="elapsed" class="tabular-nums text-gray-300">00:00</span>
         <span data-voice-console-target="agent" class="text-gray-500">agent listening</span>
+        <span data-console-sync-target="cable" class="text-gray-500">server link ○ not connected</span>
         <span class="hidden sm:inline-block w-24 h-2 rounded bg-gray-800 overflow-hidden" title="agent volume">
           <span data-voice-console-target="level" class="block h-full w-0 bg-emerald-500"></span>
         </span>
@@ -44,13 +50,21 @@
     </section>
   <% end %>
 
-  <%# --- conversation: source VAPI, non-authoritative --- %>
-  <section class="rounded border border-gray-800 bg-gray-900">
-    <header class="flex items-center justify-between border-b border-gray-800 px-4 py-2 text-xs">
-      <span class="font-semibold tracking-wide">CONVERSATION</span>
-      <span class="rounded bg-gray-800 px-2 py-0.5 text-gray-400" title="Live transcript arrives from Vapi in this browser only. It shows what was said, not what the order system did.">source: VAPI (client) · not authoritative</span>
-    </header>
-    <div data-voice-console-target="log" class="h-80 overflow-y-auto px-4 py-2 font-mono"></div>
-    <p data-voice-console-target="emptyNote" class="px-4 pb-3 text-xs text-gray-500">No call yet. Press “Start call”, allow the microphone, and speak. Headphones avoid echo.</p>
-  </section>
+  <div class="grid gap-3 lg:grid-cols-2">
+    <%# --- conversation: source VAPI, non-authoritative (owned by the browser, never replaced by the server) --- %>
+    <section class="rounded border border-gray-800 bg-gray-900">
+      <header class="flex items-center justify-between border-b border-gray-800 px-4 py-2 text-xs">
+        <span class="font-semibold tracking-wide">CONVERSATION</span>
+        <span class="rounded bg-gray-800 px-2 py-0.5 text-gray-400" title="Live transcript arrives from Vapi in this browser only. It shows what was said, not what the order system did.">source: VAPI (client) · not authoritative</span>
+      </header>
+      <div data-voice-console-target="log" class="h-80 overflow-y-auto px-4 py-2 font-mono"></div>
+      <p data-voice-console-target="emptyNote" class="px-4 pb-3 text-xs text-gray-500">No call yet. Press “Start call”, allow the microphone, and speak. Headphones avoid echo.</p>
+    </section>
+
+    <%# --- server panels: filled from the database once the call is attached; "display: contents" lets them join the grid --- %>
+    <div id="console-call" class="contents">
+      <turbo-frame id="call-state" class="min-w-0 block"><section class="rounded border border-gray-800 bg-gray-900 px-4 py-3 text-sm text-gray-500">Waiting for a call. The order board and server events appear here, straight from the server's records.</section></turbo-frame>
+      <turbo-frame id="call-events" class="lg:col-span-2 block min-w-0"></turbo-frame>
+    </div>
+  </div>
 </div>

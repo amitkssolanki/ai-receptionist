@@ -1,0 +1,16 @@
+<div id="<%= event.dom_id %>" data-server-row="true" data-tool="<%= event.tool %>" data-status="<%= event.status %>"
+     data-cart-changed="<%= event.cart_changed? ? 'true' : 'false' %>" data-cart-version-after="<%= event.invocation.cart_version_after %>"
+     class="min-w-[56rem] grid grid-cols-[3rem_9rem_1fr_1fr_8rem_6.5rem_4rem_4rem] gap-2 border-t border-gray-800 px-4 py-1.5 text-xs items-start">
+  <span class="text-gray-500"><%= event.offset %></span>
+  <span class="font-semibold"><%= event.tool %></span>
+  <span class="text-gray-300 break-words"><%= event.arguments_summary %></span>
+  <span class="break-words">
+    <%= event.result_summary %>
+    <% if event.replays.positive? %><span class="text-amber-400"> ↺ replayed ×<%= event.replays %> (stored result returned)</span><% end %>
+    <details class="mt-1"><summary class="cursor-pointer text-gray-500">what the agent was told</summary><pre class="mt-1 whitespace-pre-wrap text-gray-400"><%= event.result_json %></pre></details>
+  </span>
+  <span class="<%= { 'ok' => 'text-emerald-400', 'rejected' => 'text-amber-400' }.fetch(event.status, 'text-red-400') %>"><%= event.badge %></span>
+  <span><%= event.cart_label %></span>
+  <span class="text-gray-400"><%= event.server_ms %>ms</span>
+  <span data-observed class="text-gray-500">–</span>
+</div>

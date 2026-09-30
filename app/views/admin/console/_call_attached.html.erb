@@ -1,0 +1,4 @@
+<%# Broadcast on the console-session stream when this page's call reaches the server: subscribe to the call's stream and load its state. %>
+<%= turbo_stream_from call_log, :console, channel: ConsoleChannel %>
+<turbo-frame id="call-state" class="min-w-0 block" src="<%= admin_console_call_state_path(call_log) %>"><p class="px-4 py-3 text-sm text-gray-500">Loading the server's view of call #<%= call_log.id %>…</p></turbo-frame>
+<turbo-frame id="call-events" src="<%= admin_console_call_state_path(call_log) %>" class="lg:col-span-2 block min-w-0"></turbo-frame>

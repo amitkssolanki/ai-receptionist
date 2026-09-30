@@ -24,4 +24,11 @@ class Admin::ConsoleController < Admin::BaseController
   def call
     @call_log = current_restaurant.call_logs.find(params[:id])
   end
+
+  # The call's persisted server-side state (status, order board, server events): the source a browser rebuilds from on
+  # first render, refresh and Action Cable reconnect. Rendered straight from the database.
+  def state
+    @call_log = current_restaurant.call_logs.find(params[:id])
+    render layout: false
+  end
 end

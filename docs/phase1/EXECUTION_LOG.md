@@ -356,3 +356,46 @@ the evaluation layer). Nothing in this entry was tested against Vapi live: no ke
   were exercised there with *synthetic* messages fed to the controller, including an HTML-looking string that stayed text.
   No call was started and no microphone permission was requested.
 - Not in this step (next): the order board, server event stream, Action Cable, correlation and the unbacked-claim marker.
+
+## Step 13 (brief numbering) — server-authoritative dashboard
+
+What the console now shows, all rendered from committed database state (never from transcript text or a raw Vapi payload):
+- **Server call** strip (status, server start time, tool tallies ✓/⛔/✖, duplicates absorbed, ended reason/duration/cost),
+  **Order board** (status, lines, modifiers, total, cart version, read-back state `not delivered` / `delivered for vN at …` /
+  `STALE: cart vN, read-back vM`, confirmation state, SMS outcome from the submit's stored result) and **Server events**
+  (one row per ToolInvocation: T+ from server timestamps, tool, sanitized arguments, result summary, status, `vA → vB`,
+  server ms, replay count, "what the agent was told"; plus lifecycle rows: started, transferred, ended).
+- **Delivery:** `ConsoleBroadcaster` (only broadcaster; after commit via `ActiveRecord.after_all_transactions_commit`;
+  failures logged by class and never reach the tool response). Tool call -> event row, board, status (fixed order);
+  replay -> the row is replaced with "↺ replayed ×N" (nothing appended); lifecycle -> row, board, status. Board/status are
+  full snapshots, event rows have stable ids (`tool_call_<id>`), so a missed or repeated message cannot leave the page wrong.
+- **Attach:** the console page holds a signed bootstrap stream (`console_session:<key>`); when a call with its session key
+  starts, the server updates `#console-call` with the call's own stream plus two `turbo-frame`s that load
+  `/admin/console/calls/:id/state` (status + board; events) from the database.
+- **Reconnect / backfill:** those frames ARE the persisted state. `console-sync` reloads every `turbo-frame[src]` when a cable
+  stream connects or reconnects, and `/admin/console/calls/:id` (observe/review) renders the same frames. A test proves the
+  rebuilt row ids equal what the live stream delivered, and that events missed while disconnected appear after a reload.
+- **Client observation vs server authority:** when Vapi announces a tool call the browser inserts a `⋯ client observed ·
+  awaiting the server's record` placeholder with the same DOM id the server row will have; the server's row replaces it and
+  the obs column shows observed latency (browser receipt clock only). If no server row arrives in 20 s the row says
+  `⚠ no server record of this tool call was observed`.
+- **Unbacked-claim marker:** `ClaimDetector` (one list of patterns, shared by Ruby and the browser) + `ClaimTracker`: an
+  assistant line matching a claim ("I'll add garlic knots") with no server event that changed `cart_version` within
+  -2 s / +8 s (browser receipt clock) gets `⚠ claim not reflected in the server order (heuristic)`. Display only; it never
+  touches order state.
+- **Authorization:** Action Cable connections need a Devise session. `ConsoleChannel` (Turbo's own streams channel plus a
+  check) accepts a signed stream only if it is `console_session:*` or a call stream of the signed-in user's restaurant;
+  everything else is refused (deny by default), so a call id - or even a validly signed name for another restaurant's
+  call - is not enough. Deviation from the plan's "no custom channels": this subclass is the documented Turbo extension point
+  and exists solely for that authorization.
+- **What is never broadcast:** delivery addresses (shown as "address on file" / "address given"), free-text notes (shown as
+  a character count), phone numbers, secrets, provider URLs, raw payloads, exception text (rows show only the error code and
+  the guidance the agent was given). Tests assert each.
+- **Verified in the built-in browser** against a *local* development server on a scratch database (dropped afterwards),
+  driving the real webhook with a locally generated signed token and explicit dummy secrets/keys: the page attached to the
+  call over Action Cable, events, board, status and the STALE read-back updated live, a replayed `get_cart` showed
+  "↺ replayed ×1", a rejected add showed `⛔ rejected · invalid_modifier` and left the cart at v1, a client-observed
+  placeholder was replaced by its server row (observed 11.0 s) and an unmatched one was flagged, and the garlic-knots claim was
+  flagged; a reload rebuilt the page from the database. The browser-side transcript and tool-call announcements in that
+  exercise were **synthetic** (fed to the controller); no Vapi call, key or assistant was involved.
+- Polish found in that run: the events table scrolls horizontally instead of squeezing on narrow screens; panels have spacing.

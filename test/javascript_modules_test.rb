@@ -9,7 +9,7 @@ class JavascriptModulesTest < ActiveSupport::TestCase
     skip "node is not installed" if node.strip.empty?
 
     files = Dir[Rails.root.join("test/javascript/*.test.mjs").to_s]
-    output, status = Open3.capture2e("node", "--test", *files)
+    output, status = Open3.capture2e({ "CLAIM_PATTERNS" => ClaimDetector.browser_patterns.to_json }, "node", "--test", *files)
     assert status.success?, output
   end
 end

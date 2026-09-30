@@ -1,0 +1,17 @@
+<% status = ConsoleView::Status.new(call_log) %>
+<section id="call-status" class="rounded border border-gray-800 bg-gray-900 px-4 py-2 text-xs" data-call-id="<%= call_log.id %>" data-call-state="<%= call_log.status %>">
+  <div class="flex flex-wrap items-center justify-between gap-2">
+    <span class="font-semibold tracking-wide">SERVER CALL</span>
+    <span class="rounded bg-gray-800 px-2 py-0.5 text-gray-400">source: RAILS · authoritative</span>
+  </div>
+  <div class="mt-1 flex flex-wrap gap-x-4 gap-y-1 text-gray-300">
+    <span>status <strong class="<%= call_log.transferred? ? 'text-amber-400' : (status.ended? ? 'text-gray-300' : 'text-emerald-400') %>"><%= status.label %></strong></span>
+    <span>call #<%= call_log.id %></span>
+    <% if status.started %><span>started <%= status.started %></span><% end %>
+    <span>tools ✓<%= status.tools[:ok] %> ⛔<%= status.tools[:rejected] %> ✖<%= status.tools[:error] %></span>
+    <% if status.duplicates_absorbed.positive? %><span>↺ duplicates absorbed ×<%= status.duplicates_absorbed %></span><% end %>
+    <% if status.ended? %>
+      <span>ended<%= " · #{call_log.ended_reason}" if call_log.ended_reason.present? %><%= " · #{status.duration}" if status.duration %><%= " · #{status.cost}" if status.cost %></span>
+    <% end %>
+  </div>
+</section>
