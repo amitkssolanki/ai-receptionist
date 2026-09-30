@@ -132,6 +132,14 @@ class BaselineLiveCallReplayTest < ActionDispatch::IntegrationTest
 
   def parsed(result) = JSON.parse(result)
 
+  # Call #7's conversation history as Vapi's webhooks would have carried it (`artifact.messages`, read by the
+  # confirmation gate). The Phase 0 log dropped `artifact`, so it is reconstructed from the call's final
+  # conversation-update (the same Vapi message objects), cut at each webhook's own timestamp.
+  def call7_history_at(snapshot_events, timestamp)
+    messages = snapshot_events.reverse.find { |e| e["type"] == "conversation-update" && e["payload"]["messages"] }["payload"]["messages"]
+    { "messages" => messages.select { |m| m["time"].to_i <= timestamp.to_i } }
+  end
+
   # Replays call #7 with a transformation applied to the event list; returns results keyed by toolCallId.
   def replay_call7(&transform)
     snapshot_events = JSON.parse(File.read(File.join(DIR, "call7", "events.json")))
@@ -141,6 +149,7 @@ class BaselineLiveCallReplayTest < ActionDispatch::IntegrationTest
     events.each do |e|
       message = e["payload"].deep_dup
       message["artifact"] = { "transcript" => transcript } if e["type"] == "end-of-call-report"
+      message["artifact"] = call7_history_at(snapshot_events, message["timestamp"]) if e["type"] == "tool-calls" && message["timestamp"]
       if e["type"] == "tool-calls" && message["toolCallList"].any? { |t| t["function"]["name"] == "submit_order" } && block_given? && @inject_version
         version = @inject_version == true ? results.values.map { |r| parsed(r) }.select { |j| j.is_a?(Hash) && j["readback_text"] }.last&.fetch("cart_version") : @inject_version
         message["toolCallList"].each { |t| t["function"]["arguments"]["cart_version"] = version if t["function"]["name"] == "submit_order" }

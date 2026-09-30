@@ -17,7 +17,7 @@ class CallLifecycleRulesTest < ActiveSupport::TestCase
 
   def submit
     OrderTaking.new(@call.reload).read_back
-    OrderTaking.new(@call.reload).submit(fulfillment_type: "pickup", cart_version: order.cart_version)
+    OrderTaking.new(@call.reload).submit(fulfillment_type: "pickup", cart_version: order.cart_version, caller_turn_after_read_back: true)
   end
 
   test "open -> abandoned: no order at all" do
@@ -79,7 +79,7 @@ class CallLifecycleRulesTest < ActiveSupport::TestCase
     other = CallLifecycle.start(external_call_id: "rules_done", dialed_number: @restaurant.phone_number, caller_number: nil)
     OrderTaking.new(other).add_item(menu_item_id: @burger.id)
     OrderTaking.new(other.reload).read_back
-    OrderTaking.new(other.reload).submit(fulfillment_type: "pickup", cart_version: 1)
+    OrderTaking.new(other.reload).submit(fulfillment_type: "pickup", cart_version: 1, caller_turn_after_read_back: true)
     CallLifecycle.finish(external_call_id: "rules_done", transcript: nil, recording_url: nil)
     assert_predicate other.reload, :completed?
     CallLifecycle.transfer(other, "after the fact")

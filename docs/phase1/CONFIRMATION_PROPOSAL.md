@@ -130,3 +130,12 @@ in-flight submit), so a check at submit time needs no `conversation-update` subs
 shadow mode (`Voice::TurnEvidence`, `tool_invocations.turn_evidence`); it refuses nothing. Evidence so far (from the stored records
 of calls #8 and #9): 0 caller turns between the last `get_cart` result and `submit_order` in 2 of 2 calls. Enforcement, a yes/no
 classifier and the state machine above remain **not implemented** pending live shadow data.
+
+## Addendum (after Call #6): the minimal gate is implemented
+
+After 3/3 live calls that reached `submit_order` did so with no caller turn after the read-back, the smallest enforceable part
+of this proposal was implemented: `OrderTaking#submit` refuses (`customer_confirmation_required`) unless the tool call's own
+history shows at least one caller turn after the last `get_cart` result; missing or unreadable history fails closed. It is
+stateless (derived per submit from the webhook's `artifact.messages`), needs no `conversation-update` subscription and stores no
+text. **Not implemented, deliberately:** the four-state machine, any "yes" classifier (a caller turn is not a yes), timers and
+option C. See `docs/phase1/EXECUTION_LOG.md` ("Server-side confirmation gate").

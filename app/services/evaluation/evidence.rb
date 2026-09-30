@@ -88,7 +88,7 @@ module Evaluation
       result = nil
       ActiveRecord::Base.transaction(requires_new: true) do
         world = World.new(call_id: "eval-dup")
-        run = ->(id, name, args = {}) { Voice::ToolRunner.call(call_log: CallLog.find(world.call_log.id), tool_call: { "id" => id, "function" => { "name" => name, "arguments" => args } }) }
+        run = ->(id, name, args = {}, artifact = nil) { Voice::ToolRunner.call(call_log: CallLog.find(world.call_log.id), artifact: artifact, tool_call: { "id" => id, "function" => { "name" => name, "arguments" => args } }) }
         add_args = { "menu_item_id" => world.item_id("Garlic Knots"), "quantity" => 1 }
 
         first = run.("dup-add", "add_to_cart", add_args)
@@ -108,9 +108,9 @@ module Evaluation
 
         run.("dup-cart2", "get_cart")
         submit_args = { "fulfillment_type" => "pickup", "cart_version" => order.reload.cart_version }
-        s1 = run.("dup-sub2", "submit_order", submit_args)
-        s2 = run.("dup-sub2", "submit_order", submit_args)
-        s3 = JSON.parse(run.("dup-sub3", "submit_order", submit_args))
+        s1 = run.("dup-sub2", "submit_order", submit_args, Evaluation.answered_history("dup-sub2")) # the caller answered the read-back
+        s2 = run.("dup-sub2", "submit_order", submit_args, Evaluation.answered_history("dup-sub2"))
+        s3 = JSON.parse(run.("dup-sub3", "submit_order", submit_args)) # no history: an already-submitted order stays idempotent
         placed = order.reload.placed_at
         submit_demo = { "same_id_twice_identical" => s1 == s2, "new_id_answer" => { "already_submitted" => s3["already_submitted"], "confirmation_sms" => s3["confirmation_sms"] },
                         "order_status" => order.status, "placed_at_set_once" => placed.present?, "submit_rows" => world.call_log.tool_invocations.where(tool_name: "submit_order").count }

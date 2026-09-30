@@ -27,8 +27,11 @@ class ConsoleBroadcasterTest < ActiveSupport::TestCase
 
   def stream = [ @call, :console ]
 
+  # submit_order carries a history in which the caller answered the read-back (the confirmation gate's input, see
+  # VapiHistory); the gate itself is tested in test/controllers/api/vapi/confirmation_gate_test.rb.
   def run_tool(id, name, args = {})
-    Voice::ToolRunner.call(call_log: CallLog.find(@call.id), tool_call: { "id" => id, "function" => { "name" => name, "arguments" => args } })
+    Voice::ToolRunner.call(call_log: CallLog.find(@call.id), tool_call: { "id" => id, "function" => { "name" => name, "arguments" => args } },
+                           artifact: VapiHistory.for_tool(name, id))
   end
 
   def capture(&block) = capture_turbo_stream_broadcasts(stream, &block)
@@ -110,7 +113,7 @@ class ConsoleBroadcasterTest < ActiveSupport::TestCase
     assert_includes text, "Burger is now on 2 lines of the cart"
     assert_includes text, "Burger is on 2 lines of the cart"
     assert_match(/\d+\.\d s since the last get_cart \(elapsed time only/, text)
-    assert_includes text, "confirmation gate: shadow only (observed, nothing refused)"
+    assert_includes text, "confirmation gate: passed (a caller turn followed the read-back)"
     assert_no_match(/submitted \d+\.\d s after the last get_cart/, text)
     assert_includes text, "data-repeated-item"
     no_failures!

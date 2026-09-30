@@ -308,3 +308,10 @@ Vapi's stored call record (`GET /call/{id}`, read-only). Structure-only copies o
   the final call record (Call #6: 0 characters recorded at submit, while the final record places part of the read-back in that
   completion). `speech_chars` is unreliable and must not be used as an enforcement signal. The caller-turn count and the
   same-model-completion structure agreed between the live history and the final record and remain the useful structural evidence.
+
+## 2026-09-30 — Confirmation gate enforced (not yet verified live)
+From this commit the server refuses `submit_order` with `customer_confirmation_required` unless Vapi's history in the same webhook
+shows at least one caller turn after the last `get_cart` result (missing or unreadable history fails closed). Checked against the
+structure of the real submits: calls #1 and #2 and Call #6's first submit would have been refused; Call #6's second submit (after
+the caller's "Yes, that's right.") would have been accepted. No live call has been made with the gate yet; the next one (Call #7)
+is the first. Prompt, tools and the live assistant are unchanged.

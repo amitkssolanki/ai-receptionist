@@ -532,3 +532,28 @@ Verified against the live Vapi API (read-only) and locally; **no call was made a
 - Turn evidence: 3/3 calls that reached `submit_order` (Calls #1, #2, #6) did so with 0 caller turns after the last `get_cart`
   result; Call #6's second submit (after the caller's yes) was absorbed by idempotency. `speech_chars` is unreliable at submit time
   and is not to be used for enforcement. Details in `docs/voice_agent/verification_log.md`.
+
+## Server-side confirmation gate (turn-taking, enforced)
+
+- **Rule** (`OrderTaking#submit`, after the existing read-back and cart-version checks): an order is submitted only if the
+  conversation shows **at least one caller turn after the last `get_cart` result**. Otherwise `submit_order` is refused with
+  `customer_confirmation_required` (speakable guidance + the current `cart_version`); nothing is written, no SMS. An already
+  submitted order still answers idempotently (`already_submitted`), and the earlier codes (`readback_required`,
+  `cart_changed_since_readback`, …) still come first. It is a turn-taking gate, not a "yes" detector.
+- **Input:** `Voice::TurnEvidence.caller_turn_after_read_back?` over Vapi's `artifact.messages` in the same tool-calls webhook
+  (the parser that was validated in shadow mode; evidence schema 2, `mode: "enforced"`). Missing, malformed or unreadable
+  history, no `get_cart` result in it, the submit not found in it, or an exception while reading it → **fails closed**.
+  `completion` / `speech_chars` are recorded for explanation only and never decide anything. No transcript text is stored.
+- **Wiring:** `Voice::ToolRunner` passes the value to `OrderTaking#submit` on the recorded and the unrecorded (fallback) paths;
+  the refusal is a normal rejected `ToolInvocation` with its turn evidence, so idempotency (a redelivered refusal returns the
+  stored refusal) and the console stream work unchanged.
+- **Harness/replay:** `Evaluation::Runner` now sends each tool call the scenario's own conversation so far, like a live webhook;
+  three scenario scripts gained the caller's answer after the read-back so they keep their stated purpose (all 14 existing
+  outcomes identical); new scenario `premature_submit_then_answered` (refused, then accepted). The call #7 replay reconstructs
+  the webhook history from the call's final conversation-update (the real "Yes." precedes the submit, so it still confirms $16).
+- **Tests:** `test/controllers/api/vapi/confirmation_gate_test.rb` (the renamed shadow test), predicate tests on the live
+  structures of calls #8, #9 and #13 (`live_submit_webhook_call13_{first,second}.json` added), R24 in the reliability suite.
+  Other tests that mean "the caller answered" send such a history (`VapiHistory` in `test/test_helper.rb`); domain-rule tests
+  that call `OrderTaking#submit` directly pass `caller_turn_after_read_back: true`.
+- **Not changed:** prompt, tools and the live Vapi assistant (the refusal message carries the guidance); no state machine, no
+  classifier, no timers, no `conversation-update` subscription. **Not yet verified on a live call.**

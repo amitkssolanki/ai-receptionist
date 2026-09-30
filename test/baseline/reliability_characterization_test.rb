@@ -72,8 +72,12 @@ class BaselineReliabilityTest < ActionDispatch::IntegrationTest
     CallLog.find_by(external_call_id: id)
   end
 
-  def tool(call_id, name, args = {}, tool_call_id: "tc_#{@seq += 1}")
-    vapi(type: "tool-calls", call: { id: call_id }, toolCallList: [ { id: tool_call_id, type: "function", function: { name: name, arguments: args } } ])
+  # submit_order carries a Vapi history in which the caller answered the read-back (the confirmation gate's input, see
+  # VapiHistory), unless `history:` overrides it; R24 covers the gate.
+  def tool(call_id, name, args = {}, tool_call_id: "tc_#{@seq += 1}", history: VapiHistory.for_tool(name, tool_call_id))
+    message = { type: "tool-calls", call: { id: call_id }, toolCallList: [ { id: tool_call_id, type: "function", function: { name: name, arguments: args } } ] }
+    message[:artifact] = history if history
+    vapi(message)
     JSON.parse(response.body)["results"].first["result"]
   end
 
@@ -577,5 +581,25 @@ class BaselineReliabilityTest < ActionDispatch::IntegrationTest
       assert_raises(ActionController::RoutingError, "#{verb} #{path}") { Rails.application.routes.recognize_path(path, method: verb) }
     end
     assert_not defined?(Api::Voice), "Api::Voice should be gone"
+  end
+
+  # --- Confirmation gate (added after live calls #1, #2 and #6 submitted before the caller answered) ---
+
+  test "R24 submit_order is refused until the caller has spoken after the read-back" do
+    c = start_call
+    tool(c.external_call_id, "add_to_cart", { menu_item_id: @margherita.id })
+    version = cart(c.external_call_id)["cart_version"]
+    premature = tool(c.external_call_id, "submit_order", { fulfillment_type: "pickup", cart_version: version }, tool_call_id: "r24_a",
+                     history: VapiHistory.for_submit("r24_a", caller_turns: 0, same_completion: true))
+    assert_equal "customer_confirmation_required", error_of(premature).first
+    assert_no_leak premature
+    assert c.reload.order.pending?, "nothing was submitted"
+
+    answered = tool(c.external_call_id, "submit_order", { fulfillment_type: "pickup", cart_version: version }, tool_call_id: "r24_b")
+    assert JSON.parse(answered)["ok"]
+    assert c.reload.order.confirmed?
+    rec(id: "R24", scenario: "Submit before the caller answers the read-back", layer: "vapi",
+        current: "Refused with customer_confirmation_required (no caller turn after the last get_cart result in Vapi's history); accepted after a caller turn",
+        safe: "Server-enforced turn-taking gate; missing or unreadable history fails closed")
   end
 end

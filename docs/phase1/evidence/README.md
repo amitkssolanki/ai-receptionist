@@ -9,7 +9,7 @@ RAILS_ENV=test bin/rails evidence:suite      # runs the suite, replay and baseli
 
 | File | What it is |
 |---|---|
-| `garlic_knots_probe.json` | 14 scenarios run through the real server path. Each separates what the assistant **claimed**, which tool calls the server **received**, which of them **mutated** the cart, and the resulting **authoritative order**. Prefixes are verbatim from real call #7. |
+| `garlic_knots_probe.json` | 15 scenarios run through the real server path. Each separates what the assistant **claimed**, which tool calls the server **received**, which of them **mutated** the cart, and the resulting **authoritative order**. Prefixes are verbatim from real call #7. Like a live webhook, each tool call carries the scenario's own conversation so far, which the server's confirmation gate reads (`premature_submit_then_answered` shows the gate refusing the live premature-submit pattern). |
 | `idempotency_and_versions.json` | Cart-version traces (before/after per tool call) and duplicate-delivery demonstrations: one execution, stored result returned, a late duplicate `get_cart` does not refresh the read-back. |
 | `latency.json` | Server-side duration of each tool call (`ToolInvocation.duration_ms`) on the generating machine, with the Phase 0 sample for reference. Not Vapi round-trip latency. |
 | `test_suite.json` | Counts from the full suite, the replay suite and `baseline:verify` at generation time. |

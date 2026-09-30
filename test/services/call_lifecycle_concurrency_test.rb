@@ -21,7 +21,8 @@ class CallLifecycleConcurrencyTest < ActiveSupport::TestCase
   def new_call = CallLifecycle.start(external_call_id: "life_race_#{@seq += 1}", dialed_number: @restaurant.phone_number, caller_number: "+1555777#{format("%04d", @seq)}")
 
   def tool(call, id, name, args = {})
-    Voice::ToolRunner.call(call_log: CallLog.find(call.id), tool_call: { "id" => id, "function" => { "name" => name, "arguments" => args } })
+    Voice::ToolRunner.call(call_log: CallLog.find(call.id), tool_call: { "id" => id, "function" => { "name" => name, "arguments" => args } },
+                           artifact: VapiHistory.for_tool(name, id)) # submit_order: the caller answered (see VapiHistory)
   end
 
   def finish(call, transcript = "AI: bye") = CallLifecycle.finish(external_call_id: call.external_call_id, transcript: transcript, recording_url: nil)

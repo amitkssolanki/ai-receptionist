@@ -10,7 +10,7 @@ module Evaluation
     def all
       [ call7_verbatim, call7_adapted, control_no_claim, claim_then_accepted_add, claim_then_rejected_add, claim_tool_arrives_late,
         two_items_claimed_one_added, remove_claimed_without_tool, change_claimed_and_done, submit_without_read_back,
-        stale_submit_after_change, late_duplicate_get_cart, duplicate_claimed_add, claim_after_confirmation ]
+        stale_submit_after_change, late_duplicate_get_cart, duplicate_claimed_add, claim_after_confirmation, premature_submit_then_answered ]
     end
 
     # --- the recording ---
@@ -78,13 +78,14 @@ module Evaluation
                    "A clean conversation must produce zero claims and zero mismatches (the heuristic must not cry wolf).",
                    prefix_to(98.3) + [ say(102, "assistant", "Anything else, or should I read back your order?"), say(124, "user", "Read back my order."),
                                         Evaluation.tool(131.5, "c1", "get_cart"), say(133, "assistant", "I've got one Margherita pizza with extra cheese for pickup, total $16."),
+                                        say(137, "user", "Yes, that's right."),
                                         Evaluation.tool(142, "s1", "submit_order", ->(w) { { "fulfillment_type" => "pickup", "cart_version" => w.last_read_back_version } }) ])
     end
 
     def claim_then_accepted_add
       Scenario.new("claim_then_accepted_add", "Claim, then the tool really adds the knots",
                    "The healthy path: claim at t=112.5, add_to_cart at 114 accepted. Claim backed by both the window and the server order.",
-                   claim_base + [ add_knots(114, "k1"), Evaluation.tool(131.5, "c1", "get_cart"),
+                   claim_base + [ add_knots(114, "k1"), Evaluation.tool(131.5, "c1", "get_cart"), say(136.5, "user", "Yes."),
                                    Evaluation.tool(142, "s1", "submit_order", ->(w) { { "fulfillment_type" => "pickup", "cart_version" => w.last_read_back_version } }) ])
     end
 
@@ -149,9 +150,23 @@ module Evaluation
     def claim_after_confirmation
       Scenario.new("claim_after_confirmation", "After the order is confirmed the agent claims another add",
                    "The confirmed order is locked: the late add is refused (order_already_submitted), the claim is unbacked, the order is unchanged.",
-                   prefix_to(98.3) + [ Evaluation.tool(100, "c1", "get_cart"),
+                   prefix_to(98.3) + [ Evaluation.tool(100, "c1", "get_cart"), say(102, "user", "Yes, that's right."),
                                         Evaluation.tool(105, "s1", "submit_order", ->(w) { { "fulfillment_type" => "pickup", "cart_version" => w.last_read_back_version } }),
                                         say(110, "assistant", "I've added garlic knots to your order."), add_knots(111, "k1") ])
+    end
+
+    # The pattern seen in live calls #1, #2 and #6 (Vapi/DB calls #8, #9, #13): the model submits in the same breath as
+    # the read-back, before the caller can answer. The server's confirmation gate refuses it; after the caller answers,
+    # the same submit is accepted.
+    def premature_submit_then_answered
+      submit = ->(w) { { "fulfillment_type" => "pickup", "cart_version" => w.last_read_back_version } }
+      Scenario.new("premature_submit_then_answered", "Read-back and submit in one breath, then the caller answers",
+                   "Live calls #1, #2 and #6 submitted before the caller answered. The server refuses that submit (customer_confirmation_required: no caller turn after the read-back); after the caller's answer the submit is accepted.",
+                   prefix_to(98.3) + [ say(102, "assistant", "Anything else, or should I read back your order?"), say(124, "user", "Read back my order."),
+                                        Evaluation.tool(131.5, "c1", "get_cart"),
+                                        say(132, "assistant", "One Margherita pizza with extra cheese. Total sixteen dollars. Did I get that right?"),
+                                        Evaluation.tool(132.5, "s1", "submit_order", submit), say(136.5, "user", "Yes, that's right."),
+                                        Evaluation.tool(138, "s2", "submit_order", submit) ])
     end
 
     # --- building blocks ---

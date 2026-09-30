@@ -25,7 +25,10 @@ class OrderTaking
     large_order_requires_staff: "That would take the order past #{MAX_ORDER_ITEMS} items, which staff need to handle. Offer to transfer the caller to a person.",
     no_active_call: "This call has already ended, so the order can't be changed. Apologize and offer to transfer the caller to a person.",
     readback_required: "The order hasn't been read back yet. Call get_cart, read its readback_text to the caller exactly as written, " \
-                       "get a clear yes, then call submit_order with the cart_version from get_cart."
+                       "get a clear yes, then call submit_order with the cart_version from get_cart.",
+    customer_confirmation_required: "The order was NOT submitted: the caller has not answered the read-back yet. Finish reading the order " \
+                                    "back if you have not, ask the caller if it is right, and stop talking until they answer. Only after " \
+                                    "they say yes, call submit_order again with the same cart_version."
   }.freeze
 
   def initialize(call_log)
@@ -107,10 +110,16 @@ class OrderTaking
   # Submitting requires the cart_version the caller heard read back: the server's current version must equal both
   # the argument and the last read-back.
   #
+  # And the caller must have had their turn: caller_turn_after_read_back says whether the conversation shows at least
+  # one caller turn after the last read-back (get_cart result). The voice adapter derives it from the provider's own
+  # conversation history (Voice::TurnEvidence), never from the model, and passes false when it cannot tell. This is a
+  # turn-taking gate, not a "did they say yes" judgement. Live calls showed the model submitting in the same breath
+  # as the read-back (3 of 3 calls that reached submit), so the caller's answer arrived after the order was placed.
+  #
   # Idempotent: an order that was already submitted (confirmed, or later in the kitchen flow) answers with its
   # existing summary and `already_submitted: true`; nothing is written and no SMS is queued. Only the
   # pending -> confirmed transition queues the confirmation SMS, and only for a caller with a real number.
-  def submit(fulfillment_type:, cart_version:, delivery_address: nil, notes: nil)
+  def submit(fulfillment_type:, cart_version:, caller_turn_after_read_back:, delivery_address: nil, notes: nil)
     mutating do
       cart_order = order
       next refuse(:cart_empty) if cart_order.nil? || cart_order.order_items.none?
@@ -121,6 +130,9 @@ class OrderTaking
       next refuse(:readback_required) if cart_order.read_back_version.nil?
       if cart_version != cart_order.cart_version || cart_order.read_back_version != cart_order.cart_version
         next refuse(:cart_changed_since_readback, changed_since_readback_message(cart_order), cart_version: cart_order.cart_version)
+      end
+      unless caller_turn_after_read_back == true
+        next refuse(:customer_confirmation_required, MESSAGES.fetch(:customer_confirmation_required), cart_version: cart_order.cart_version)
       end
 
       cart_order.update!(

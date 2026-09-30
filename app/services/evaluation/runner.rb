@@ -1,6 +1,10 @@
 module Evaluation
   # Runs a scenario through the real server path and reports claims, tool calls, mutations and the resulting order.
   # Each run happens inside a transaction that is rolled back: the database is left exactly as it was found.
+  #
+  # Like a live Vapi webhook, every tool call carries the conversation so far (`artifact.messages`, the shape in
+  # Voice::TurnEvidence), built from the scenario's own lines and earlier tool calls. That history is what the
+  # server's confirmation gate reads: submit_order needs a caller line after the last get_cart result.
   class Runner
     CLAIM_WINDOW = (-2.0..8.0).freeze # seconds around a claim; the console's heuristic uses the same window
 
@@ -20,23 +24,34 @@ module Evaluation
       @world = World.new(call_id: "eval-#{scenario.id}")
       @transcript = []
       @tool_times = {}
+      @history = []
     end
 
     def call
-      @scenario.events.sort_by(&:t).each { |event| event.kind == :say ? @transcript << event : run_tool(event) }
+      @scenario.events.sort_by(&:t).each { |event| event.kind == :say ? say(event) : run_tool(event) }
       CallLifecycle.finish(external_call_id: @world.call_log.external_call_id, transcript: nil, recording_url: nil)
       report
     end
 
     private
 
+    def say(event)
+      @transcript << event
+      @history << { "role" => event.role == "assistant" ? "bot" : "user", "time" => millis(event.t) }
+    end
+
     def run_tool(event)
       args = event.args.respond_to?(:call) ? event.args.call(@world) : event.args
       @tool_times[event.tool_call_id] = event.t
-      raw = Voice::ToolRunner.call(call_log: CallLog.find(@world.call_log.id), tool_call: { "id" => event.tool_call_id, "function" => { "name" => event.tool, "arguments" => args } })
+      request = { "role" => "tool_calls", "time" => millis(event.t), "toolCalls" => [ { "id" => event.tool_call_id, "function" => { "name" => event.tool } } ] }
+      raw = Voice::ToolRunner.call(call_log: CallLog.find(@world.call_log.id), artifact: { "messages" => @history + [ request ] },
+                                   tool_call: { "id" => event.tool_call_id, "function" => { "name" => event.tool, "arguments" => args } })
+      @history << request << { "role" => "tool_call_result", "time" => millis(event.t), "name" => event.tool, "toolCallId" => event.tool_call_id }
       body = JSON.parse(raw)
       @world.last_read_back_version = body["cart_version"] if event.tool == "get_cart" && body["ok"]
     end
+
+    def millis(seconds) = (seconds * 1000).round
 
     def report
       call_log = CallLog.find(@world.call_log.id)

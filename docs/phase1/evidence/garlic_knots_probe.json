@@ -1,21 +1,21 @@
 {
   "claim": "The model proposes. The server decides.",
-  "what_was_run": "14 scripted scenarios through Voice::ToolRunner -> OrderTaking -> ToolInvocation. Each prefix up to the claim is verbatim from real call #7; what follows is a deliberate variation. No model and no Vapi call is involved.",
+  "what_was_run": "15 scripted scenarios through Voice::ToolRunner -> OrderTaking -> ToolInvocation. Each prefix up to the claim is verbatim from real call #7; what follows is a deliberate variation. No model and no Vapi call is involved.",
   "live_model_sample": "PENDING: plan Layer 3a (gpt-5-mini, N=20 per probe) needs Vapi/OpenAI access and has not been run. These results say what the SERVER does with an assistant that claims things; they say nothing about how often a live model does.",
   "caveat_timing": "Recorded speech times in call #7 are Vapi speech offsets (about 4.5 s off the tool-call clock, see test/fixtures/files/baseline/README.md); claim-window results for the recorded scenarios are indicative.",
   "totals": {
-    "scenarios": 14,
+    "scenarios": 15,
     "assistant_claims": 11,
     "claims_not_reflected_in_server_order": 6,
     "claims_flagged_by_console_window_heuristic": 6,
     "claims_indeterminate": 1,
-    "tool_calls_received_by_server": 54,
-    "tool_calls_that_mutated_the_cart": 22,
-    "tool_calls_refused_by_server": 7,
+    "tool_calls_received_by_server": 59,
+    "tool_calls_that_mutated_the_cart": 23,
+    "tool_calls_refused_by_server": 8,
     "duplicate_deliveries_absorbed": 2,
-    "scenarios_ending_confirmed": 4,
-    "invariant_every_order_line_came_from_an_accepted_add_to_cart_held_in": 14,
-    "invariant_confirmed_only_at_the_read_back_version_held_in": 14
+    "scenarios_ending_confirmed": 5,
+    "invariant_every_order_line_came_from_an_accepted_add_to_cart_held_in": 15,
+    "invariant_confirmed_only_at_the_read_back_version_held_in": 15
   },
   "reading_the_totals": "A claim 'not reflected in the server order' is reported, never repaired: the server order contains only what accepted tool calls put there. 'Window heuristic' is the console's display-only rule (no cart change within -2s/+8s of the claim); it has a documented false positive (claim_tool_arrives_late) and false negative (two_items_claimed_one_added).",
   "scenarios": [
@@ -49,7 +49,7 @@
           "cart_version_before": 0,
           "cart_version_after": 0,
           "mutated_cart": false,
-          "server_ms": 12,
+          "server_ms": 7,
           "replay_count": 0
         },
         {
@@ -61,7 +61,7 @@
           "cart_version_before": 0,
           "cart_version_after": 1,
           "mutated_cart": true,
-          "server_ms": 34,
+          "server_ms": 37,
           "replay_count": 0
         },
         {
@@ -151,7 +151,7 @@
           "cart_version_before": 0,
           "cart_version_after": 0,
           "mutated_cart": false,
-          "server_ms": 2,
+          "server_ms": 3,
           "replay_count": 0
         },
         {
@@ -163,7 +163,7 @@
           "cart_version_before": 0,
           "cart_version_after": 1,
           "mutated_cart": true,
-          "server_ms": 7,
+          "server_ms": 8,
           "replay_count": 0
         },
         {
@@ -175,7 +175,7 @@
           "cart_version_before": 1,
           "cart_version_after": 1,
           "mutated_cart": false,
-          "server_ms": 5,
+          "server_ms": 4,
           "replay_count": 0
         },
         {
@@ -187,7 +187,7 @@
           "cart_version_before": 1,
           "cart_version_after": 1,
           "mutated_cart": false,
-          "server_ms": 11,
+          "server_ms": 4,
           "replay_count": 0
         }
       ],
@@ -250,7 +250,7 @@
           "cart_version_before": 0,
           "cart_version_after": 1,
           "mutated_cart": true,
-          "server_ms": 11,
+          "server_ms": 7,
           "replay_count": 0
         },
         {
@@ -262,7 +262,7 @@
           "cart_version_before": 1,
           "cart_version_after": 1,
           "mutated_cart": false,
-          "server_ms": 4,
+          "server_ms": 3,
           "replay_count": 0
         },
         {
@@ -274,7 +274,7 @@
           "cart_version_before": 1,
           "cart_version_after": 1,
           "mutated_cart": false,
-          "server_ms": 5,
+          "server_ms": 4,
           "replay_count": 0
         }
       ],
@@ -362,7 +362,7 @@
           "cart_version_before": 1,
           "cart_version_after": 2,
           "mutated_cart": true,
-          "server_ms": 8,
+          "server_ms": 6,
           "replay_count": 0
         },
         {
@@ -386,7 +386,7 @@
           "cart_version_before": 2,
           "cart_version_after": 2,
           "mutated_cart": false,
-          "server_ms": 11,
+          "server_ms": 4,
           "replay_count": 0
         }
       ],
@@ -545,7 +545,7 @@
           "cart_version_before": 0,
           "cart_version_after": 0,
           "mutated_cart": false,
-          "server_ms": 4,
+          "server_ms": 2,
           "replay_count": 0
         },
         {
@@ -557,7 +557,7 @@
           "cart_version_before": 0,
           "cart_version_after": 1,
           "mutated_cart": true,
-          "server_ms": 8,
+          "server_ms": 6,
           "replay_count": 0
         },
         {
@@ -569,7 +569,7 @@
           "cart_version_before": 1,
           "cart_version_after": 2,
           "mutated_cart": true,
-          "server_ms": 6,
+          "server_ms": 5,
           "replay_count": 0
         }
       ],
@@ -640,7 +640,7 @@
           "cart_version_before": 0,
           "cart_version_after": 0,
           "mutated_cart": false,
-          "server_ms": 3,
+          "server_ms": 2,
           "replay_count": 0
         },
         {
@@ -652,7 +652,7 @@
           "cart_version_before": 0,
           "cart_version_after": 1,
           "mutated_cart": true,
-          "server_ms": 9,
+          "server_ms": 6,
           "replay_count": 0
         },
         {
@@ -734,7 +734,7 @@
           "cart_version_before": 0,
           "cart_version_after": 0,
           "mutated_cart": false,
-          "server_ms": 3,
+          "server_ms": 2,
           "replay_count": 0
         },
         {
@@ -746,7 +746,7 @@
           "cart_version_before": 0,
           "cart_version_after": 1,
           "mutated_cart": true,
-          "server_ms": 5,
+          "server_ms": 11,
           "replay_count": 0
         }
       ],
@@ -807,7 +807,7 @@
           "cart_version_before": 0,
           "cart_version_after": 0,
           "mutated_cart": false,
-          "server_ms": 3,
+          "server_ms": 2,
           "replay_count": 0
         },
         {
@@ -819,7 +819,7 @@
           "cart_version_before": 0,
           "cart_version_after": 1,
           "mutated_cart": true,
-          "server_ms": 6,
+          "server_ms": 5,
           "replay_count": 0
         },
         {
@@ -831,7 +831,7 @@
           "cart_version_before": 1,
           "cart_version_after": 2,
           "mutated_cart": true,
-          "server_ms": 9,
+          "server_ms": 6,
           "replay_count": 0
         }
       ],
@@ -895,7 +895,7 @@
           "cart_version_before": 0,
           "cart_version_after": 0,
           "mutated_cart": false,
-          "server_ms": 4,
+          "server_ms": 3,
           "replay_count": 0
         },
         {
@@ -907,7 +907,7 @@
           "cart_version_before": 0,
           "cart_version_after": 1,
           "mutated_cart": true,
-          "server_ms": 8,
+          "server_ms": 6,
           "replay_count": 0
         },
         {
@@ -919,7 +919,7 @@
           "cart_version_before": 1,
           "cart_version_after": 2,
           "mutated_cart": true,
-          "server_ms": 6,
+          "server_ms": 5,
           "replay_count": 0
         },
         {
@@ -999,7 +999,7 @@
           "cart_version_before": 0,
           "cart_version_after": 1,
           "mutated_cart": true,
-          "server_ms": 10,
+          "server_ms": 6,
           "replay_count": 0
         },
         {
@@ -1011,7 +1011,7 @@
           "cart_version_before": 1,
           "cart_version_after": 1,
           "mutated_cart": false,
-          "server_ms": 4,
+          "server_ms": 5,
           "replay_count": 0
         },
         {
@@ -1023,7 +1023,7 @@
           "cart_version_before": 1,
           "cart_version_after": 2,
           "mutated_cart": true,
-          "server_ms": 17,
+          "server_ms": 7,
           "replay_count": 0
         },
         {
@@ -1035,7 +1035,7 @@
           "cart_version_before": 2,
           "cart_version_after": 2,
           "mutated_cart": false,
-          "server_ms": 3,
+          "server_ms": 2,
           "replay_count": 0
         },
         {
@@ -1047,7 +1047,7 @@
           "cart_version_before": 2,
           "cart_version_after": 2,
           "mutated_cart": false,
-          "server_ms": 3,
+          "server_ms": 2,
           "replay_count": 0
         }
       ],
@@ -1103,7 +1103,7 @@
           "cart_version_before": 0,
           "cart_version_after": 0,
           "mutated_cart": false,
-          "server_ms": 3,
+          "server_ms": 2,
           "replay_count": 0
         },
         {
@@ -1115,7 +1115,7 @@
           "cart_version_before": 0,
           "cart_version_after": 1,
           "mutated_cart": true,
-          "server_ms": 7,
+          "server_ms": 8,
           "replay_count": 0
         },
         {
@@ -1127,7 +1127,7 @@
           "cart_version_before": 1,
           "cart_version_after": 1,
           "mutated_cart": false,
-          "server_ms": 5,
+          "server_ms": 4,
           "replay_count": 1
         },
         {
@@ -1139,7 +1139,7 @@
           "cart_version_before": 1,
           "cart_version_after": 2,
           "mutated_cart": true,
-          "server_ms": 9,
+          "server_ms": 6,
           "replay_count": 0
         },
         {
@@ -1220,7 +1220,7 @@
           "cart_version_before": 0,
           "cart_version_after": 0,
           "mutated_cart": false,
-          "server_ms": 2,
+          "server_ms": 3,
           "replay_count": 0
         },
         {
@@ -1232,7 +1232,7 @@
           "cart_version_before": 0,
           "cart_version_after": 1,
           "mutated_cart": true,
-          "server_ms": 9,
+          "server_ms": 6,
           "replay_count": 0
         },
         {
@@ -1244,7 +1244,7 @@
           "cart_version_before": 1,
           "cart_version_after": 2,
           "mutated_cart": true,
-          "server_ms": 9,
+          "server_ms": 5,
           "replay_count": 1
         }
       ],
@@ -1314,7 +1314,7 @@
           "cart_version_before": 0,
           "cart_version_after": 0,
           "mutated_cart": false,
-          "server_ms": 6,
+          "server_ms": 2,
           "replay_count": 0
         },
         {
@@ -1326,7 +1326,7 @@
           "cart_version_before": 0,
           "cart_version_after": 1,
           "mutated_cart": true,
-          "server_ms": 14,
+          "server_ms": 7,
           "replay_count": 0
         },
         {
@@ -1338,7 +1338,7 @@
           "cart_version_before": 1,
           "cart_version_after": 1,
           "mutated_cart": false,
-          "server_ms": 7,
+          "server_ms": 4,
           "replay_count": 0
         },
         {
@@ -1389,6 +1389,105 @@
         "assistant_claims": 1,
         "claims_not_reflected_in_server_order": 1,
         "claims_flagged_by_console_window": 1,
+        "claims_indeterminate": 0,
+        "tool_calls_received": 5,
+        "tool_calls_that_mutated_the_cart": 1,
+        "tool_calls_refused": 1,
+        "duplicate_deliveries_absorbed": 0,
+        "final_order_status": "confirmed",
+        "final_cart_version": 1
+      }
+    },
+    {
+      "id": "premature_submit_then_answered",
+      "title": "Read-back and submit in one breath, then the caller answers",
+      "purpose": "Live calls #1, #2 and #6 submitted before the caller answered. The server refuses that submit (customer_confirmation_required: no caller turn after the read-back); after the caller's answer the submit is accepted.",
+      "claims": [],
+      "tool_calls": [
+        {
+          "tool": "get_menu",
+          "tool_call_id": "call_DeA64Ufy8pFTMgfLwZh4hQio",
+          "t": 13.548,
+          "status": "ok",
+          "error_code": null,
+          "cart_version_before": 0,
+          "cart_version_after": 0,
+          "mutated_cart": false,
+          "server_ms": 4,
+          "replay_count": 0
+        },
+        {
+          "tool": "add_to_cart",
+          "tool_call_id": "call_oDMrQNdB4sio5vCJD90xITH9",
+          "t": 98.245,
+          "status": "ok",
+          "error_code": null,
+          "cart_version_before": 0,
+          "cart_version_after": 1,
+          "mutated_cart": true,
+          "server_ms": 6,
+          "replay_count": 0
+        },
+        {
+          "tool": "get_cart",
+          "tool_call_id": "c1",
+          "t": 131.5,
+          "status": "ok",
+          "error_code": null,
+          "cart_version_before": 1,
+          "cart_version_after": 1,
+          "mutated_cart": false,
+          "server_ms": 4,
+          "replay_count": 0
+        },
+        {
+          "tool": "submit_order",
+          "tool_call_id": "s1",
+          "t": 132.5,
+          "status": "rejected",
+          "error_code": "customer_confirmation_required",
+          "cart_version_before": 1,
+          "cart_version_after": 1,
+          "mutated_cart": false,
+          "server_ms": 3,
+          "replay_count": 0
+        },
+        {
+          "tool": "submit_order",
+          "tool_call_id": "s2",
+          "t": 138,
+          "status": "ok",
+          "error_code": null,
+          "cart_version_before": 1,
+          "cart_version_after": 1,
+          "mutated_cart": false,
+          "server_ms": 4,
+          "replay_count": 0
+        }
+      ],
+      "final_order": {
+        "status": "confirmed",
+        "cart_version": 1,
+        "read_back_version": 1,
+        "total": 16.0,
+        "lines": [
+          {
+            "quantity": 1,
+            "item": "Margherita Pizza",
+            "modifiers": [
+              "Extra cheese"
+            ]
+          }
+        ]
+      },
+      "invariants": {
+        "every_order_line_came_from_an_accepted_add_to_cart": true,
+        "confirmed_only_at_the_read_back_version": true
+      },
+      "summary": {
+        "assistant_claims": 0,
+        "claims_not_reflected_in_server_order": 0,
+        "claims_flagged_by_console_window": 0,
         "claims_indeterminate": 0,
         "tool_calls_received": 5,
         "tool_calls_that_mutated_the_cart": 1,

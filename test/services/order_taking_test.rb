@@ -47,7 +47,7 @@ class OrderTakingTest < ActiveSupport::TestCase
   end
 
   test "submit on an empty cart is a cart_empty rejection, not an exception" do
-    result = @service.submit(fulfillment_type: "pickup", cart_version: 0)
+    result = @service.submit(fulfillment_type: "pickup", cart_version: 0, caller_turn_after_read_back: true)
     assert_predicate result, :rejected?
     assert_equal :cart_empty, result.rejection
     assert_equal OrderTaking::MESSAGES[:cart_empty], result.message
@@ -57,7 +57,7 @@ class OrderTakingTest < ActiveSupport::TestCase
     @service.add_item(menu_item_id: @item.id)
     assert_enqueued_jobs 1, only: OrderConfirmationSmsJob do
       @service.read_back
-      result = @service.submit(fulfillment_type: "delivery", cart_version: 1, delivery_address: "1 Main St", notes: "ring twice")
+      result = @service.submit(fulfillment_type: "delivery", cart_version: 1, delivery_address: "1 Main St", notes: "ring twice", caller_turn_after_read_back: true)
       assert_not_predicate result, :rejected?
     end
 
@@ -74,7 +74,7 @@ class OrderTakingTest < ActiveSupport::TestCase
 
     @service.add_item(menu_item_id: @item.id)
     assert_equal :item_not_in_cart, @service.remove_item(order_item_id: 0).rejection
-    assert_equal :delivery_address_required, @service.submit(fulfillment_type: "delivery", cart_version: 1).rejection
+    assert_equal :delivery_address_required, @service.submit(fulfillment_type: "delivery", cart_version: 1, caller_turn_after_read_back: true).rejection
     assert_predicate @call_log.reload.order, :pending?
   end
 end

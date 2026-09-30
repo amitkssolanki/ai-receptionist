@@ -1,0 +1,495 @@
+{
+ "_provenance": "Live Vapi tool-calls webhook for the second submit_order of our Call #6 (Vapi/DB call #13, 2026-09-30), captured from the local ngrok inspector. Structure only: every spoken/transcribed text is replaced by 'x' of the same length; tool arguments, tool results, assistant ids, metadata and the system prompt are removed.",
+ "type": "tool-calls",
+ "timestamp": 1790789115436,
+ "toolCallList": [
+  {
+   "id": "call_YMwjg2YC8nG1PSgo7JWNmSyD",
+   "type": "function",
+   "function": {
+    "name": "submit_order"
+   }
+  }
+ ],
+ "artifact": {
+  "messages": [
+   {
+    "role": "system",
+    "time": 1790789015240,
+    "secondsFromStart": 0,
+    "message": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+   },
+   {
+    "role": "bot",
+    "time": 1790789016237,
+    "endTime": 1790789019237,
+    "secondsFromStart": 0.6,
+    "duration": 3000,
+    "message": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+   },
+   {
+    "role": "user",
+    "time": 1790789021909,
+    "endTime": 1790789022689,
+    "secondsFromStart": 6.272,
+    "duration": 780,
+    "message": "xxxxxxxxxxxxxxxxxxxxxxxx"
+   },
+   {
+    "role": "bot",
+    "time": 1790789024817,
+    "endTime": 1790789035557,
+    "secondsFromStart": 9.18,
+    "duration": 8700,
+    "message": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+   },
+   {
+    "role": "tool_calls",
+    "time": 1790789029817,
+    "secondsFromStart": 14.18,
+    "message": "",
+    "toolCalls": [
+     {
+      "id": "call_PAWg4Txzywnbc65wmzyvBJQx",
+      "type": "function",
+      "function": {
+       "name": "get_menu"
+      }
+     }
+    ]
+   },
+   {
+    "role": "tool_call_result",
+    "time": 1790789030790,
+    "secondsFromStart": 15.153,
+    "name": "get_menu",
+    "toolCallId": "call_PAWg4Txzywnbc65wmzyvBJQx"
+   },
+   {
+    "role": "user",
+    "time": 1790789037869,
+    "endTime": 1790789038649,
+    "secondsFromStart": 22.232,
+    "duration": 780,
+    "message": "xxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+   },
+   {
+    "role": "bot",
+    "time": 1790789040477,
+    "endTime": 1790789052597,
+    "secondsFromStart": 24.84,
+    "duration": 10260,
+    "message": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+   },
+   {
+    "role": "tool_calls",
+    "time": 1790789045408,
+    "secondsFromStart": 29.771,
+    "message": "",
+    "toolCalls": [
+     {
+      "id": "call_wi7IMO3t4JZmSegUcmToc4Fn",
+      "type": "function",
+      "function": {
+       "name": "get_menu_item"
+      }
+     }
+    ]
+   },
+   {
+    "role": "tool_call_result",
+    "time": 1790789046311,
+    "secondsFromStart": 30.674,
+    "name": "get_menu_item",
+    "toolCallId": "call_wi7IMO3t4JZmSegUcmToc4Fn"
+   },
+   {
+    "role": "bot",
+    "time": 1790789053197,
+    "endTime": 1790789053437,
+    "secondsFromStart": 37.56,
+    "duration": 240,
+    "message": "xxxxxxxxxxxxxxxxxxx"
+   },
+   {
+    "role": "user",
+    "time": 1790789055989,
+    "endTime": 1790789059169,
+    "secondsFromStart": 40.352,
+    "duration": 1680,
+    "message": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+   },
+   {
+    "role": "bot",
+    "time": 1790789059617,
+    "endTime": 1790789065797,
+    "secondsFromStart": 43.98,
+    "duration": 4380,
+    "message": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+   },
+   {
+    "role": "tool_calls",
+    "time": 1790789064585,
+    "secondsFromStart": 48.948,
+    "message": "",
+    "toolCalls": [
+     {
+      "id": "call_kdqrS5I5ZQCOytsXuX0GVPTW",
+      "type": "function",
+      "function": {
+       "name": "add_to_cart"
+      }
+     }
+    ]
+   },
+   {
+    "role": "tool_call_result",
+    "time": 1790789066006,
+    "secondsFromStart": 50.369,
+    "name": "add_to_cart",
+    "toolCallId": "call_kdqrS5I5ZQCOytsXuX0GVPTW"
+   },
+   {
+    "role": "bot",
+    "time": 1790789066697,
+    "endTime": 1790789069157,
+    "secondsFromStart": 51.06,
+    "duration": 2460,
+    "message": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+   },
+   {
+    "role": "user",
+    "time": 1790789071349,
+    "endTime": 1790789072609,
+    "secondsFromStart": 55.712,
+    "duration": 660,
+    "message": "xxxxxxxxxxxxxxxxxxxxxxxxxx"
+   },
+   {
+    "role": "bot",
+    "time": 1790789074257,
+    "endTime": 1790789078877,
+    "secondsFromStart": 58.62,
+    "duration": 2700,
+    "message": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+   },
+   {
+    "role": "tool_calls",
+    "time": 1790789079041,
+    "secondsFromStart": 63.404,
+    "message": "",
+    "toolCalls": [
+     {
+      "id": "call_nMuXucQMIADnNDjIXJWwLQOC",
+      "type": "function",
+      "function": {
+       "name": "add_to_cart"
+      }
+     }
+    ]
+   },
+   {
+    "role": "tool_call_result",
+    "time": 1790789080259,
+    "secondsFromStart": 64.622,
+    "name": "add_to_cart",
+    "toolCallId": "call_nMuXucQMIADnNDjIXJWwLQOC"
+   },
+   {
+    "role": "user",
+    "time": 1790789081969,
+    "endTime": 1790789082449,
+    "secondsFromStart": 66.332,
+    "duration": 480,
+    "message": "xxxxxxxxxxxxxxxxxxx"
+   },
+   {
+    "role": "bot",
+    "time": 1790789084217,
+    "endTime": 1790789088477,
+    "secondsFromStart": 68.58,
+    "duration": 3420,
+    "message": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+   },
+   {
+    "role": "user",
+    "time": 1790789090309,
+    "endTime": 1790789090489,
+    "secondsFromStart": 74.672,
+    "duration": 180,
+    "message": "xxxxxxxxxxxx"
+   },
+   {
+    "role": "bot",
+    "time": 1790789091777,
+    "endTime": 1790789094837,
+    "secondsFromStart": 76.14,
+    "duration": 600,
+    "message": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+   },
+   {
+    "role": "tool_calls",
+    "time": 1790789095816,
+    "secondsFromStart": 80.179,
+    "message": "",
+    "toolCalls": [
+     {
+      "id": "call_09h3szo9o5ICDjGeRN9q7EpG",
+      "type": "function",
+      "function": {
+       "name": "get_cart"
+      }
+     }
+    ]
+   },
+   {
+    "role": "tool_call_result",
+    "time": 1790789096942,
+    "secondsFromStart": 81.305,
+    "name": "get_cart",
+    "toolCallId": "call_09h3szo9o5ICDjGeRN9q7EpG"
+   },
+   {
+    "role": "bot",
+    "time": 1790789097237,
+    "endTime": 1790789100837,
+    "secondsFromStart": 81.6,
+    "duration": 3600,
+    "message": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+   },
+   {
+    "role": "tool_calls",
+    "time": 1790789098106,
+    "secondsFromStart": 82.469,
+    "message": "",
+    "toolCalls": [
+     {
+      "id": "call_aaLLmB55STo6I7RBwoXnhdyP",
+      "type": "function",
+      "function": {
+       "name": "submit_order"
+      }
+     }
+    ]
+   },
+   {
+    "role": "tool_call_result",
+    "time": 1790789099449,
+    "secondsFromStart": 83.812,
+    "name": "submit_order",
+    "toolCallId": "call_aaLLmB55STo6I7RBwoXnhdyP"
+   },
+   {
+    "role": "bot",
+    "time": 1790789101137,
+    "endTime": 1790789107317,
+    "secondsFromStart": 85.5,
+    "duration": 1320,
+    "message": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+   },
+   {
+    "role": "user",
+    "time": 1790789109989,
+    "endTime": 1790789110409,
+    "secondsFromStart": 94.352,
+    "duration": 420,
+    "message": "xxxxxxxxxxxxxxxxxx"
+   },
+   {
+    "role": "tool_calls",
+    "time": 1790789115430,
+    "secondsFromStart": 99.793,
+    "message": "",
+    "toolCalls": [
+     {
+      "id": "call_YMwjg2YC8nG1PSgo7JWNmSyD",
+      "type": "function",
+      "function": {
+       "name": "submit_order"
+      }
+     }
+    ]
+   }
+  ],
+  "messagesOpenAIFormatted": [
+   {
+    "role": "system",
+    "content": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+   },
+   {
+    "role": "assistant",
+    "content": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+   },
+   {
+    "role": "user",
+    "content": "xxxxxxxxxxxxxxxxxxxxxxxx"
+   },
+   {
+    "role": "assistant",
+    "content": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+    "tool_calls": [
+     {
+      "id": "call_PAWg4Txzywnbc65wmzyvBJQx",
+      "type": "function",
+      "function": {
+       "name": "get_menu"
+      }
+     }
+    ]
+   },
+   {
+    "role": "tool",
+    "content": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+    "tool_call_id": "call_PAWg4Txzywnbc65wmzyvBJQx"
+   },
+   {
+    "role": "user",
+    "content": "xxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+   },
+   {
+    "role": "assistant",
+    "content": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+    "tool_calls": [
+     {
+      "id": "call_wi7IMO3t4JZmSegUcmToc4Fn",
+      "type": "function",
+      "function": {
+       "name": "get_menu_item"
+      }
+     }
+    ]
+   },
+   {
+    "role": "tool",
+    "content": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+    "tool_call_id": "call_wi7IMO3t4JZmSegUcmToc4Fn"
+   },
+   {
+    "role": "assistant",
+    "content": "xxxxxxxxxxxxxxxxxxx"
+   },
+   {
+    "role": "user",
+    "content": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+   },
+   {
+    "role": "assistant",
+    "content": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+    "tool_calls": [
+     {
+      "id": "call_kdqrS5I5ZQCOytsXuX0GVPTW",
+      "type": "function",
+      "function": {
+       "name": "add_to_cart"
+      }
+     }
+    ]
+   },
+   {
+    "role": "tool",
+    "content": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+    "tool_call_id": "call_kdqrS5I5ZQCOytsXuX0GVPTW"
+   },
+   {
+    "role": "assistant",
+    "content": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+   },
+   {
+    "role": "user",
+    "content": "xxxxxxxxxxxxxxxxxxxxxxxxxx"
+   },
+   {
+    "role": "assistant",
+    "content": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+    "tool_calls": [
+     {
+      "id": "call_nMuXucQMIADnNDjIXJWwLQOC",
+      "type": "function",
+      "function": {
+       "name": "add_to_cart"
+      }
+     }
+    ]
+   },
+   {
+    "role": "tool",
+    "content": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+    "tool_call_id": "call_nMuXucQMIADnNDjIXJWwLQOC"
+   },
+   {
+    "role": "user",
+    "content": "xxxxxxxxxxxxxxxxxxx"
+   },
+   {
+    "role": "assistant",
+    "content": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+   },
+   {
+    "role": "user",
+    "content": "xxxxxxxxxxxx"
+   },
+   {
+    "role": "assistant",
+    "content": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+    "tool_calls": [
+     {
+      "id": "call_09h3szo9o5ICDjGeRN9q7EpG",
+      "type": "function",
+      "function": {
+       "name": "get_cart"
+      }
+     }
+    ]
+   },
+   {
+    "role": "tool",
+    "content": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+    "tool_call_id": "call_09h3szo9o5ICDjGeRN9q7EpG"
+   },
+   {
+    "role": "assistant",
+    "content": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+    "tool_calls": [
+     {
+      "id": "call_aaLLmB55STo6I7RBwoXnhdyP",
+      "type": "function",
+      "function": {
+       "name": "submit_order"
+      }
+     }
+    ]
+   },
+   {
+    "role": "tool",
+    "content": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+    "tool_call_id": "call_aaLLmB55STo6I7RBwoXnhdyP"
+   },
+   {
+    "role": "assistant",
+    "content": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+   },
+   {
+    "role": "user",
+    "content": "xxxxxxxxxxxxxxxxxx"
+   },
+   {
+    "role": "assistant",
+    "content": null,
+    "tool_calls": [
+     {
+      "id": "call_YMwjg2YC8nG1PSgo7JWNmSyD",
+      "type": "function",
+      "function": {
+       "name": "submit_order"
+      }
+     }
+    ]
+   },
+   {
+    "role": "tool",
+    "content": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+    "tool_call_id": "call_YMwjg2YC8nG1PSgo7JWNmSyD"
+   }
+  ]
+ }
+}

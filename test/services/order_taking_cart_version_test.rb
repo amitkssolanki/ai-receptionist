@@ -18,7 +18,9 @@ class OrderTakingCartVersionTest < ActiveSupport::TestCase
   def order = @call_log.reload.order
   def add(item = @burger, **opts) = svc.add_item(menu_item_id: item.id, **opts)
   def read_back = svc.read_back
-  def submit(version, **opts) = svc.submit(fulfillment_type: "pickup", cart_version: version, **opts)
+  # The confirmation gate's input is satisfied here unless a test overrides it; the gate itself is tested in
+  # test/controllers/api/vapi/confirmation_gate_test.rb and below.
+  def submit(version, **opts) = svc.submit(fulfillment_type: "pickup", cart_version: version, **{ caller_turn_after_read_back: true }.merge(opts))
 
   test "1. every authoritative cart mutation increments the version by exactly one; reads never do" do
     assert_equal 0, read_back.payload[:cart_version]

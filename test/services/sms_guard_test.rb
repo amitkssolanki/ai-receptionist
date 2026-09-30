@@ -20,8 +20,11 @@ class SmsGuardTest < ActiveSupport::TestCase
 
   def start(id, caller_number) = CallLifecycle.start(external_call_id: id, dialed_number: @restaurant.phone_number, caller_number: caller_number)
 
+  # submit_order carries a history in which the caller answered the read-back (the confirmation gate's input, see
+  # VapiHistory); the gate itself is tested in test/controllers/api/vapi/confirmation_gate_test.rb.
   def run_tool(call, id, name, args = {})
-    Voice::ToolRunner.call(call_log: CallLog.find(call.id), tool_call: { "id" => id, "function" => { "name" => name, "arguments" => args } })
+    Voice::ToolRunner.call(call_log: CallLog.find(call.id), tool_call: { "id" => id, "function" => { "name" => name, "arguments" => args } },
+                           artifact: VapiHistory.for_tool(name, id))
   end
 
   def confirm(call, prefix = "c")
@@ -142,8 +145,11 @@ class SmsGuardCommitTest < ActiveSupport::TestCase
     [ ToolInvocation, CallLog, OrderItem, Order, Customer, MenuItem, MenuCategory, Restaurant ].each(&:delete_all)
   end
 
+  # submit_order carries a history in which the caller answered the read-back (the confirmation gate's input, see
+  # VapiHistory); the gate itself is tested in test/controllers/api/vapi/confirmation_gate_test.rb.
   def run_tool(id, name, args = {})
-    Voice::ToolRunner.call(call_log: CallLog.find(@call.id), tool_call: { "id" => id, "function" => { "name" => name, "arguments" => args } })
+    Voice::ToolRunner.call(call_log: CallLog.find(@call.id), tool_call: { "id" => id, "function" => { "name" => name, "arguments" => args } },
+                           artifact: VapiHistory.for_tool(name, id))
   end
 
   def submit

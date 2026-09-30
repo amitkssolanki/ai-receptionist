@@ -1,12 +1,13 @@
-# SHADOW-MODE OBSERVATION ONLY. Nothing in here refuses, delays or changes a submit_order.
-#
 # What the conversation history in Vapi's tool-calls webhook shows about turn-taking at the moment submit_order was
-# requested: did the caller say anything after the agent last received a get_cart result? This is evidence of turn
-# separation, not of confirmation - a caller turn proves the caller spoke, never that they said yes.
+# requested: did the caller say anything after the agent last received a get_cart result? It feeds the server's
+# confirmation gate (OrderTaking#submit refuses without a caller turn after the read-back) and is recorded on every
+# submit_order. It is evidence of turn separation, not of confirmation: a caller turn proves the caller spoke, never
+# that they said yes. The gate uses only the caller-turn count; `completion` (and its speech_chars, which lags behind
+# the spoken audio in the live history) is recorded for explanation only and never decides anything.
 #
 # Source: message["artifact"], which Vapi sends with every tool-calls webhook as "a live version of call.artifact".
-# Shape verified against the live submit_order webhooks of calls #8 and #9 (structure-only copies in
-# test/fixtures/files/vapi/live_submit_webhook_call{8,9}.json):
+# Shape verified against the live submit_order webhooks of calls #8, #9 and #13 (structure-only copies in
+# test/fixtures/files/vapi/live_submit_webhook_*.json):
 #
 #   artifact.messages - one entry per event, in order:
 #     { role: "system" | "bot" | "user", message:, time: <epoch ms>, endTime:, secondsFromStart:, duration: }
@@ -27,13 +28,14 @@
 # transcript or spoken text leaves this method (speech is measured by length only).
 module Voice
   module TurnEvidence
-    SCHEMA = 1
+    # 2: the evidence gates submit_order ("mode" => "enforced"). Rows with schema 1 were recorded in shadow mode.
+    SCHEMA = 2
 
     module_function
 
     # Always returns a small JSON-safe Hash; never raises.
     def for_submit(artifact, tool_call_id:)
-      base = { "schema" => SCHEMA, "mode" => "shadow" }
+      base = { "schema" => SCHEMA, "mode" => "enforced" }
       return base.merge("artifact_messages" => "missing") if artifact.nil?
       return base.merge("artifact_messages" => "malformed") unless artifact.is_a?(Hash)
 
@@ -45,7 +47,16 @@ module Voice
           .merge(turns(messages, tool_call_id))
           .merge("completion" => completion(artifact["messagesOpenAIFormatted"], tool_call_id))
     rescue StandardError => e
-      { "schema" => SCHEMA, "mode" => "shadow", "artifact_messages" => "malformed", "error" => e.class.name.first(80) }
+      { "schema" => SCHEMA, "mode" => "enforced", "artifact_messages" => "malformed", "error" => e.class.name.first(80) }
+    end
+
+    # The confirmation gate's input: at least one caller turn between the last get_cart result and this submit's own
+    # entry in a history that is present and readable. Anything else - missing or malformed history, no get_cart result
+    # in it, the submit not found in it - is false: the gate fails closed. Deliberately ignores `completion` and
+    # speech_chars.
+    def caller_turn_after_read_back?(evidence)
+      evidence.is_a?(Hash) && evidence["artifact_messages"] == "present" && evidence["submit_request_found"] == true &&
+        evidence["caller_turns_since_last_get_cart"].is_a?(Integer) && evidence["caller_turns_since_last_get_cart"] >= 1
     end
 
     # Caller turns between the last get_cart result and this submit's own tool_calls entry, by position in the list.

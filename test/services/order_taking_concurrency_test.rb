@@ -57,7 +57,7 @@ class OrderTakingConcurrencyTest < ActiveSupport::TestCase
       OrderTaking.new(call.reload).read_back
 
       submit, add = in_threads(
-        -> { OrderTaking.new(CallLog.find(call.id)).submit(fulfillment_type: "pickup", cart_version: 1) },
+        -> { OrderTaking.new(CallLog.find(call.id)).submit(fulfillment_type: "pickup", cart_version: 1, caller_turn_after_read_back: true) },
         -> { OrderTaking.new(CallLog.find(call.id)).add_item(menu_item_id: @burger.id) }
       )
       order = call.reload.order
@@ -79,7 +79,7 @@ class OrderTakingConcurrencyTest < ActiveSupport::TestCase
     OrderTaking.new(call).add_item(menu_item_id: @burger.id)
     OrderTaking.new(call.reload).read_back
 
-    results = in_threads(*Array.new(2) { -> { OrderTaking.new(CallLog.find(call.id)).submit(fulfillment_type: "pickup", cart_version: 1) } })
+    results = in_threads(*Array.new(2) { -> { OrderTaking.new(CallLog.find(call.id)).submit(fulfillment_type: "pickup", cart_version: 1, caller_turn_after_read_back: true) } })
 
     assert(results.none?(&:rejected?)) # duplicate-submit idempotency is a later step; both calls are consistent today
     order = call.reload.order

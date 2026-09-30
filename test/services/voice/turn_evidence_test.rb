@@ -1,7 +1,9 @@
 require "test_helper"
 
-# Shadow-mode turn evidence (Voice::TurnEvidence): what Vapi's conversation history shows about caller turn-taking
-# when submit_order is requested. Observation only - these tests never expect a refusal.
+# Turn evidence (Voice::TurnEvidence): what Vapi's conversation history shows about caller turn-taking when
+# submit_order is requested, and the confirmation gate's predicate built on it (at least one caller turn after the last
+# get_cart result; everything else fails closed). The gate's behaviour through the webhook is in
+# test/controllers/api/vapi/confirmation_gate_test.rb.
 class Voice::TurnEvidenceTest < ActiveSupport::TestCase
   SPOKEN = "SENTINEL spoken words that must never be stored".freeze
 
@@ -38,7 +40,7 @@ class Voice::TurnEvidenceTest < ActiveSupport::TestCase
     assert_equal [ 11_500, 100 ], e.values_at("ms_last_get_cart_result_to_submit_request", "ms_submit_request_to_next_caller_turn")
     assert_equal "c1", e["last_get_cart_tool_call_id"]
     assert_equal [], e["anomalies"]
-    assert_equal "shadow", e["mode"]
+    assert_equal "enforced", e["mode"]
   end
 
   test "2. one caller turn after the last get_cart, submit from a later completion" do
@@ -151,5 +153,44 @@ class Voice::TurnEvidenceTest < ActiveSupport::TestCase
     assert_equal 783, e["ms_last_get_cart_result_to_submit_request"]
     assert_equal "call_ES9d2qnU0EElkbW67zOoHhiM", e["last_get_cart_tool_call_id"]
     assert_equal [ true, 44 ], e["completion"].values_at("responds_to_get_cart_result", "speech_chars")
+  end
+
+  # --- the gate's predicate ---
+
+  def gate?(evidence) = Voice::TurnEvidence.caller_turn_after_read_back?(evidence)
+
+  test "the predicate needs a readable history, the submit found in it, and at least one caller turn" do
+    messages, openai = chained_history
+    assert_not gate?(evidence(messages, openai)), "0 caller turns"
+    answered = [ bot(1_000), requested(3_000, %w[c1 get_cart]), answered(3_500, "c1", "get_cart"), caller(4_000), requested(5_000, %w[s1 submit_order]) ]
+    assert gate?(evidence(answered))
+    assert_not gate?(evidence(answered, id: "s_other")), "submit not in the history"
+    assert_not gate?(evidence([ caller(1_000), requested(2_000, %w[s1 submit_order]) ])), "no get_cart result in the history"
+    [ nil, "garbage", { "messages" => { "a" => 1 } }, {} ].each { |artifact| assert_not gate?(Voice::TurnEvidence.for_submit(artifact, tool_call_id: "s1")), artifact.inspect }
+    assert_not gate?(nil)
+    assert_not gate?({ "artifact_messages" => "present", "submit_request_found" => true, "caller_turns_since_last_get_cart" => "1" }), "only an Integer count"
+  end
+
+  test "the predicate ignores the completion and speech_chars" do
+    base = { "artifact_messages" => "present", "submit_request_found" => true }
+    assert gate?(base.merge("caller_turns_since_last_get_cart" => 1, "completion" => { "responds_to_get_cart_result" => true, "speech_chars" => 0 }))
+    assert_not gate?(base.merge("caller_turns_since_last_get_cart" => 0, "completion" => { "responds_to_get_cart_result" => false, "speech_chars" => 900 }))
+  end
+
+  test "on the real live submits: calls #1, #2 and #6's first submit fail the gate; #6's second submit passes" do
+    { "call8" => false, "call9" => false, "call13_first" => false, "call13_second" => true }.each do |name, expected|
+      payload = live(name)
+      e = Voice::TurnEvidence.for_submit(payload["artifact"], tool_call_id: payload.dig("toolCallList", 0, "id"))
+      assert_equal expected, gate?(e), name
+    end
+  end
+
+  test "live call #6: the first submit answered the get_cart result directly; the second came after one caller turn" do
+    first, second = %w[call13_first call13_second].map do |name|
+      payload = live(name)
+      Voice::TurnEvidence.for_submit(payload["artifact"], tool_call_id: payload.dig("toolCallList", 0, "id"))
+    end
+    assert_equal [ 0, true, 1_164 ], [ first["caller_turns_since_last_get_cart"], first.dig("completion", "responds_to_get_cart_result"), first["ms_last_get_cart_result_to_submit_request"] ]
+    assert_equal [ 1, false ], [ second["caller_turns_since_last_get_cart"], second.dig("completion", "responds_to_get_cart_result") ]
   end
 end

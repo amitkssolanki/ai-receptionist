@@ -20,8 +20,9 @@ module Voice
       { ok: false, error: { code: code.to_s, message: message }.merge(details) }.to_json
     end
 
-    # artifact: the webhook's conversation history (Vapi's live call.artifact). Only read to record a shadow-mode
-    # observation on submit_order (Voice::TurnEvidence); it never influences what a tool does or returns.
+    # artifact: the webhook's conversation history (Vapi's live call.artifact). Read only for submit_order: it supplies
+    # the confirmation gate's input (Voice::TurnEvidence - was there a caller turn after the last read-back?) and the
+    # evidence recorded with the submit. Other tools never look at it.
     def self.call(call_log:, tool_call:, vapi_timestamp: nil, artifact: nil)
       return error_json(:no_active_call, MESSAGES.fetch(:no_active_call)) unless call_log
 
@@ -106,7 +107,7 @@ module Voice
     end
 
     def execute_and_record
-      turn_evidence = submit_turn_evidence # pure; computed from the payload before anything runs, never consulted by it
+      turn_evidence = submit_turn_evidence # pure; computed from the payload before anything runs (and gates submit_order)
       started_at = Time.current
       clock = Process.clock_gettime(Process::CLOCK_MONOTONIC)
       before = cart_version
@@ -144,14 +145,17 @@ module Voice
       end
     end
 
-    # Shadow mode: observed and recorded for submit_order only, never enforced (see Voice::TurnEvidence).
+    # submit_order only: the turn evidence from the webhook's history, computed once per tool call. It is recorded on
+    # the ToolInvocation and decides the confirmation gate (see OrderTaking#submit).
     def submit_turn_evidence
-      return unless (@tool_call.dig("function", "name") || @tool_call["name"]) == "submit_order"
+      return @submit_turn_evidence if defined?(@submit_turn_evidence)
 
-      TurnEvidence.for_submit(@artifact, tool_call_id: tool_call_id)
-    rescue StandardError => e # belt and braces: an observation must never stop the submit
-      { "schema" => TurnEvidence::SCHEMA, "mode" => "shadow", "artifact_messages" => "malformed", "error" => e.class.name.first(80) }
+      @submit_turn_evidence = submit_tool? ? TurnEvidence.for_submit(@artifact, tool_call_id: tool_call_id) : nil
+    rescue StandardError => e # belt and braces: an observer failure is unreadable history, so the gate stays closed
+      @submit_turn_evidence = { "schema" => TurnEvidence::SCHEMA, "mode" => "enforced", "artifact_messages" => "malformed", "error" => e.class.name.first(80) }
     end
+
+    def submit_tool? = (@tool_call.dig("function", "name") || @tool_call["name"]) == "submit_order"
 
     # The model-visible cart version: 0 while there is no order.
     def cart_version = @call_log.reload.order&.cart_version || 0
@@ -194,7 +198,8 @@ module Voice
       when "update_cart_item_quantity" then order_taking.update_quantity(**values)
       when "remove_cart_item" then order_taking.remove_item(**values)
       when "get_cart" then order_taking.read_back
-      when "submit_order" then order_taking.submit(**values)
+      when "submit_order"
+        order_taking.submit(**values, caller_turn_after_read_back: TurnEvidence.caller_turn_after_read_back?(submit_turn_evidence))
       when "transfer_to_human"
         CallLifecycle.transfer(@call_log, values[:reason])
         Result.ok({ message: "Transfer logged." })

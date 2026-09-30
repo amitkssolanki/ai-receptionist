@@ -12,11 +12,13 @@ class Voice::ToolIdempotencyTest < ActiveSupport::TestCase
     @call_log = CallLifecycle.start(external_call_id: "idem_1", dialed_number: @restaurant.phone_number, caller_number: "+15557770101") # a real number: SMS-capable
   end
 
+  # submit_order carries a history in which the caller answered the read-back (the confirmation gate's input, see
+  # VapiHistory); the gate itself is tested in test/controllers/api/vapi/confirmation_gate_test.rb.
   def run_tool(id, name, arguments = {}, timestamp: nil)
     Voice::ToolRunner.call(
       call_log: CallLog.find(@call_log.id),
       tool_call: { "id" => id, "function" => { "name" => name, "arguments" => arguments } },
-      vapi_timestamp: timestamp
+      vapi_timestamp: timestamp, artifact: VapiHistory.for_tool(name, id)
     )
   end
 

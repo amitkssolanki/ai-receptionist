@@ -19,7 +19,7 @@ class OrderTakingRulesTest < ActiveSupport::TestCase
   # Read the cart back, then submit the version that was read (the protocol Step 5 requires).
   def submit_order(fulfillment_type: "pickup")
     read_back = OrderTaking.new(@call_log.reload).read_back
-    OrderTaking.new(@call_log.reload).submit(fulfillment_type: fulfillment_type, cart_version: read_back.payload[:cart_version])
+    OrderTaking.new(@call_log.reload).submit(fulfillment_type: fulfillment_type, cart_version: read_back.payload[:cart_version], caller_turn_after_read_back: true)
   end
 
   def add(item = @burger, **opts) = OrderTaking.new(@call_log.reload).add_item(menu_item_id: item.id, **opts)

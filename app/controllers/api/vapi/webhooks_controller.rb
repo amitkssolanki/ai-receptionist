@@ -88,7 +88,7 @@ class Api::Vapi::WebhooksController < ActionController::API
     call_log = CallLog.find_by(external_call_id: call_id(message))
     tool_calls = message["toolCallList"] || []
 
-    # artifact (the conversation so far) is handed over only for the shadow-mode submit observation; it is not logged.
+    # artifact (the conversation so far) feeds the submit_order confirmation gate (Voice::TurnEvidence); it is not logged.
     results = tool_calls.map do |tool_call|
       { toolCallId: tool_call["id"], result: Voice::ToolRunner.call(call_log: call_log, tool_call: tool_call, vapi_timestamp: message["timestamp"],
                                                                     artifact: message["artifact"]) }

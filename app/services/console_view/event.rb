@@ -104,16 +104,26 @@ module ConsoleView
       return [ shadow("turn evidence not recorded for this submit (recorded before shadow instrumentation, or replayed/unrecorded)", false) ] unless evidence.is_a?(Hash)
 
       case evidence["artifact_messages"]
-      when "missing" then return [ shadow("turn evidence unavailable: the webhook carried no conversation history", true), shadow_gate ]
+      when "missing" then return [ shadow("turn evidence unavailable: the webhook carried no conversation history", true), gate_line(evidence) ]
       when "present" then nil
-      else return [ shadow("turn evidence unavailable: the conversation history was unreadable", true), shadow_gate ]
+      else return [ shadow("turn evidence unavailable: the conversation history was unreadable", true), gate_line(evidence) ]
       end
 
-      [ caller_turns_observation(evidence), after_submit_observation(evidence), completion_observation(evidence["completion"]), shadow_gate ].compact
+      [ caller_turns_observation(evidence), after_submit_observation(evidence), completion_observation(evidence["completion"]), gate_line(evidence) ].compact
     end
 
     def shadow(text, warn) = Observation.new(text: text, warn: warn, icon: "◌")
-    def shadow_gate = shadow("confirmation gate: shadow only (observed, nothing refused)", false)
+
+    # What the server's confirmation gate did with this submit. Evidence schema 2 is enforced (OrderTaking#submit);
+    # rows recorded with schema 1 were observed in shadow mode only.
+    def gate_line(evidence)
+      return shadow("confirmation gate: shadow only (observed, nothing refused)", false) unless evidence["mode"] == "enforced"
+      return shadow("confirmation gate: submit refused (no caller turn after the read-back)", true) if code == "customer_confirmation_required"
+      return shadow("confirmation gate: not reached (refused earlier as #{code || status})", false) unless status == "ok"
+      return shadow("confirmation gate: not applied (the order was already submitted)", false) if parsed_result.is_a?(Hash) && parsed_result["already_submitted"]
+
+      shadow("confirmation gate: passed (a caller turn followed the read-back)", false)
+    end
 
     def caller_turns_observation(evidence)
       turns = evidence["caller_turns_since_last_get_cart"]

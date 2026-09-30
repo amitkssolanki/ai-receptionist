@@ -3,34 +3,34 @@
   "not_measured": "Vapi round-trip latency, STT/LLM/TTS time, network, or the browser-observed latency. (One live call measured them: see docs/voice_agent/verification_log.md; they are not part of this generated file.)",
   "after_phase1": {
     "add_to_cart": {
-      "runs": 22,
-      "median_ms": 8,
-      "max_ms": 34,
+      "runs": 23,
+      "median_ms": 6,
+      "max_ms": 37,
       "min_ms": 2
     },
     "get_cart": {
-      "runs": 6,
+      "runs": 7,
       "median_ms": 4,
-      "max_ms": 7,
-      "min_ms": 4
+      "max_ms": 5,
+      "min_ms": 3
     },
     "get_menu": {
-      "runs": 14,
+      "runs": 15,
       "median_ms": 3,
-      "max_ms": 12,
+      "max_ms": 7,
       "min_ms": 2
     },
     "submit_order": {
-      "runs": 9,
+      "runs": 11,
       "median_ms": 3,
-      "max_ms": 11,
+      "max_ms": 4,
       "min_ms": 1
     },
     "update_cart_item_quantity": {
       "runs": 1,
-      "median_ms": 9,
-      "max_ms": 9,
-      "min_ms": 9
+      "median_ms": 6,
+      "max_ms": 6,
+      "min_ms": 6
     }
   },
   "baseline_one_sample_for_reference": {

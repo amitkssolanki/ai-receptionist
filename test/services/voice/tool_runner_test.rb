@@ -8,8 +8,11 @@ class Voice::ToolRunnerTest < ActiveSupport::TestCase
     @call_log = CallLifecycle.start(external_call_id: "runner_1", dialed_number: @restaurant.phone_number, caller_number: nil)
   end
 
+  # submit_order carries a history in which the caller answered the read-back (the confirmation gate's input, see
+  # VapiHistory); the gate itself is tested in test/controllers/api/vapi/confirmation_gate_test.rb.
   def run_tool(name, arguments = {}, id: "tc_#{SecureRandom.hex(3)}", call_log: @call_log)
-    Voice::ToolRunner.call(call_log: call_log, tool_call: { "id" => id, "function" => { "name" => name, "arguments" => arguments } })
+    Voice::ToolRunner.call(call_log: call_log, tool_call: { "id" => id, "function" => { "name" => name, "arguments" => arguments } },
+                           artifact: VapiHistory.for_tool(name, id))
   end
 
   test "dispatches each tool to its service and returns JSON strings" do

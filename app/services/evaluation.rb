@@ -19,4 +19,12 @@ module Evaluation
 
   # args: a Hash, or a lambda taking the World (for ids that only exist at run time).
   def self.tool(t, id, name, args = {}) = Event.new(t: t, kind: :tool, role: nil, text: nil, tool_call_id: id, tool: name, args: args)
+
+  # A minimal Vapi-shaped history for a submit_order the caller has answered (last get_cart result, a caller turn, the
+  # submit's own entry - see Voice::TurnEvidence). For the direct demos in Evidence, which have no scenario script.
+  def self.answered_history(submit_id)
+    { "messages" => [ { "role" => "tool_call_result", "name" => "get_cart", "toolCallId" => "demo-get-cart", "time" => 1_000 },
+                      { "role" => "user", "time" => 2_000 },
+                      { "role" => "tool_calls", "time" => 3_000, "toolCalls" => [ { "id" => submit_id, "function" => { "name" => "submit_order" } } ] } ] }
+  end
 end

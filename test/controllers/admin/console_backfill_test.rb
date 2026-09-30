@@ -15,8 +15,11 @@ class Admin::ConsoleBackfillTest < ActionDispatch::IntegrationTest
     @call = CallLifecycle.start(external_call_id: "bf_1", dialed_number: @restaurant.phone_number, caller_number: "+15557774444", console_token: token)
   end
 
+  # submit_order carries a history in which the caller answered the read-back (the confirmation gate's input, see
+  # VapiHistory); the gate itself is tested in test/controllers/api/vapi/confirmation_gate_test.rb.
   def run_tool(id, name, args = {})
-    Voice::ToolRunner.call(call_log: CallLog.find(@call.id), tool_call: { "id" => id, "function" => { "name" => name, "arguments" => args } })
+    Voice::ToolRunner.call(call_log: CallLog.find(@call.id), tool_call: { "id" => id, "function" => { "name" => name, "arguments" => args } },
+                           artifact: VapiHistory.for_tool(name, id))
   end
 
   def script!

@@ -9,8 +9,11 @@ class ConsoleViewTest < ActiveSupport::TestCase
     @call = CallLifecycle.start(external_call_id: "view_1", dialed_number: @restaurant.phone_number, caller_number: "unknown-view_1".then { nil })
   end
 
+  # submit_order carries a history in which the caller answered the read-back (the confirmation gate's input, see
+  # VapiHistory); the gate itself is tested in test/controllers/api/vapi/confirmation_gate_test.rb.
   def run_tool(id, name, args = {})
-    Voice::ToolRunner.call(call_log: CallLog.find(@call.id), tool_call: { "id" => id, "function" => { "name" => name, "arguments" => args } })
+    Voice::ToolRunner.call(call_log: CallLog.find(@call.id), tool_call: { "id" => id, "function" => { "name" => name, "arguments" => args } },
+                           artifact: VapiHistory.for_tool(name, id))
   end
 
   def board = ConsoleView::Board.new(CallLog.find(@call.id))
@@ -61,7 +64,7 @@ class ConsoleViewTest < ActiveSupport::TestCase
     other = CallLifecycle.start(external_call_id: "view_2", dialed_number: @restaurant.phone_number, caller_number: "+15557773333")
     [ [ "a", "add_to_cart", { "menu_item_id" => @burger.id } ], [ "c", "get_cart", {} ],
       [ "s", "submit_order", { "fulfillment_type" => "delivery", "cart_version" => 1, "delivery_address" => "9 SECRET ROAD" } ] ].each do |id, name, args|
-      Voice::ToolRunner.call(call_log: other, tool_call: { "id" => id, "function" => { "name" => name, "arguments" => args } })
+      Voice::ToolRunner.call(call_log: other, tool_call: { "id" => id, "function" => { "name" => name, "arguments" => args } }, artifact: VapiHistory.for_tool(name, id))
     end
     view = ConsoleView::Board.new(other.reload)
     assert_equal [ "delivery (address on file)", "confirmation text queued" ], [ view.fulfillment, view.sms ]
@@ -181,18 +184,18 @@ class ConsoleViewTest < ActiveSupport::TestCase
     events.find { |e| e.invocation.tool_call_id == "s" }
   end
 
-  test "shadow evidence from a chained read-back + submit (the call #9 pattern) is shown as observation, flagged, not enforced" do
+  test "a chained read-back + submit (the call #9 pattern) is refused by the gate, with the turn evidence shown" do
     payload = JSON.parse(file_fixture("vapi/live_submit_webhook_call9.json").read)
     payload["artifact"]["messages"].each { |m| m["toolCalls"]&.each { |t| t["id"] = "s" if t["id"] == payload.dig("toolCallList", 0, "id") } }
     payload["artifact"]["messagesOpenAIFormatted"].each { |m| m["tool_calls"]&.each { |t| t["id"] = "s" if t["id"] == payload.dig("toolCallList", 0, "id") } }
     submit = submit_with(payload["artifact"])
 
-    assert_equal "ok", submit.status, "nothing was refused"
+    assert_equal [ "rejected", "customer_confirmation_required" ], [ submit.status, submit.code ]
     assert_equal [
       [ "caller turns since the last get_cart result: 0 (turn-taking only; not a yes)", true ],
       [ "caller began speaking 0.1 s after the submit was requested (1 later turn, not counted)", false ],
       [ "same model completion answered the get_cart result and issued this submit: yes (it spoke 118 characters)", true ],
-      [ "confirmation gate: shadow only (observed, nothing refused)", false ]
+      [ "confirmation gate: submit refused (no caller turn after the read-back)", true ]
     ], shadow(submit).map { |o| [ o.text, o.warn ] }
     assert shadow(submit).none? { |o| o.text.match?(/confirmed by|customer confirmed|caller confirmed/i) }
   end
@@ -205,7 +208,7 @@ class ConsoleViewTest < ActiveSupport::TestCase
     submit = submit_with(artifact)
     assert_equal [ [ "caller turns since the last get_cart result: 1 (turn-taking only; not a yes)", false ],
                    [ "same model completion answered the get_cart result and issued this submit: no", false ],
-                   [ "confirmation gate: shadow only (observed, nothing refused)", false ] ], shadow(submit).map { |o| [ o.text, o.warn ] }
+                   [ "confirmation gate: passed (a caller turn followed the read-back)", false ] ], shadow(submit).map { |o| [ o.text, o.warn ] }
   end
 
   test "missing history and rows recorded before the instrumentation say so" do

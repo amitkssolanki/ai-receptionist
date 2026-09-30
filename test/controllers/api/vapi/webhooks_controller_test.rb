@@ -97,7 +97,8 @@ class Api::Vapi::WebhooksControllerTest < ActionDispatch::IntegrationTest
       post_event(
         type: "tool-calls",
         call: { id: "vapi_call_4" },
-        toolCallList: [ { id: "toolu_3", function: { name: "submit_order", arguments: { fulfillment_type: "pickup", cart_version: 1 } } } ]
+        toolCallList: [ { id: "toolu_3", function: { name: "submit_order", arguments: { fulfillment_type: "pickup", cart_version: 1 } } } ],
+        artifact: VapiHistory.answered("toolu_3") # the caller answered the read-back (the confirmation gate's input)
       )
     end
     assert_response :success

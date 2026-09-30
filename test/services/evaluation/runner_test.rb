@@ -21,7 +21,8 @@ class Evaluation::RunnerTest < ActiveSupport::TestCase
     "stale_submit_after_change" => [ 0, 0, 0, 6, 2, 2, 0, "abandoned", 2 ],
     "late_duplicate_get_cart" => [ 0, 0, 0, 5, 2, 1, 1, "abandoned", 2 ],
     "duplicate_claimed_add" => [ 1, 0, 0, 3, 2, 0, 1, "abandoned", 2 ],
-    "claim_after_confirmation" => [ 1, 1, 1, 5, 1, 1, 0, "confirmed", 1 ]
+    "claim_after_confirmation" => [ 1, 1, 1, 5, 1, 1, 0, "confirmed", 1 ],
+    "premature_submit_then_answered" => [ 0, 0, 0, 5, 1, 1, 0, "confirmed", 1 ]
   }.freeze
 
   test "every scenario runs and matches its expected outcome" do
@@ -89,6 +90,13 @@ class Evaluation::RunnerTest < ActiveSupport::TestCase
     assert_equal 1, replayed["final_order"]["read_back_version"], "the duplicate get_cart did not refresh the read-back"
     assert_equal 2, replayed["final_order"]["cart_version"]
     assert_equal "cart_changed_since_readback", replayed["tool_calls"].find { |t| t["tool"] == "submit_order" }["error_code"]
+  end
+
+  test "the live premature-submit pattern: refused until the caller answers, then accepted" do
+    r = result("premature_submit_then_answered")
+    submits = r["tool_calls"].select { |t| t["tool"] == "submit_order" }
+    assert_equal [ [ "rejected", "customer_confirmation_required" ], [ "ok", nil ] ], submits.map { |t| t.values_at("status", "error_code") }
+    assert_equal [ "confirmed", 1, 1 ], r["final_order"].values_at("status", "cart_version", "read_back_version")
   end
 
   test "a confirmed order is locked against a later claimed add" do
