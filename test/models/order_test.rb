@@ -45,4 +45,9 @@ class OrderTest < ActiveSupport::TestCase
     @order.update_columns(status: "completed")
     assert @order.update(notes: "late note")
   end
+
+  test "order notes are capped at 300 characters" do
+    assert_not @order.update(notes: "x" * 301)
+    assert @order.update(notes: "x" * 300)
+  end
 end

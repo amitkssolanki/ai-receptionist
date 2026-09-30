@@ -59,6 +59,12 @@ class Voice::ToolArgumentsTest < ActiveSupport::TestCase
     assert_invalid "transfer_to_human", { "reason" => { "why" => "x" } }, /reason must be text/
   end
 
+  test "notes are capped at 300 characters, on items and on the order" do
+    assert_equal 300, parse("add_to_cart", { "menu_item_id" => 1, "notes" => "x" * 300 }).values[:notes].length
+    assert_invalid "add_to_cart", { "menu_item_id" => 1, "notes" => "x" * 301 }, /notes must be at most 300 characters \(got 301\)/
+    assert_invalid "submit_order", { "fulfillment_type" => "pickup", "cart_version" => 1, "notes" => "x" * 301 }, /notes must be at most 300/
+  end
+
   test "unknown fields are dropped, never forwarded (price injection)" do
     result = parse("add_to_cart", { "menu_item_id" => 1, "unit_price_cents" => 1, "price" => 0.01, "total" => 0 })
     assert_equal({ menu_item_id: 1 }, result.values)

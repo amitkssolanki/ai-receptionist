@@ -58,7 +58,8 @@
           },
           "notes": {
             "type": "string",
-            "description": "Optional special instructions for this item"
+            "description": "Optional special instructions for this item (up to 300 characters)",
+            "maxLength": 300
           }
         }
       }
@@ -146,7 +147,8 @@
           },
           "notes": {
             "type": "string",
-            "description": "Optional order-level notes"
+            "description": "Optional order-level notes (up to 300 characters)",
+            "maxLength": 300
           }
         }
       }

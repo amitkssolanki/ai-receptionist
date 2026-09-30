@@ -247,3 +247,35 @@ console token (R23), end-of-call cost / ended_reason / messages columns - those 
 - Flipped: R02, R18. Tests that assert SMS counts now use callers with a real number; web-call variants assert zero.
   Replay call #7 (a browser call) now expects the order confirmed with the SMS skipped.
 - Prompt and `tools.json` tell the model to promise a text only when `confirmation_sms` is `queued`.
+
+## Step 10 — security and sensitive-data hygiene
+
+Plan items done (PLAN §11 and the Step 10 row): no default webhook secret, payload logging, parameter filtering, TLS
+in production, sign-in rate limit, notes cap, secret scan. Not done here (assigned to console steps or other
+steps): console session key / signed console token, browser Vapi key, Web SDK and Action Cable authorization,
+R23 / restaurant resolution (`Restaurant.count == 1` fallback is untouched), HMAC, the rendered-page secrets scan
+(Step 13, it needs pages).
+
+- **Webhook secret:** `ENV["VAPI_SERVER_SECRET"]` or credentials `vapi.server_secret`; no default in any
+  environment (tests set an explicit value). Unset or shorter than 16 characters -> every request is refused with 401
+  and an error is logged (fail closed; chosen over a boot-time raise so `assets:precompile` and the Docker build keep
+  working). The old default string is never accepted. Constant-time compare unchanged.
+- **Logging:** the full-payload `logger.info` is removed in every environment (stricter than the plan, which kept it
+  for development). Now logged: `[Vapi] event type=<type> call=<id>` and, for tool calls,
+  `[Vapi] tool-calls call=<id> <tool>#<toolCallId>=<ok|error code>`; values are cut to a short single-line token
+  (`\w.:-`, 64 chars). `filter_parameters` gained `message, artifact, transcript, customer, phoneNumber, monitor,
+  transport`, so Rails' own "Parameters:" line shows `"message" => "[FILTERED]"`.
+- **Exception hygiene:** tool-runner failures are logged as `<class> at <first app frame>`; exception messages are never
+  logged (they can carry SQL values or provider text) or returned. `ToolInvocation.error_class` keeps the class.
+  Nothing new is stored in ToolInvocation.
+- **Also:** `assume_ssl` + `force_ssl` in production (`/up` excluded); `Users::SessionsController` with
+  `rate_limit` 10 sign-ins / 3 min (test cache store is now `:memory_store` so the limit is testable); notes <= 300
+  characters (argument schema, `OrderItem`/`Order` validations, `tools.json`).
+- **Secret scan:** tracked files were checked for the old default, Twilio SIDs, private key blocks, sk-/GitHub/AWS
+  key shapes, and hard-coded secret assignments; `.kamal/secrets` holds only an ENV reference; `config/master.key` and
+  `.env*` are untracked. Only the old default string remained (README, two setup docs, the controller), now removed.
+  `test/security/secrets_scan_test.rb` keeps this as a check (history files excluded).
+- Docs: README env table, `local_setup.md` and `vapi_setup.md` now say the secret is required, how to generate it
+  (`openssl rand -hex 32`) and that it is never committed. Other stale `api/voice` text stays for Step 17.
+- Flipped: R20. Known gap: development logs at debug level still show SQL with customer phone values (INSERT
+  statements) - framework behaviour, dev only.

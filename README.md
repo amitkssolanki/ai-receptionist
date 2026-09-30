@@ -81,14 +81,13 @@ bin/dev                              # rails app on :3000
 ngrok http 3000                      # separate terminal
 ```
 
-Then in Vapi: set the assistant's Server URL to `<ngrok-url>/api/vapi/webhooks`, set a Server URL Secret (matches `VAPI_SERVER_SECRET`, or use the `dev-secret-change-me` default locally), paste in the system prompt, and add the 7 tools. Full details in the two docs above.
+Then in Vapi: set the assistant's Server URL to `<ngrok-url>/api/vapi/webhooks`, set a Server URL Secret (the same value as `VAPI_SERVER_SECRET` — generate one, see below), paste in the system prompt, and add the 7 tools. Full details in the two docs above.
 
 ### Environment variables
 
 | Variable | Required | Purpose |
 |---|---|---|
-| `VAPI_SERVER_SECRET` | Recommended | Value Vapi must send in the `X-Vapi-Secret` header on every `api/vapi/webhooks` request. Defaults to `dev-secret-change-me` outside production (always fails in production if unset). |
-| `VOICE_WEBHOOK_SECRET` | Recommended | Same idea, for the generic `api/voice/*` endpoints (`Authorization: Bearer <secret>`). Same default behavior. |
+| `VAPI_SERVER_SECRET` | **Required** | Value Vapi must send in the `X-Vapi-Secret` header on every `api/vapi/webhooks` request. There is no default: if it is unset (or shorter than 16 characters) every webhook request is refused with 401 and an error is logged. Generate one with `openssl rand -hex 32`; set it as an env var (or in credentials as `vapi.server_secret`). Never commit it. |
 | `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_FROM_NUMBER` | Optional | SMS order confirmations. `OrderConfirmationSmsJob` silently no-ops if any are missing — safe to leave unset in early dev. |
 
 ### Tests

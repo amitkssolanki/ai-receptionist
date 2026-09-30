@@ -9,6 +9,8 @@ module Voice
       def ok? = error.nil?
     end
 
+    NOTES_LIMIT = 300
+
     INTEGER_PATTERN = /\A\s*-?\d+\s*\z/
 
     SCHEMAS = {
@@ -21,7 +23,7 @@ module Voice
         menu_item_id: { type: :integer, required: true },
         quantity: { type: :integer },
         modifier_ids: { type: :integer_list },
-        notes: { type: :string }
+        notes: { type: :string, max: NOTES_LIMIT }
       },
       "update_cart_item_quantity" => {
         order_item_id: { type: :integer, required: true },
@@ -34,7 +36,7 @@ module Voice
         fulfillment_type: { type: :string, required: true, enum: %w[pickup delivery] },
         cart_version: { type: :integer, required: true },
         delivery_address: { type: :string },
-        notes: { type: :string }
+        notes: { type: :string, max: NOTES_LIMIT }
       },
       "transfer_to_human" => {
         reason: { type: :string }
@@ -65,6 +67,7 @@ module Voice
 
         coerced = coerce(value, spec)
         return failure(received, "#{field} #{describe(spec)} (got #{brief(value)}).") if coerced == :invalid
+        return failure(received, "#{field} must be at most #{spec[:max]} characters (got #{coerced.length}).") if spec[:max] && coerced.length > spec[:max]
 
         values[field] = coerced
       end

@@ -510,8 +510,15 @@ class BaselineReliabilityTest < ActionDispatch::IntegrationTest
 
     assert_equal 401, missing
     assert_response :unauthorized
+
+    # Step 10: no default secret. With none configured every request is refused, including the old default.
+    ENV.delete("VAPI_SERVER_SECRET")
+    [ "wrong", "dev-secret-change-me", "" ].each do |sent|
+      post api_vapi_webhooks_path, params: { message: { type: "status-update" } }, headers: { "X-Vapi-Secret" => sent }, as: :json
+      assert_response :unauthorized, sent.inspect
+    end
     rec(id: "R20", scenario: "Webhook authentication", layer: "vapi",
-        current: "Missing/wrong X-Vapi-Secret -> 401 (constant-time compare; static shared secret, no signature or timestamp)",
+        current: "Step 10: missing/wrong X-Vapi-Secret -> 401 (constant-time compare; static shared secret); no default secret in any environment - unset or < 16 chars refuses everything",
         safe: "Already adequate for a static secret over TLS; replay protection absent")
   end
 

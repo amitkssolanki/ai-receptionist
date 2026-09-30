@@ -30,6 +30,7 @@ class Order < ApplicationRecord
   enum :fulfillment_type, { pickup: "pickup", delivery: "delivery" }
 
   validates :delivery_address, presence: true, if: :delivery?
+  validates :notes, length: { maximum: 300 }
   validate :status_transition_allowed, on: :update, if: :status_changed?
 
   # The cart can change only while the order is still pending.

@@ -52,15 +52,15 @@ Check the elephant icon in the menu bar, or:
 psql -h localhost -U "$(whoami)" -l
 ```
 
-### 2. Set the webhook secret (optional but recommended)
+### 2. Set the webhook secret (required)
 
-The API defaults to `dev-secret-change-me` outside production, which works, but setting your own makes it obvious in logs/config which secret is active:
+There is no default secret: until `VAPI_SERVER_SECRET` is set (16+ characters) every webhook request gets a 401. Generate a random one and export it before starting the app; paste the same value into Vapi's "Server URL Secret":
 
 ```
-export VOICE_WEBHOOK_SECRET=whatever-you-want-locally
+export VAPI_SERVER_SECRET="$(openssl rand -hex 32)"
 ```
 
-Set this in the same shell you start `bin/dev` from — it won't persist across new terminal windows unless you add it to your shell profile or a local `.env` (already gitignored).
+Keep it out of the repository (for example in an untracked `.env` file you source).
 
 ### 3. Start the Rails app
 
@@ -101,7 +101,7 @@ Provision a Twilio trial number, point it at the voice platform (not directly at
 
 ## Troubleshooting
 
-- **401 on every webhook call**: the secret configured in the platform doesn't match `VOICE_WEBHOOK_SECRET` (or the `dev-secret-change-me` default if you didn't set one).
+- **401 on every webhook call**: the secret configured in Vapi does not match `VAPI_SERVER_SECRET`, or `VAPI_SERVER_SECRET` is unset or shorter than 16 characters (there is no default; the app logs an error in that case).
 - **404 on a tool call**: the platform isn't substituting `{{call_id}}` into the URL, or it's using a different call-start `external_call_id` than what it's sending on later tool calls — check the ngrok inspector to see the actual request paths.
 - **Menu/cart looks stale**: the Tailwind CSS being stale is a *display* issue only (see step 3) — if actual data looks wrong, check you're hitting the right restaurant's `phone_number` in the call-start payload.
 - **ngrok URL changed and the platform's webhooks broke**: you're on the free tier without a static domain — claim one (step 1) so this stops happening.

@@ -60,13 +60,20 @@ module Voice
         raise
       end
     rescue AuditFailure => e
-      Rails.logger.error("[Vapi] could not record tool invocation #{tool_call_id}: #{e.cause.class}: #{e.cause&.message}; served unrecorded")
+      log_failure("could not record tool invocation #{tool_call_id}; served unrecorded", e.cause || e)
       run_unrecorded
     end
 
     private
 
     def tool_call_id = @tool_call["id"]
+
+    # Exception messages can carry customer data (SQL values, provider responses), so the log gets the class and the
+    # first application frame - enough to find the bug - and never the message. ToolInvocation.error_class has the class.
+    def log_failure(what, error)
+      frame = Rails.backtrace_cleaner.clean(error.backtrace || []).first
+      Rails.logger.error("[Vapi] #{what}: #{error.class}#{" at #{frame}" if frame}")
+    end
 
     def run_recorded
       ApplicationRecord.transaction do
@@ -103,7 +110,7 @@ module Voice
       rescue ActiveRecord::RecordNotUnique
         raise
       rescue => e
-        raise AuditFailure, e.message
+        raise AuditFailure, "audit insert failed"
       end
       outcome[:result]
     end
@@ -142,7 +149,7 @@ module Voice
       fields = e.record.errors.attribute_names.map { |a| a.to_s.tr("_", " ") }.to_sentence
       reject(outcome, :invalid_arguments, "The request wasn't valid#{": check #{fields}" if fields.present?}.")
     rescue => e
-      Rails.logger.error("[Vapi] tool #{name} failed on call #{@call_log.external_call_id}: #{e.class}: #{e.message}")
+      log_failure("tool #{name.to_s.gsub(/[^\w.:\-]/, '?').first(64)} failed on call #{@call_log.external_call_id}", e)
       outcome.merge(
         result: self.class.error_json(:internal_error, MESSAGES.fetch(:internal_error)),
         status: "error", error_code: "internal_error", error_class: e.class.name
