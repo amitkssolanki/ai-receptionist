@@ -1,0 +1,163 @@
+[
+  {
+    "id": "R01",
+    "scenario": "Submit without read-back",
+    "layer": "vapi",
+    "current": "Accepted; order confirmed. No get_cart call was required. Result: {\"items\":[{\"id\":103,\"menu_item\":\"Margherita Pizza\",\"quantity\":1,\"modifiers\":[],\"subtotal\":14.0}],\"total\":14.0}",
+    "safe": "Reject unless the cart was read back (via server) after the last change"
+  },
+  {
+    "id": "R02",
+    "scenario": "Submit twice",
+    "layer": "vapi",
+    "current": "Second submit accepted: 2 OrderConfirmationSmsJob enqueued, placed_at overwritten, fulfillment switched pickup->delivery on an already-confirmed order",
+    "safe": "Idempotent: second submit returns the existing confirmation; no second SMS; no field changes"
+  },
+  {
+    "id": "R03",
+    "scenario": "Modify order after submission",
+    "layer": "vapi",
+    "current": "Order in 'preparing' was mutated by voice tools: Margherita removed, Garlic Knots added, total 1400->550 cents; no error",
+    "safe": "Reject cart mutations once the order is submitted"
+  },
+  {
+    "id": "R04",
+    "scenario": "Invalid modifier (belongs to another item)",
+    "layer": "vapi",
+    "current": "Item added WITHOUT the modifier; no error returned (result: {\"items\":[{\"id\":115,\"menu_item\":\"Margherita Pizza\",\"quantity\":1,\"modifiers\":[],\"subtotal\":14.0}],\"total\":14.0})",
+    "safe": "Reject with an actionable error naming the valid modifiers"
+  },
+  {
+    "id": "R05",
+    "scenario": "Invalid modifier (nonexistent id)",
+    "layer": "vapi",
+    "current": "Item added without modifier; no error",
+    "safe": "Reject with an actionable error"
+  },
+  {
+    "id": "R06",
+    "scenario": "Invalid / unavailable / other-restaurant menu item",
+    "layer": "vapi",
+    "current": "Not inserted (safe). Error returned to the LLM is raw ActiveRecord text, e.g. \"Sorry, something went wrong handling that - Couldn't find MenuItem with 'id'=999999 [WHERE \\\"menu_items\\\".\\\"restaurant_id\\\" = $1 AND \\\"menu_items\\\".\\\"available\\\" = $2]\"",
+    "safe": "Not inserted, with a structured, speakable error code (e.g. item_unavailable)"
+  },
+  {
+    "id": "R07",
+    "scenario": "Excessive / invalid quantity",
+    "layer": "vapi",
+    "current": "quantity 500 accepted (order total $7,000.00). 0, -3 and \"two\" rejected with raw text: \"Sorry, something went wrong handling that - Validation failed: Quantity must be greater than 0\"",
+    "safe": "Upper bound; large orders routed to a human (the prompt's 'large order -> transfer' rule enforced server-side)"
+  },
+  {
+    "id": "R08",
+    "scenario": "Order while restaurant closed",
+    "layer": "vapi",
+    "current": "open_now? is false, submit_order still confirms. The Vapi path never exposes or checks hours",
+    "safe": "Reject submission when closed, with a speakable reason"
+  },
+  {
+    "id": "R09",
+    "scenario": "24/7 hours edge (seed data)",
+    "layer": "model",
+    "current": "open_now? false from 23:59:01 to 23:59:59 local time with the seeded '00:00-23:59' hours",
+    "safe": "A real 24-hour representation (or document the one-minute gap)"
+  },
+  {
+    "id": "R10",
+    "scenario": "Malformed tool arguments / raw exception exposure",
+    "layer": "vapi",
+    "current": "All caught by one `rescue => e` and returned to the LLM verbatim: \"Sorry, something went wrong handling that - key not found: \\\"menu_item_id\\\"\" | \"Sorry, something went wrong handling that - expected object key, got 'not' at line 1 column 2\" | \"Sorry, something went wrong handling that - undefined method 'order_items' for nil\" | \"Sorry, something went wrong handling that - 'teleport' is not a valid fulfillment_type\"",
+    "safe": "Validate arguments at the boundary; return structured error codes; never expose exception text"
+  },
+  {
+    "id": "R11",
+    "scenario": "Unknown call id / unknown tool",
+    "layer": "vapi",
+    "current": "Handled with fixed strings (\"No active call found for this request.\", \"Unknown tool: delete_everything\"); HTTP 200",
+    "safe": "Already safe; keep"
+  },
+  {
+    "id": "R12",
+    "scenario": "Transferred call followed by end-of-call",
+    "layer": "vapi",
+    "current": "Status transferred -> abandoned; the '[Transferred to human: ...]' note is also overwritten by the report's transcript",
+    "safe": "Preserve transferred status and the transfer note"
+  },
+  {
+    "id": "R13",
+    "scenario": "Duplicate call-start event",
+    "layer": "vapi",
+    "current": "Sequential duplicate: ignored (1 CallLog). Racing duplicate: CallLog.create! raises uniqueness RecordInvalid -> HTTP 422",
+    "safe": "Create-or-find; always 200 for a duplicate start"
+  },
+  {
+    "id": "R14",
+    "scenario": "Duplicate tool call (same toolCallId redelivered)",
+    "layer": "vapi",
+    "current": "Two order items, total doubled (2800 cents). toolCallId is not recorded anywhere",
+    "safe": "Replay of a toolCallId returns the stored result without re-executing"
+  },
+  {
+    "id": "R15",
+    "scenario": "Parallel duplicate tool calls (distinct ids, same intent)",
+    "layer": "vapi",
+    "current": "Both executed -> 2 items. Indistinguishable from a caller ordering two",
+    "safe": "Not solvable by idempotency; caught by server-owned read-back before submit"
+  },
+  {
+    "id": "R16",
+    "scenario": "Partial failure inside add_to_cart",
+    "layer": "vapi",
+    "current": "Order created and linked to the call, item insert failed -> empty pending order left behind; LLM got \"Sorry, something went wrong handling that - simulated failure\"",
+    "safe": "Single transaction; nothing persisted on failure"
+  },
+  {
+    "id": "R17",
+    "scenario": "Abandoned call with unsubmitted cart",
+    "layer": "vapi",
+    "current": "CallLog abandoned; its order stays 'pending' with items and a total, indistinguishable in the orders list from a live cart",
+    "safe": "Mark the cart abandoned/cancelled at end of call"
+  },
+  {
+    "id": "R18",
+    "scenario": "SMS confirmation behavior",
+    "layer": "job",
+    "current": "Twilio unset: silent no-op. Twilio set: sends to \"unknown-sms_call\" (web-call placeholder, not a phone number); body \"Thanks for your order at Baseline Pizzeria! Total: $21.50. We'll have it ready soon.\" - total only, no items",
+    "safe": "Skip non-phone caller ids; itemized body; record send status on the order"
+  },
+  {
+    "id": "R19",
+    "scenario": "Price/total injection via tool arguments",
+    "layer": "vapi",
+    "current": "Ignored; unit price from the menu, total recomputed server-side",
+    "safe": "Already safe; keep"
+  },
+  {
+    "id": "R20",
+    "scenario": "Webhook authentication",
+    "layer": "vapi",
+    "current": "Missing/wrong X-Vapi-Secret -> 401 (constant-time compare; static shared secret, no signature or timestamp)",
+    "safe": "Already adequate for a static secret over TLS; replay protection absent"
+  },
+  {
+    "id": "R21",
+    "scenario": "Generic api/voice adapter parity",
+    "layer": "api/voice",
+    "current": "Same gaps via the generic endpoints: modifier from another item dropped, double submit enqueues 2 SMS, add after confirm returns 201",
+    "safe": "Both adapters delegate to one domain service enforcing the same rules"
+  },
+  {
+    "id": "R22",
+    "scenario": "Generic end_call after transfer",
+    "layer": "api/voice",
+    "current": "transferred -> abandoned (unless the platform passes an explicit status)",
+    "safe": "Preserve transferred"
+  },
+  {
+    "id": "R23",
+    "scenario": "Restaurant resolution for web calls (no dialed number)",
+    "layer": "vapi",
+    "current": "Works only while exactly one Restaurant exists (Restaurant.count == 1 fallback). With two, no CallLog is created (HTTP 200, warning log only) and every tool returns 'No active call found'",
+    "safe": "Explicit restaurant resolution (e.g. assistant metadata) and a loud failure; documented single-tenant assumption"
+  }
+]

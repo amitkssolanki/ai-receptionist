@@ -1,0 +1,192 @@
+[
+  {
+    "log_line": 3266,
+    "started_at_local": "2026-08-06 08:03:48 +0530",
+    "event": "assistant.started",
+    "tools": [],
+    "http_status": 200,
+    "total_ms": 2,
+    "active_record_ms": 0.0,
+    "queries": 0
+  },
+  {
+    "log_line": 3276,
+    "started_at_local": "2026-08-06 08:03:48 +0530",
+    "event": "speech-update",
+    "tools": [],
+    "http_status": 200,
+    "total_ms": 1,
+    "active_record_ms": 0.0,
+    "queries": 0
+  },
+  {
+    "log_line": 3318,
+    "started_at_local": "2026-08-06 08:03:48 +0530",
+    "event": "speech-update",
+    "tools": [],
+    "http_status": 200,
+    "total_ms": 1,
+    "active_record_ms": 0.0,
+    "queries": 0
+  },
+  {
+    "log_line": 3334,
+    "started_at_local": "2026-08-06 08:03:52 +0530",
+    "event": "conversation-update",
+    "tools": [],
+    "http_status": 200,
+    "total_ms": 1,
+    "active_record_ms": 0.0,
+    "queries": 0
+  },
+  {
+    "log_line": 3348,
+    "started_at_local": "2026-08-06 08:03:55 +0530",
+    "event": "speech-update",
+    "tools": [],
+    "http_status": 200,
+    "total_ms": 1,
+    "active_record_ms": 0.0,
+    "queries": 0
+  },
+  {
+    "log_line": 3356,
+    "started_at_local": "2026-08-06 08:03:56 +0530",
+    "event": "speech-update",
+    "tools": [],
+    "http_status": 200,
+    "total_ms": 0,
+    "active_record_ms": 0.0,
+    "queries": 0
+  },
+  {
+    "log_line": 3364,
+    "started_at_local": "2026-08-06 08:03:57 +0530",
+    "event": "conversation-update",
+    "tools": [],
+    "http_status": 200,
+    "total_ms": 1,
+    "active_record_ms": 0.0,
+    "queries": 0
+  },
+  {
+    "log_line": 3372,
+    "started_at_local": "2026-08-06 08:03:58 +0530",
+    "event": "speech-update",
+    "tools": [],
+    "http_status": 200,
+    "total_ms": 1,
+    "active_record_ms": 0.0,
+    "queries": 0
+  },
+  {
+    "log_line": 3382,
+    "started_at_local": "2026-08-06 08:03:59 +0530",
+    "event": "speech-update",
+    "tools": [],
+    "http_status": 200,
+    "total_ms": 1,
+    "active_record_ms": 0.0,
+    "queries": 0
+  },
+  {
+    "log_line": 3398,
+    "started_at_local": "2026-08-06 08:04:03 +0530",
+    "event": "conversation-update",
+    "tools": [],
+    "http_status": 200,
+    "total_ms": 1,
+    "active_record_ms": 0.0,
+    "queries": 0
+  },
+  {
+    "log_line": 3412,
+    "started_at_local": "2026-08-06 08:04:08 +0530",
+    "event": "conversation-update",
+    "tools": [],
+    "http_status": 200,
+    "total_ms": 1,
+    "active_record_ms": 0.0,
+    "queries": 0
+  },
+  {
+    "log_line": 3422,
+    "started_at_local": "2026-08-06 08:04:09 +0530",
+    "event": "speech-update",
+    "tools": [],
+    "http_status": 200,
+    "total_ms": 1,
+    "active_record_ms": 0.0,
+    "queries": 0
+  },
+  {
+    "log_line": 3436,
+    "started_at_local": "2026-08-06 08:04:09 +0530",
+    "event": "speech-update",
+    "tools": [],
+    "http_status": 200,
+    "total_ms": 1,
+    "active_record_ms": 0.0,
+    "queries": 0
+  },
+  {
+    "log_line": 3444,
+    "started_at_local": "2026-08-06 08:04:13 +0530",
+    "event": "conversation-update",
+    "tools": [],
+    "http_status": 200,
+    "total_ms": 1,
+    "active_record_ms": 0.0,
+    "queries": 0
+  },
+  {
+    "log_line": 3452,
+    "started_at_local": "2026-08-06 08:04:14 +0530",
+    "event": "speech-update",
+    "tools": [],
+    "http_status": 200,
+    "total_ms": 1,
+    "active_record_ms": 0.0,
+    "queries": 0
+  },
+  {
+    "log_line": 3460,
+    "started_at_local": "2026-08-06 08:04:14 +0530",
+    "event": "conversation-update",
+    "tools": [],
+    "http_status": 200,
+    "total_ms": 1,
+    "active_record_ms": 0.0,
+    "queries": 0
+  },
+  {
+    "log_line": 3468,
+    "started_at_local": "2026-08-06 08:04:44 +0530",
+    "event": "speech-update",
+    "tools": [],
+    "http_status": 200,
+    "total_ms": 2,
+    "active_record_ms": 0.0,
+    "queries": 0
+  },
+  {
+    "log_line": 3476,
+    "started_at_local": "2026-08-06 08:04:46 +0530",
+    "event": "status-update",
+    "tools": [],
+    "http_status": 200,
+    "total_ms": 1,
+    "active_record_ms": 0.0,
+    "queries": 0
+  },
+  {
+    "log_line": 3484,
+    "started_at_local": "2026-08-06 08:04:48 +0530",
+    "event": "end-of-call-report",
+    "tools": [],
+    "http_status": 200,
+    "total_ms": 81,
+    "active_record_ms": 27.2,
+    "queries": 2
+  }
+]

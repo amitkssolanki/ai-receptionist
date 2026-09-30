@@ -1,0 +1,1006 @@
+[
+  {
+    "log_line": 3505,
+    "started_at_local": "2026-08-06 08:20:21 +0530",
+    "event": "assistant.started",
+    "tools": [],
+    "http_status": 200,
+    "total_ms": 3,
+    "active_record_ms": 0.0,
+    "queries": 0
+  },
+  {
+    "log_line": 3515,
+    "started_at_local": "2026-08-06 08:20:22 +0530",
+    "event": "speech-update",
+    "tools": [],
+    "http_status": 200,
+    "total_ms": 1,
+    "active_record_ms": 0.0,
+    "queries": 0
+  },
+  {
+    "log_line": 3557,
+    "started_at_local": "2026-08-06 08:20:25 +0530",
+    "event": "conversation-update",
+    "tools": [],
+    "http_status": 200,
+    "total_ms": 1,
+    "active_record_ms": 0.0,
+    "queries": 0
+  },
+  {
+    "log_line": 3571,
+    "started_at_local": "2026-08-06 08:20:27 +0530",
+    "event": "speech-update",
+    "tools": [],
+    "http_status": 200,
+    "total_ms": 1,
+    "active_record_ms": 0.0,
+    "queries": 0
+  },
+  {
+    "log_line": 3581,
+    "started_at_local": "2026-08-06 08:20:29 +0530",
+    "event": "conversation-update",
+    "tools": [],
+    "http_status": 200,
+    "total_ms": 2,
+    "active_record_ms": 0.0,
+    "queries": 0
+  },
+  {
+    "log_line": 3595,
+    "started_at_local": "2026-08-06 08:20:29 +0530",
+    "event": "conversation-update",
+    "tools": [],
+    "http_status": 200,
+    "total_ms": 3,
+    "active_record_ms": 0.0,
+    "queries": 0
+  },
+  {
+    "log_line": 3603,
+    "started_at_local": "2026-08-06 08:20:30 +0530",
+    "event": "tool-calls",
+    "tools": [
+      "get_menu"
+    ],
+    "http_status": 200,
+    "total_ms": 267,
+    "active_record_ms": 124.3,
+    "queries": 53
+  },
+  {
+    "log_line": 3717,
+    "started_at_local": "2026-08-06 08:20:31 +0530",
+    "event": "conversation-update",
+    "tools": [],
+    "http_status": 200,
+    "total_ms": 2,
+    "active_record_ms": 0.0,
+    "queries": 0
+  },
+  {
+    "log_line": 3725,
+    "started_at_local": "2026-08-06 08:20:32 +0530",
+    "event": "speech-update",
+    "tools": [],
+    "http_status": 200,
+    "total_ms": 2,
+    "active_record_ms": 0.0,
+    "queries": 0
+  },
+  {
+    "log_line": 3733,
+    "started_at_local": "2026-08-06 08:20:42 +0530",
+    "event": "conversation-update",
+    "tools": [],
+    "http_status": 200,
+    "total_ms": 3,
+    "active_record_ms": 0.0,
+    "queries": 0
+  },
+  {
+    "log_line": 3741,
+    "started_at_local": "2026-08-06 08:20:49 +0530",
+    "event": "conversation-update",
+    "tools": [],
+    "http_status": 200,
+    "total_ms": 2,
+    "active_record_ms": 0.0,
+    "queries": 0
+  },
+  {
+    "log_line": 3749,
+    "started_at_local": "2026-08-06 08:21:02 +0530",
+    "event": "conversation-update",
+    "tools": [],
+    "http_status": 200,
+    "total_ms": 2,
+    "active_record_ms": 0.0,
+    "queries": 0
+  },
+  {
+    "log_line": 3757,
+    "started_at_local": "2026-08-06 08:21:02 +0530",
+    "event": "conversation-update",
+    "tools": [],
+    "http_status": 200,
+    "total_ms": 2,
+    "active_record_ms": 0.0,
+    "queries": 0
+  },
+  {
+    "log_line": 3765,
+    "started_at_local": "2026-08-06 08:21:13 +0530",
+    "event": "conversation-update",
+    "tools": [],
+    "http_status": 200,
+    "total_ms": 2,
+    "active_record_ms": 0.0,
+    "queries": 0
+  },
+  {
+    "log_line": 3773,
+    "started_at_local": "2026-08-06 08:21:24 +0530",
+    "event": "conversation-update",
+    "tools": [],
+    "http_status": 200,
+    "total_ms": 2,
+    "active_record_ms": 0.0,
+    "queries": 0
+  },
+  {
+    "log_line": 3783,
+    "started_at_local": "2026-08-06 08:21:26 +0530",
+    "event": "speech-update",
+    "tools": [],
+    "http_status": 200,
+    "total_ms": 1,
+    "active_record_ms": 0.0,
+    "queries": 0
+  },
+  {
+    "log_line": 3797,
+    "started_at_local": "2026-08-06 08:21:29 +0530",
+    "event": "speech-update",
+    "tools": [],
+    "http_status": 200,
+    "total_ms": 2,
+    "active_record_ms": 0.0,
+    "queries": 0
+  },
+  {
+    "log_line": 3807,
+    "started_at_local": "2026-08-06 08:21:30 +0530",
+    "event": "conversation-update",
+    "tools": [],
+    "http_status": 200,
+    "total_ms": 1,
+    "active_record_ms": 0.0,
+    "queries": 0
+  },
+  {
+    "log_line": 3821,
+    "started_at_local": "2026-08-06 08:21:31 +0530",
+    "event": "speech-update",
+    "tools": [],
+    "http_status": 200,
+    "total_ms": 1,
+    "active_record_ms": 0.0,
+    "queries": 0
+  },
+  {
+    "log_line": 3831,
+    "started_at_local": "2026-08-06 08:21:31 +0530",
+    "event": "speech-update",
+    "tools": [],
+    "http_status": 200,
+    "total_ms": 1,
+    "active_record_ms": 0.0,
+    "queries": 0
+  },
+  {
+    "log_line": 3845,
+    "started_at_local": "2026-08-06 08:21:35 +0530",
+    "event": "conversation-update",
+    "tools": [],
+    "http_status": 200,
+    "total_ms": 3,
+    "active_record_ms": 0.0,
+    "queries": 0
+  },
+  {
+    "log_line": 3855,
+    "started_at_local": "2026-08-06 08:21:39 +0530",
+    "event": "conversation-update",
+    "tools": [],
+    "http_status": 200,
+    "total_ms": 4,
+    "active_record_ms": 0.0,
+    "queries": 0
+  },
+  {
+    "log_line": 3869,
+    "started_at_local": "2026-08-06 08:21:39 +0530",
+    "event": "conversation-update",
+    "tools": [],
+    "http_status": 200,
+    "total_ms": 1,
+    "active_record_ms": 0.0,
+    "queries": 0
+  },
+  {
+    "log_line": 3877,
+    "started_at_local": "2026-08-06 08:21:39 +0530",
+    "event": "speech-update",
+    "tools": [],
+    "http_status": 200,
+    "total_ms": 1,
+    "active_record_ms": 0.0,
+    "queries": 0
+  },
+  {
+    "log_line": 3885,
+    "started_at_local": "2026-08-06 08:21:40 +0530",
+    "event": "conversation-update",
+    "tools": [],
+    "http_status": 200,
+    "total_ms": 3,
+    "active_record_ms": 0.0,
+    "queries": 0
+  },
+  {
+    "log_line": 3893,
+    "started_at_local": "2026-08-06 08:21:40 +0530",
+    "event": "speech-update",
+    "tools": [],
+    "http_status": 200,
+    "total_ms": 1,
+    "active_record_ms": 0.0,
+    "queries": 0
+  },
+  {
+    "log_line": 3901,
+    "started_at_local": "2026-08-06 08:21:41 +0530",
+    "event": "speech-update",
+    "tools": [],
+    "http_status": 200,
+    "total_ms": 1,
+    "active_record_ms": 0.0,
+    "queries": 0
+  },
+  {
+    "log_line": 3911,
+    "started_at_local": "2026-08-06 08:21:41 +0530",
+    "event": "speech-update",
+    "tools": [],
+    "http_status": 200,
+    "total_ms": 1,
+    "active_record_ms": 0.0,
+    "queries": 0
+  },
+  {
+    "log_line": 3929,
+    "started_at_local": "2026-08-06 08:21:42 +0530",
+    "event": "user-interrupted",
+    "tools": [],
+    "http_status": 200,
+    "total_ms": 1,
+    "active_record_ms": 0.0,
+    "queries": 0
+  },
+  {
+    "log_line": 3949,
+    "started_at_local": "2026-08-06 08:21:42 +0530",
+    "event": "conversation-update",
+    "tools": [],
+    "http_status": 200,
+    "total_ms": 2,
+    "active_record_ms": 0.0,
+    "queries": 0
+  },
+  {
+    "log_line": 3957,
+    "started_at_local": "2026-08-06 08:21:42 +0530",
+    "event": "conversation-update",
+    "tools": [],
+    "http_status": 200,
+    "total_ms": 1,
+    "active_record_ms": 0.0,
+    "queries": 0
+  },
+  {
+    "log_line": 3965,
+    "started_at_local": "2026-08-06 08:21:43 +0530",
+    "event": "speech-update",
+    "tools": [],
+    "http_status": 200,
+    "total_ms": 1,
+    "active_record_ms": 0.0,
+    "queries": 0
+  },
+  {
+    "log_line": 3975,
+    "started_at_local": "2026-08-06 08:21:43 +0530",
+    "event": "speech-update",
+    "tools": [],
+    "http_status": 200,
+    "total_ms": 1,
+    "active_record_ms": 0.0,
+    "queries": 0
+  },
+  {
+    "log_line": 3989,
+    "started_at_local": "2026-08-06 08:21:44 +0530",
+    "event": "speech-update",
+    "tools": [],
+    "http_status": 200,
+    "total_ms": 1,
+    "active_record_ms": 0.0,
+    "queries": 0
+  },
+  {
+    "log_line": 3997,
+    "started_at_local": "2026-08-06 08:21:48 +0530",
+    "event": "conversation-update",
+    "tools": [],
+    "http_status": 200,
+    "total_ms": 3,
+    "active_record_ms": 0.0,
+    "queries": 0
+  },
+  {
+    "log_line": 4005,
+    "started_at_local": "2026-08-06 08:21:52 +0530",
+    "event": "user-interrupted",
+    "tools": [],
+    "http_status": 200,
+    "total_ms": 1,
+    "active_record_ms": 0.0,
+    "queries": 0
+  },
+  {
+    "log_line": 4013,
+    "started_at_local": "2026-08-06 08:21:53 +0530",
+    "event": "speech-update",
+    "tools": [],
+    "http_status": 200,
+    "total_ms": 2,
+    "active_record_ms": 0.0,
+    "queries": 0
+  },
+  {
+    "log_line": 4023,
+    "started_at_local": "2026-08-06 08:21:53 +0530",
+    "event": "conversation-update",
+    "tools": [],
+    "http_status": 200,
+    "total_ms": 2,
+    "active_record_ms": 0.0,
+    "queries": 0
+  },
+  {
+    "log_line": 4039,
+    "started_at_local": "2026-08-06 08:21:54 +0530",
+    "event": "conversation-update",
+    "tools": [],
+    "http_status": 200,
+    "total_ms": 2,
+    "active_record_ms": 0.0,
+    "queries": 0
+  },
+  {
+    "log_line": 4091,
+    "started_at_local": "2026-08-06 08:21:55 +0530",
+    "event": "conversation-update",
+    "tools": [],
+    "http_status": 200,
+    "total_ms": 2,
+    "active_record_ms": 0.0,
+    "queries": 0
+  },
+  {
+    "log_line": 4099,
+    "started_at_local": "2026-08-06 08:21:56 +0530",
+    "event": "speech-update",
+    "tools": [],
+    "http_status": 200,
+    "total_ms": 1,
+    "active_record_ms": 0.0,
+    "queries": 0
+  },
+  {
+    "log_line": 4109,
+    "started_at_local": "2026-08-06 08:21:56 +0530",
+    "event": "speech-update",
+    "tools": [],
+    "http_status": 200,
+    "total_ms": 1,
+    "active_record_ms": 0.0,
+    "queries": 0
+  },
+  {
+    "log_line": 4130,
+    "started_at_local": "2026-08-06 08:22:03 +0530",
+    "event": "conversation-update",
+    "tools": [],
+    "http_status": 200,
+    "total_ms": 2,
+    "active_record_ms": 0.0,
+    "queries": 0
+  },
+  {
+    "log_line": 4138,
+    "started_at_local": "2026-08-06 08:22:05 +0530",
+    "event": "user-interrupted",
+    "tools": [],
+    "http_status": 200,
+    "total_ms": 2,
+    "active_record_ms": 0.0,
+    "queries": 0
+  },
+  {
+    "log_line": 4148,
+    "started_at_local": "2026-08-06 08:22:05 +0530",
+    "event": "speech-update",
+    "tools": [],
+    "http_status": 200,
+    "total_ms": 2,
+    "active_record_ms": 0.0,
+    "queries": 0
+  },
+  {
+    "log_line": 4162,
+    "started_at_local": "2026-08-06 08:22:05 +0530",
+    "event": "conversation-update",
+    "tools": [],
+    "http_status": 200,
+    "total_ms": 3,
+    "active_record_ms": 0.0,
+    "queries": 0
+  },
+  {
+    "log_line": 4170,
+    "started_at_local": "2026-08-06 08:22:05 +0530",
+    "event": "conversation-update",
+    "tools": [],
+    "http_status": 200,
+    "total_ms": 3,
+    "active_record_ms": 0.0,
+    "queries": 0
+  },
+  {
+    "log_line": 4178,
+    "started_at_local": "2026-08-06 08:22:05 +0530",
+    "event": "speech-update",
+    "tools": [],
+    "http_status": 200,
+    "total_ms": 1,
+    "active_record_ms": 0.0,
+    "queries": 0
+  },
+  {
+    "log_line": 4186,
+    "started_at_local": "2026-08-06 08:22:06 +0530",
+    "event": "speech-update",
+    "tools": [],
+    "http_status": 200,
+    "total_ms": 2,
+    "active_record_ms": 0.0,
+    "queries": 0
+  },
+  {
+    "log_line": 4194,
+    "started_at_local": "2026-08-06 08:22:06 +0530",
+    "event": "speech-update",
+    "tools": [],
+    "http_status": 200,
+    "total_ms": 2,
+    "active_record_ms": 0.0,
+    "queries": 0
+  },
+  {
+    "log_line": 4202,
+    "started_at_local": "2026-08-06 08:22:07 +0530",
+    "event": "speech-update",
+    "tools": [],
+    "http_status": 200,
+    "total_ms": 2,
+    "active_record_ms": 0.0,
+    "queries": 0
+  },
+  {
+    "log_line": 4210,
+    "started_at_local": "2026-08-06 08:22:10 +0530",
+    "event": "user-interrupted",
+    "tools": [],
+    "http_status": 200,
+    "total_ms": 4,
+    "active_record_ms": 0.0,
+    "queries": 0
+  },
+  {
+    "log_line": 4218,
+    "started_at_local": "2026-08-06 08:22:11 +0530",
+    "event": "speech-update",
+    "tools": [],
+    "http_status": 200,
+    "total_ms": 1,
+    "active_record_ms": 0.0,
+    "queries": 0
+  },
+  {
+    "log_line": 4228,
+    "started_at_local": "2026-08-06 08:22:11 +0530",
+    "event": "conversation-update",
+    "tools": [],
+    "http_status": 200,
+    "total_ms": 2,
+    "active_record_ms": 0.0,
+    "queries": 0
+  },
+  {
+    "log_line": 4244,
+    "started_at_local": "2026-08-06 08:22:11 +0530",
+    "event": "conversation-update",
+    "tools": [],
+    "http_status": 200,
+    "total_ms": 2,
+    "active_record_ms": 0.0,
+    "queries": 0
+  },
+  {
+    "log_line": 4258,
+    "started_at_local": "2026-08-06 08:22:12 +0530",
+    "event": "speech-update",
+    "tools": [],
+    "http_status": 200,
+    "total_ms": 1,
+    "active_record_ms": 0.0,
+    "queries": 0
+  },
+  {
+    "log_line": 4266,
+    "started_at_local": "2026-08-06 08:22:19 +0530",
+    "event": "conversation-update",
+    "tools": [],
+    "http_status": 200,
+    "total_ms": 2,
+    "active_record_ms": 0.0,
+    "queries": 0
+  },
+  {
+    "log_line": 4274,
+    "started_at_local": "2026-08-06 08:22:23 +0530",
+    "event": "speech-update",
+    "tools": [],
+    "http_status": 200,
+    "total_ms": 1,
+    "active_record_ms": 0.0,
+    "queries": 0
+  },
+  {
+    "log_line": 4282,
+    "started_at_local": "2026-08-06 08:22:23 +0530",
+    "event": "conversation-update",
+    "tools": [],
+    "http_status": 200,
+    "total_ms": 2,
+    "active_record_ms": 0.0,
+    "queries": 0
+  },
+  {
+    "log_line": 4290,
+    "started_at_local": "2026-08-06 08:22:24 +0530",
+    "event": "speech-update",
+    "tools": [],
+    "http_status": 200,
+    "total_ms": 1,
+    "active_record_ms": 0.0,
+    "queries": 0
+  },
+  {
+    "log_line": 4298,
+    "started_at_local": "2026-08-06 08:22:24 +0530",
+    "event": "speech-update",
+    "tools": [],
+    "http_status": 200,
+    "total_ms": 1,
+    "active_record_ms": 0.0,
+    "queries": 0
+  },
+  {
+    "log_line": 4306,
+    "started_at_local": "2026-08-06 08:22:25 +0530",
+    "event": "speech-update",
+    "tools": [],
+    "http_status": 200,
+    "total_ms": 1,
+    "active_record_ms": 0.0,
+    "queries": 0
+  },
+  {
+    "log_line": 4316,
+    "started_at_local": "2026-08-06 08:22:26 +0530",
+    "event": "conversation-update",
+    "tools": [],
+    "http_status": 200,
+    "total_ms": 4,
+    "active_record_ms": 0.0,
+    "queries": 0
+  },
+  {
+    "log_line": 4330,
+    "started_at_local": "2026-08-06 08:22:27 +0530",
+    "event": "tool-calls",
+    "tools": [
+      "get_cart"
+    ],
+    "http_status": 200,
+    "total_ms": 19,
+    "active_record_ms": 6.0,
+    "queries": 4
+  },
+  {
+    "log_line": 4346,
+    "started_at_local": "2026-08-06 08:22:28 +0530",
+    "event": "conversation-update",
+    "tools": [],
+    "http_status": 200,
+    "total_ms": 8,
+    "active_record_ms": 0.0,
+    "queries": 0
+  },
+  {
+    "log_line": 4354,
+    "started_at_local": "2026-08-06 08:22:28 +0530",
+    "event": "conversation-update",
+    "tools": [],
+    "http_status": 200,
+    "total_ms": 4,
+    "active_record_ms": 0.0,
+    "queries": 0
+  },
+  {
+    "log_line": 4362,
+    "started_at_local": "2026-08-06 08:22:29 +0530",
+    "event": "speech-update",
+    "tools": [],
+    "http_status": 200,
+    "total_ms": 3,
+    "active_record_ms": 0.0,
+    "queries": 0
+  },
+  {
+    "log_line": 4370,
+    "started_at_local": "2026-08-06 08:22:36 +0530",
+    "event": "speech-update",
+    "tools": [],
+    "http_status": 200,
+    "total_ms": 2,
+    "active_record_ms": 0.0,
+    "queries": 0
+  },
+  {
+    "log_line": 4378,
+    "started_at_local": "2026-08-06 08:22:36 +0530",
+    "event": "conversation-update",
+    "tools": [],
+    "http_status": 200,
+    "total_ms": 6,
+    "active_record_ms": 0.0,
+    "queries": 0
+  },
+  {
+    "log_line": 4386,
+    "started_at_local": "2026-08-06 08:22:37 +0530",
+    "event": "speech-update",
+    "tools": [],
+    "http_status": 200,
+    "total_ms": 3,
+    "active_record_ms": 0.0,
+    "queries": 0
+  },
+  {
+    "log_line": 4394,
+    "started_at_local": "2026-08-06 08:22:37 +0530",
+    "event": "conversation-update",
+    "tools": [],
+    "http_status": 200,
+    "total_ms": 4,
+    "active_record_ms": 0.0,
+    "queries": 0
+  },
+  {
+    "log_line": 4402,
+    "started_at_local": "2026-08-06 08:22:38 +0530",
+    "event": "speech-update",
+    "tools": [],
+    "http_status": 200,
+    "total_ms": 3,
+    "active_record_ms": 0.0,
+    "queries": 0
+  },
+  {
+    "log_line": 4419,
+    "started_at_local": "2026-08-06 08:22:38 +0530",
+    "event": "conversation-update",
+    "tools": [],
+    "http_status": 200,
+    "total_ms": 3,
+    "active_record_ms": 0.0,
+    "queries": 0
+  },
+  {
+    "log_line": 4446,
+    "started_at_local": "2026-08-06 08:22:39 +0530",
+    "event": "conversation-update",
+    "tools": [],
+    "http_status": 200,
+    "total_ms": 5,
+    "active_record_ms": 0.0,
+    "queries": 0
+  },
+  {
+    "log_line": 4454,
+    "started_at_local": "2026-08-06 08:22:39 +0530",
+    "event": "speech-update",
+    "tools": [],
+    "http_status": 200,
+    "total_ms": 2,
+    "active_record_ms": 0.0,
+    "queries": 0
+  },
+  {
+    "log_line": 4464,
+    "started_at_local": "2026-08-06 08:22:40 +0530",
+    "event": "speech-update",
+    "tools": [],
+    "http_status": 200,
+    "total_ms": 8,
+    "active_record_ms": 0.0,
+    "queries": 0
+  },
+  {
+    "log_line": 4478,
+    "started_at_local": "2026-08-06 08:22:48 +0530",
+    "event": "speech-update",
+    "tools": [],
+    "http_status": 200,
+    "total_ms": 3,
+    "active_record_ms": 0.0,
+    "queries": 0
+  },
+  {
+    "log_line": 4486,
+    "started_at_local": "2026-08-06 08:22:49 +0530",
+    "event": "conversation-update",
+    "tools": [],
+    "http_status": 200,
+    "total_ms": 4,
+    "active_record_ms": 0.0,
+    "queries": 0
+  },
+  {
+    "log_line": 4494,
+    "started_at_local": "2026-08-06 08:22:50 +0530",
+    "event": "speech-update",
+    "tools": [],
+    "http_status": 200,
+    "total_ms": 2,
+    "active_record_ms": 0.0,
+    "queries": 0
+  },
+  {
+    "log_line": 4502,
+    "started_at_local": "2026-08-06 08:22:50 +0530",
+    "event": "conversation-update",
+    "tools": [],
+    "http_status": 200,
+    "total_ms": 5,
+    "active_record_ms": 0.0,
+    "queries": 0
+  },
+  {
+    "log_line": 4510,
+    "started_at_local": "2026-08-06 08:22:51 +0530",
+    "event": "speech-update",
+    "tools": [],
+    "http_status": 200,
+    "total_ms": 3,
+    "active_record_ms": 0.0,
+    "queries": 0
+  },
+  {
+    "log_line": 4520,
+    "started_at_local": "2026-08-06 08:22:51 +0530",
+    "event": "speech-update",
+    "tools": [],
+    "http_status": 200,
+    "total_ms": 2,
+    "active_record_ms": 0.0,
+    "queries": 0
+  },
+  {
+    "log_line": 4534,
+    "started_at_local": "2026-08-06 08:22:51 +0530",
+    "event": "speech-update",
+    "tools": [],
+    "http_status": 200,
+    "total_ms": 3,
+    "active_record_ms": 0.0,
+    "queries": 0
+  },
+  {
+    "log_line": 4542,
+    "started_at_local": "2026-08-06 08:23:00 +0530",
+    "event": "conversation-update",
+    "tools": [],
+    "http_status": 200,
+    "total_ms": 4,
+    "active_record_ms": 0.0,
+    "queries": 0
+  },
+  {
+    "log_line": 4550,
+    "started_at_local": "2026-08-06 08:23:00 +0530",
+    "event": "speech-update",
+    "tools": [],
+    "http_status": 200,
+    "total_ms": 2,
+    "active_record_ms": 0.0,
+    "queries": 0
+  },
+  {
+    "log_line": 4558,
+    "started_at_local": "2026-08-06 08:23:00 +0530",
+    "event": "conversation-update",
+    "tools": [],
+    "http_status": 200,
+    "total_ms": 4,
+    "active_record_ms": 0.0,
+    "queries": 0
+  },
+  {
+    "log_line": 4566,
+    "started_at_local": "2026-08-06 08:23:04 +0530",
+    "event": "speech-update",
+    "tools": [],
+    "http_status": 200,
+    "total_ms": 2,
+    "active_record_ms": 0.0,
+    "queries": 0
+  },
+  {
+    "log_line": 4576,
+    "started_at_local": "2026-08-06 08:23:04 +0530",
+    "event": "speech-update",
+    "tools": [],
+    "http_status": 200,
+    "total_ms": 1,
+    "active_record_ms": 0.0,
+    "queries": 0
+  },
+  {
+    "log_line": 4590,
+    "started_at_local": "2026-08-06 08:23:05 +0530",
+    "event": "speech-update",
+    "tools": [],
+    "http_status": 200,
+    "total_ms": 1,
+    "active_record_ms": 0.0,
+    "queries": 0
+  },
+  {
+    "log_line": 4600,
+    "started_at_local": "2026-08-06 08:23:05 +0530",
+    "event": "speech-update",
+    "tools": [],
+    "http_status": 200,
+    "total_ms": 2,
+    "active_record_ms": 0.0,
+    "queries": 0
+  },
+  {
+    "log_line": 4614,
+    "started_at_local": "2026-08-06 08:23:09 +0530",
+    "event": "conversation-update",
+    "tools": [],
+    "http_status": 200,
+    "total_ms": 3,
+    "active_record_ms": 0.0,
+    "queries": 0
+  },
+  {
+    "log_line": 4622,
+    "started_at_local": "2026-08-06 08:23:10 +0530",
+    "event": "speech-update",
+    "tools": [],
+    "http_status": 200,
+    "total_ms": 5,
+    "active_record_ms": 0.0,
+    "queries": 0
+  },
+  {
+    "log_line": 4630,
+    "started_at_local": "2026-08-06 08:23:11 +0530",
+    "event": "conversation-update",
+    "tools": [],
+    "http_status": 200,
+    "total_ms": 4,
+    "active_record_ms": 0.0,
+    "queries": 0
+  },
+  {
+    "log_line": 4638,
+    "started_at_local": "2026-08-06 08:23:13 +0530",
+    "event": "speech-update",
+    "tools": [],
+    "http_status": 200,
+    "total_ms": 3,
+    "active_record_ms": 0.0,
+    "queries": 0
+  },
+  {
+    "log_line": 4648,
+    "started_at_local": "2026-08-06 08:23:13 +0530",
+    "event": "conversation-update",
+    "tools": [],
+    "http_status": 200,
+    "total_ms": 4,
+    "active_record_ms": 0.0,
+    "queries": 0
+  },
+  {
+    "log_line": 4662,
+    "started_at_local": "2026-08-06 08:23:15 +0530",
+    "event": "speech-update",
+    "tools": [],
+    "http_status": 200,
+    "total_ms": 1,
+    "active_record_ms": 0.0,
+    "queries": 0
+  },
+  {
+    "log_line": 4670,
+    "started_at_local": "2026-08-06 08:23:16 +0530",
+    "event": "speech-update",
+    "tools": [],
+    "http_status": 200,
+    "total_ms": 3,
+    "active_record_ms": 0.0,
+    "queries": 0
+  },
+  {
+    "log_line": 4678,
+    "started_at_local": "2026-08-06 08:23:16 +0530",
+    "event": "conversation-update",
+    "tools": [],
+    "http_status": 200,
+    "total_ms": 3,
+    "active_record_ms": 0.0,
+    "queries": 0
+  },
+  {
+    "log_line": 4686,
+    "started_at_local": "2026-08-06 08:23:21 +0530",
+    "event": "status-update",
+    "tools": [],
+    "http_status": 200,
+    "total_ms": 3,
+    "active_record_ms": 0.0,
+    "queries": 0
+  },
+  {
+    "log_line": 4694,
+    "started_at_local": "2026-08-06 08:23:22 +0530",
+    "event": "end-of-call-report",
+    "tools": [],
+    "http_status": 200,
+    "total_ms": 22,
+    "active_record_ms": 8.6,
+    "queries": 3
+  }
+]

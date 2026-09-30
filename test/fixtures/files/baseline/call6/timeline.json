@@ -1,0 +1,50 @@
+[
+  {
+    "t": 0,
+    "time_ms": 1785983617101,
+    "role": "system",
+    "message_chars": 1003
+  },
+  {
+    "t": 1.14,
+    "time_ms": 1785983618614,
+    "role": "bot",
+    "message": "Thanks for calling Taj Zeika, this is your AI host. How can I help?",
+    "duration_ms": 3180
+  },
+  {
+    "t": 7.682,
+    "time_ms": 1785983625156,
+    "role": "user",
+    "message": "I want to order a burger, and.",
+    "duration_ms": 1800
+  },
+  {
+    "t": 11.58,
+    "time_ms": 1785983629054,
+    "role": "bot",
+    "message": "Sure, I can help with that. Uh, first, do you want pickup or delivery?",
+    "duration_ms": 3540
+  },
+  {
+    "t": 19.862,
+    "time_ms": 1785983637336,
+    "role": "user",
+    "message": "Pick up.",
+    "duration_ms": 60
+  },
+  {
+    "t": 22.74,
+    "time_ms": 1785983640214,
+    "role": "bot",
+    "message": "Great, pickup. Let me pull up the menu for burgers.",
+    "duration_ms": 2700
+  },
+  {
+    "t": 25.98,
+    "time_ms": 1785983643454,
+    "role": "bot",
+    "message": "One moment.",
+    "duration_ms": 60
+  }
+]
