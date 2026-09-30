@@ -2,7 +2,7 @@ require "test_helper"
 
 class Voice::ToolRunnerTest < ActiveSupport::TestCase
   setup do
-    @restaurant = Restaurant.create!(name: "Runner Bistro", phone_number: "+15550007777")
+    @restaurant = Restaurant.create!(name: "Runner Bistro", phone_number: "+15550007777", business_hours: ALWAYS_OPEN_HOURS)
     @item = @restaurant.menu_categories.create!(name: "Mains", position: 1)
                        .menu_items.create!(restaurant: @restaurant, name: "Burger", price_cents: 1000)
     @call_log = CallLifecycle.start(external_call_id: "runner_1", dialed_number: @restaurant.phone_number, caller_number: nil)
@@ -68,13 +68,21 @@ class Voice::ToolRunnerTest < ActiveSupport::TestCase
     end
   end
 
-  test "business-validation failures become invalid_arguments naming fields, not exception text" do
-    run_tool("add_to_cart", { "menu_item_id" => @item.id })
-    line = @call_log.reload.order.order_items.sole
-    result = JSON.parse(run_tool("update_cart_item_quantity", { "order_item_id" => line.id, "quantity" => 0 }))
-    assert_equal "invalid_arguments", result.dig("error", "code")
-    assert_match(/quantity/, result.dig("error", "message"))
-    assert_equal 1, line.reload.quantity
+  test "a model validation that slips past the rules becomes invalid_arguments naming fields, not exception text" do
+    record = OrderItem.new.tap { |r| r.errors.add(:quantity, "secret model message") }
+    original = Order.instance_method(:recompute_total!)
+    Order.define_method(:recompute_total!) { raise ActiveRecord::RecordInvalid, record }
+    begin
+      result = run_tool("add_to_cart", { "menu_item_id" => @item.id })
+    ensure
+      Order.define_method(:recompute_total!, original)
+    end
+
+    error = JSON.parse(result)["error"]
+    assert_equal "invalid_arguments", error["code"]
+    assert_match(/check quantity/, error["message"])
+    assert_no_match(/secret model message|RecordInvalid/, result)
+    assert_nil @call_log.reload.order, "rolled back"
   end
 
   test "vapi_requested_at is stored for integer, float and numeric-string timestamps, and a bad one never drops the row" do

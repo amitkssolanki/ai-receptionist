@@ -38,8 +38,8 @@ class BaselineReliabilityTest < ActionDispatch::IntegrationTest
     ENV["VAPI_SERVER_SECRET"] = "test-vapi-secret"
     ENV["VOICE_WEBHOOK_SECRET"] = "test-secret"
 
-    all_day = %w[sun mon tue wed thu fri sat].index_with { "00:00-23:59" } # same shape as the seeded Taj Zayka
-    @restaurant = Restaurant.create!(name: "Baseline Pizzeria", phone_number: "+15550001111", business_hours: all_day)
+    # Phase 1 Step 4: was "00:00-23:59" (the seeded shape); closed-hours enforcement makes the last minute matter.
+    @restaurant = Restaurant.create!(name: "Baseline Pizzeria", phone_number: "+15550001111", business_hours: ALWAYS_OPEN_HOURS)
     pizzas = @restaurant.menu_categories.create!(name: "Pizzas", position: 1)
     sides = @restaurant.menu_categories.create!(name: "Sides", position: 2)
     mains = @restaurant.menu_categories.create!(name: "Mains", position: 3)
@@ -125,46 +125,57 @@ class BaselineReliabilityTest < ActionDispatch::IntegrationTest
         safe: "Idempotent: second submit returns the existing confirmation; no second SMS; no field changes")
   end
 
-  test "R03 items can be added and removed after the order is confirmed (and after kitchen status moves on)" do
+  test "R03 a submitted order can no longer be changed by voice tools (confirmed, or after the kitchen moves on)" do
     c = start_call
     tool(c.external_call_id, "add_to_cart", { menu_item_id: @margherita.id })
     tool(c.external_call_id, "submit_order", { fulfillment_type: "pickup" })
     order = c.reload.order
-    order.update!(status: :preparing) # admin/kitchen advanced it
-    tool(c.external_call_id, "add_to_cart", { menu_item_id: @knots.id })
-    item_id = order.order_items.find_by(menu_item: @margherita).id
-    tool(c.external_call_id, "remove_cart_item", { order_item_id: item_id })
+    item_id = order.order_items.sole.id
+
+    attempts = lambda do
+      [ tool(c.external_call_id, "add_to_cart", { menu_item_id: @knots.id }),
+        tool(c.external_call_id, "update_cart_item_quantity", { order_item_id: item_id, quantity: 3 }),
+        tool(c.external_call_id, "remove_cart_item", { order_item_id: item_id }) ]
+    end
+    (attempts.call + (order.update!(status: :preparing) && attempts.call)).each do |r|
+      assert_equal "order_already_submitted", error_of(r).first
+      assert_no_leak r
+    end
     order.reload
 
     assert order.preparing?
-    assert_equal [ "Garlic Knots" ], order.order_items.map { |i| i.menu_item.name }
-    assert_equal 550, order.total_cents
+    assert_equal [ "Margherita Pizza" ], order.order_items.map { |i| i.menu_item.name }
+    assert_equal 1400, order.total_cents
     rec(id: "R03", scenario: "Modify order after submission", layer: "vapi",
-        current: "Order in 'preparing' was mutated by voice tools: Margherita removed, Garlic Knots added, total 1400->550 cents; no error",
+        current: "Step 4: add/update/remove are refused with order_already_submitted (confirmed and preparing); items and total unchanged at 1400 cents",
         safe: "Reject cart mutations once the order is submitted")
   end
 
   # --- Input validation ---
 
-  test "R04 a modifier belonging to another item is silently dropped" do
+  test "R04 a modifier belonging to another item is rejected, naming the valid options" do
     c = start_call
-    result = JSON.parse(tool(c.external_call_id, "add_to_cart", { menu_item_id: @margherita.id, modifier_ids: [ @bacon.id ] }))
-    item = c.reload.order.order_items.last
+    result = tool(c.external_call_id, "add_to_cart", { menu_item_id: @margherita.id, modifier_ids: [ @bacon.id ] })
 
-    assert_equal [], item.selected_modifiers
-    assert_equal 1400, item.unit_price_cents
+    code, message = error_of(result)
+    assert_equal "invalid_modifier", code
+    assert_includes message, "Extra cheese"
+    assert_no_leak result
+    assert_nil c.reload.order, "nothing inserted"
     rec(id: "R04", scenario: "Invalid modifier (belongs to another item)", layer: "vapi",
-        current: "Item added WITHOUT the modifier; no error returned (result: #{result.to_json})",
+        current: "Step 4: rejected with invalid_modifier listing the item's valid modifiers; nothing inserted (#{result})",
         safe: "Reject with an actionable error naming the valid modifiers")
   end
 
-  test "R05 a nonexistent modifier id is silently dropped" do
+  test "R05 a nonexistent modifier id is rejected and nothing is inserted" do
     c = start_call
-    tool(c.external_call_id, "add_to_cart", { menu_item_id: @margherita.id, modifier_ids: [ 999_999 ] })
+    result = tool(c.external_call_id, "add_to_cart", { menu_item_id: @margherita.id, modifier_ids: [ @extra_cheese.id, 999_999 ] })
 
-    assert_equal [], c.reload.order.order_items.last.selected_modifiers
+    assert_equal "invalid_modifier", error_of(result).first
+    assert_match(/999999/, error_of(result).last)
+    assert_nil c.reload.order
     rec(id: "R05", scenario: "Invalid modifier (nonexistent id)", layer: "vapi",
-        current: "Item added without modifier; no error",
+        current: "Step 4: rejected with invalid_modifier, even when mixed with a valid one; nothing inserted",
         safe: "Reject with an actionable error")
   end
 
@@ -190,47 +201,71 @@ class BaselineReliabilityTest < ActionDispatch::IntegrationTest
         safe: "Not inserted, with a structured, speakable error code (e.g. item_unavailable)")
   end
 
-  test "R07 quantity has no upper bound; zero/negative/non-numeric are refused without raw validation text" do
+  test "R07 quantity must be a whole number from 1 to 20; more than 30 items needs staff" do
     c = start_call
-    tool(c.external_call_id, "add_to_cart", { menu_item_id: @margherita.id, quantity: 500 })
-    zero = tool(c.external_call_id, "add_to_cart", { menu_item_id: @margherita.id, quantity: 0 })
-    negative = tool(c.external_call_id, "add_to_cart", { menu_item_id: @margherita.id, quantity: -3 })
-    words = tool(c.external_call_id, "add_to_cart", { menu_item_id: @margherita.id, quantity: "two" })
-    order = c.reload.order
+    accepted = [ 1, 20 ].map { |q| JSON.parse(tool(c.external_call_id, "add_to_cart", { menu_item_id: @margherita.id, quantity: q })) }
+    assert accepted.none? { |r| r.key?("error") }
 
-    assert_equal [ 500 ], order.order_items.map(&:quantity)
-    assert_equal 700_000, order.total_cents
-    [ zero, negative ].each do |r|
-      assert_equal "invalid_arguments", error_of(r).first # Step 4 turns these into quantity_out_of_range
-      assert_match(/quantity/i, error_of(r).last)
-      assert_no_leak r
+    [ 0, 21, -3, 500 ].each do |q|
+      result = tool(c.external_call_id, "add_to_cart", { menu_item_id: @margherita.id, quantity: q })
+      assert_equal "quantity_out_of_range", error_of(result).first, "quantity #{q}"
     end
-    assert_equal "invalid_arguments", error_of(words).first
-    assert_match(/quantity must be a whole number/, error_of(words).last)
+    [ "two", 2.5 ].each do |q|
+      result = tool(c.external_call_id, "add_to_cart", { menu_item_id: @margherita.id, quantity: q })
+      assert_equal "invalid_arguments", error_of(result).first, "quantity #{q.inspect}"
+    end
+    order = c.reload.order
+    assert_equal [ 1, 20 ], order.order_items.map(&:quantity)
+    assert_equal 21 * 1400, order.total_cents
+
+    # 21 items so far: 9 more reaches exactly 30, one more is too many.
+    assert_nil JSON.parse(tool(c.external_call_id, "add_to_cart", { menu_item_id: @knots.id, quantity: 9 }))["error"]
+    over = tool(c.external_call_id, "add_to_cart", { menu_item_id: @knots.id })
+    assert_equal "large_order_requires_staff", error_of(over).first
+    assert_equal 30, order.reload.order_items.sum(:quantity)
     rec(id: "R07", scenario: "Excessive / invalid quantity", layer: "vapi",
-        current: "quantity 500 accepted (order total $7,000.00). 0, -3 and \"two\" refused with invalid_arguments (no raw text): #{zero.inspect}",
+        current: "Step 4: 1-20 per line accepted; 0, -3, 21, 500 -> quantity_out_of_range; \"two\"/2.5 -> invalid_arguments; total item count capped at 30 (large_order_requires_staff)",
         safe: "Upper bound; large orders routed to a human (the prompt's 'large order -> transfer' rule enforced server-side)")
   end
 
-  test "R08 orders are accepted while the restaurant is closed" do
-    @restaurant.update!(business_hours: %w[sun mon tue wed thu fri sat].index_with { "closed" })
+  test "R08 orders are refused while the restaurant is closed, with today's hours" do
     c = start_call
-    tool(c.external_call_id, "add_to_cart", { menu_item_id: @margherita.id })
-    tool(c.external_call_id, "submit_order", { fulfillment_type: "pickup" })
+    tool(c.external_call_id, "add_to_cart", { menu_item_id: @margherita.id }) # open: accepted
+    @restaurant.update!(business_hours: %w[sun mon tue wed thu fri sat].index_with { "closed" })
+    add = tool(c.external_call_id, "add_to_cart", { menu_item_id: @knots.id })
+    submit = tool(c.external_call_id, "submit_order", { fulfillment_type: "pickup" })
 
-    assert_not @restaurant.open_now?
-    assert c.reload.order.confirmed?
+    assert_not @restaurant.reload.open_now?
+    [ add, submit ].each do |r|
+      assert_equal "restaurant_closed", error_of(r).first
+      assert_match(/closed today/, error_of(r).last)
+    end
+    assert c.reload.order.pending?
+    assert_equal 1, c.order.order_items.count
+
+    @restaurant.update!(business_hours: %w[sun mon tue wed thu fri sat].index_with { "11:00-21:00" })
+    travel_to ActiveSupport::TimeZone[@restaurant.timezone].local(2026, 9, 30, 15, 0) do
+      assert_nil JSON.parse(tool(c.external_call_id, "submit_order", { fulfillment_type: "pickup" }))["error"]
+    end
+    assert c.order.reload.confirmed?
     rec(id: "R08", scenario: "Order while restaurant closed", layer: "vapi",
-        current: "open_now? is false, submit_order still confirms. The Vapi path never exposes or checks hours",
+        current: "Step 4: add_to_cart and submit_order refused with restaurant_closed + today's hours; the cart is kept and submit works once open",
         safe: "Reject submission when closed, with a speakable reason")
   end
 
-  test "R09 the seeded 24/7 hours (00:00-23:59) report closed during the last minute of each day" do
+  test "R09 24-hour days are open all day, including the last minute" do
     tz = ActiveSupport::TimeZone[@restaurant.timezone]
-    assert @restaurant.open_now?(at: tz.local(2026, 9, 30, 23, 59, 0))
+    [ "24h", "00:00-24:00" ].each do |hours|
+      @restaurant.update!(business_hours: %w[sun mon tue wed thu fri sat].index_with { hours })
+      assert @restaurant.open_now?(at: tz.local(2026, 9, 30, 0, 0, 0)), hours
+      assert @restaurant.open_now?(at: tz.local(2026, 9, 30, 23, 59, 30)), hours
+      assert @restaurant.open_now?(at: tz.local(2026, 9, 30, 23, 59, 59)), hours
+    end
+    # The old shape still closes for its last minute; the seeds now use 00:00-24:00.
+    @restaurant.update!(business_hours: %w[sun mon tue wed thu fri sat].index_with { "00:00-23:59" })
     assert_not @restaurant.open_now?(at: tz.local(2026, 9, 30, 23, 59, 30))
     rec(id: "R09", scenario: "24/7 hours edge (seed data)", layer: "model",
-        current: "open_now? false from 23:59:01 to 23:59:59 local time with the seeded '00:00-23:59' hours",
+        current: "Step 4: '24h' and '00:00-24:00' are open all day; seeds use 00:00-24:00. A literal '00:00-23:59' still closes at 23:59:01",
         safe: "A real 24-hour representation (or document the one-minute gap)")
   end
 
@@ -341,7 +376,7 @@ class BaselineReliabilityTest < ActionDispatch::IntegrationTest
         safe: "Not solvable by idempotency; caught by server-owned read-back before submit")
   end
 
-  test "R16 add_to_cart is not atomic across its writes" do
+  test "R16 add_to_cart is atomic: a failed item insert leaves no order and no call link" do
     c = start_call
     original = OrderItem.instance_method(:save!)
     OrderItem.define_method(:save!) { |*| raise ActiveRecord::StatementInvalid, "simulated failure" }
@@ -352,22 +387,26 @@ class BaselineReliabilityTest < ActionDispatch::IntegrationTest
     end
     c.reload
 
-    assert c.order, "an empty order was left linked to the call"
-    assert_equal 0, c.order.order_items.count
+    assert_equal "internal_error", error_of(result).first
+    assert_no_leak result
+    assert_nil c.order, "no order is linked to the call"
+    assert_equal 0, Order.count
     rec(id: "R16", scenario: "Partial failure inside add_to_cart", layer: "vapi",
-        current: "Order created and linked to the call, item insert failed -> empty pending order left behind; LLM got #{result.inspect}",
+        current: "Step 4: order creation, call link, item and total commit together; after a failed insert no order exists; LLM got #{result.inspect}",
         safe: "Single transaction; nothing persisted on failure")
   end
 
-  test "R17 a call that ends with items but no submit leaves a pending order forever" do
+  test "R17 a call that ends with an unsubmitted cart marks the order abandoned (items kept)" do
     c = start_call
     tool(c.external_call_id, "add_to_cart", { menu_item_id: @margherita.id })
     vapi(type: "end-of-call-report", call: { id: c.external_call_id }, artifact: { transcript: "AI: bye" })
 
     assert c.reload.abandoned?
-    assert c.order.pending?
+    assert c.order.abandoned?
+    assert_equal 1, c.order.order_items.count
+    assert_equal 1400, c.order.total_cents
     rec(id: "R17", scenario: "Abandoned call with unsubmitted cart", layer: "vapi",
-        current: "CallLog abandoned; its order stays 'pending' with items and a total, indistinguishable in the orders list from a live cart",
+        current: "Step 4: CallLog abandoned and its order moves pending -> abandoned with items and total kept",
         safe: "Mark the cart abandoned/cancelled at end of call")
   end
 

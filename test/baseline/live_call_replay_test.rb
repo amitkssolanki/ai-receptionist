@@ -28,7 +28,7 @@ class BaselineLiveCallReplayTest < ActionDispatch::IntegrationTest
     @snapshot = snap
     r = snap["restaurant"]
     @restaurant = Restaurant.create!(id: r["id"], name: r["name"], phone_number: "+15550001111",
-                                     timezone: r["timezone"], business_hours: r["business_hours"])
+                                     timezone: r["timezone"], business_hours: ALWAYS_OPEN_HOURS) # snapshot hours were 00:00-23:59; see Step 4 log
     menu = snap["menu_reference"]
     menu["categories"].each do |c|
       @restaurant.menu_categories.create!(id: c["id"], name: c["name"], position: c["position"])

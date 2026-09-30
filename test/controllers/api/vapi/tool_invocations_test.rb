@@ -5,7 +5,7 @@ require "test_helper"
 class Api::Vapi::ToolInvocationsTest < ActionDispatch::IntegrationTest
   setup do
     ENV["VAPI_SERVER_SECRET"] = "test-vapi-secret"
-    @restaurant = Restaurant.create!(name: "Test Bistro", phone_number: "+15550001111")
+    @restaurant = Restaurant.create!(name: "Test Bistro", phone_number: "+15550001111", business_hours: ALWAYS_OPEN_HOURS)
     @item = @restaurant.menu_categories.create!(name: "Mains", position: 1)
                        .menu_items.create!(restaurant: @restaurant, name: "Burger", price_cents: 1000)
     vapi(type: "status-update", status: "in-progress", call: { id: "call_ti", type: "webCall" })

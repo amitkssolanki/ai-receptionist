@@ -77,3 +77,34 @@ unchanged.
 - Timestamp follow-up: `Voice::ToolRunner` tolerates integer/float/numeric-string timestamps and persists the row
   with a NULL timestamp for anything else; replay tests now assert every real tool call has a ToolInvocation with
   the exact Vapi ms timestamp and that no "could not record tool invocation" line was logged.
+
+## Step 4 — order state and business invariants
+
+Scope note: this step follows the review brief's list. That is plan Step 4 (R03, R16, R17, admin transitions)
+**plus** the input rules the plan schedules as its Step 6 (R04, R05, R07, R08, R09). The brief also says "no
+duplicate-submit/idempotency yet", so plan Step 4's R02 is **not** flipped (see deviations).
+
+- State: `Order::TRANSITIONS` (pending → confirmed/cancelled/abandoned; confirmed → preparing/ready/completed/cancelled;
+  preparing → ready/completed/cancelled; ready → completed/cancelled; completed/cancelled/abandoned final; nothing
+  returns to pending), enforced by a model validation and by the admin status picker (current + valid next only).
+  `Order#cart_open?` = pending. `abandoned` added to the enum (string column, no migration needed).
+- `OrderTaking` rules: cart mutations only while pending (`order_already_submitted`); quantity 1–20 per line
+  (`quantity_out_of_range`, also on update); more than 30 items in total (`large_order_requires_staff`, add and
+  update); modifiers must all belong to the item (`invalid_modifier`, message lists the valid names);
+  `restaurant_closed` on add and submit with today's hours. Unknown/foreign/sold-out items were already
+  `menu_item_unavailable` (Step 3).
+- Hours: `Restaurant#open_now?` understands `"24h"` and `"00:00-24:00"`; seeds now use `00:00-24:00`. Blank or
+  unconfigured hours count as closed (existing semantics, now enforced).
+- Atomicity (R16): every mutation runs in one transaction that locks the call row and the order row
+  (`with_lock` + `order.lock!`), so order creation, call link, item, and total commit together and mutations on a
+  call are serialized. Any exception rolls back.
+- R17: `CallLifecycle.finish` moves a still-pending order to `abandoned` (items kept).
+- Flipped: R03, R04, R05, R07, R08, R09, R16, R17. Not flipped: R02 (deferred by the brief).
+- Deviations / details:
+  - `submit` on a `confirmed` order still re-confirms as before (R02's old behavior, deliberately untouched); orders
+    that are `preparing`/`ready`/final are refused with `order_already_submitted` so a late submit cannot drag an
+    order backwards.
+  - Test fixtures that assumed "open" now set `ALWAYS_OPEN_HOURS` (`"24h"`); the R-suite setup and the replay
+    restaurant changed from the seeded `00:00-23:59` for that reason (the last-minute gap would otherwise make the
+    suite time-of-day dependent). Frozen originals are untouched and still pass against the tag.
+  - The dev database's restaurant keeps its old `00:00-23:59` hours until reseeded/edited in admin.

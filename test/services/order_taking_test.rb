@@ -4,7 +4,7 @@ class OrderTakingTest < ActiveSupport::TestCase
   include ActiveJob::TestHelper
 
   setup do
-    @restaurant = Restaurant.create!(name: "Svc Bistro", phone_number: "+15550003333")
+    @restaurant = Restaurant.create!(name: "Svc Bistro", phone_number: "+15550003333", business_hours: ALWAYS_OPEN_HOURS)
     @item = @restaurant.menu_categories.create!(name: "Mains", position: 1)
                        .menu_items.create!(restaurant: @restaurant, name: "Burger", price_cents: 1000)
     @cheese = @item.menu_item_modifiers.create!(name: "Cheese", price_cents: 150)

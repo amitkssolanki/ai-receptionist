@@ -12,7 +12,7 @@
   </div>
 
   <%= form_with model: @order, url: admin_order_path(@order), method: :patch, class: "flex items-center gap-2" do |f| %>
-    <%= f.select :status, Order.statuses.keys.map { |s| [ s.humanize, s ] }, {}, onchange: "this.form.requestSubmit()", class: "border border-gray-300 rounded px-3 py-2 text-sm" %>
+    <%= f.select :status, ([ @order.status ] + @order.allowed_next_statuses).map { |s| [ s.humanize, s ] }, {}, onchange: "this.form.requestSubmit()", class: "border border-gray-300 rounded px-3 py-2 text-sm" %>
   <% end %>
 </div>
 

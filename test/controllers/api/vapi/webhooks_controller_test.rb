@@ -4,7 +4,7 @@ class Api::Vapi::WebhooksControllerTest < ActionDispatch::IntegrationTest
   setup do
     ENV["VAPI_SERVER_SECRET"] = "test-vapi-secret"
 
-    @restaurant = Restaurant.create!(name: "Test Bistro", phone_number: "+15550001111")
+    @restaurant = Restaurant.create!(name: "Test Bistro", phone_number: "+15550001111", business_hours: ALWAYS_OPEN_HOURS)
     @category = @restaurant.menu_categories.create!(name: "Mains", position: 1)
     @menu_item = @category.menu_items.create!(restaurant: @restaurant, name: "Burger", price_cents: 1000)
     @modifier = @menu_item.menu_item_modifiers.create!(name: "Add cheese", price_cents: 150)

@@ -31,12 +31,16 @@ class CallLifecycle
     call_log = CallLog.find_by(external_call_id: external_call_id)
     return unless call_log
 
-    call_log.update!(
-      status: call_log.order&.confirmed? ? "completed" : "abandoned",
-      transcript: transcript,
-      recording_url: recording_url,
-      ended_at: Time.current
-    )
+    call_log.transaction do
+      call_log.update!(
+        status: call_log.order&.confirmed? ? "completed" : "abandoned",
+        transcript: transcript,
+        recording_url: recording_url,
+        ended_at: Time.current
+      )
+      # A cart still open when the call ends was never submitted: keep its items, but it is no longer a live cart.
+      call_log.order.update!(status: :abandoned) if call_log.order&.cart_open?
+    end
   end
 
   # Single restaurant pilot: fall back to the only restaurant in the system if the
