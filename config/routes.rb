@@ -14,6 +14,7 @@ Rails.application.routes.draw do
     # Voice test console: start a browser call, watch the conversation (Vapi) next to what the server did (Rails).
     get "console", to: "console#show", as: :console
     post "console/token", to: "console#token", as: :console_token
+    post "console/attach", to: "console#attach", as: :console_attach
     get "console/calls/:id", to: "console#call", as: :console_call
     get "console/calls/:id/state", to: "console#state", as: :console_call_state
   end

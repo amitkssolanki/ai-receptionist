@@ -4,6 +4,7 @@ class Admin::ConsoleController < Admin::BaseController
   layout "console"
 
   SESSION_KEY = /\A[0-9a-f]{16,64}\z/
+  CALL_ID = /\A[\w-]{1,100}\z/
 
   # The idle console: generates the session key this page's call will carry.
   def show
@@ -18,6 +19,20 @@ class Admin::ConsoleController < Admin::BaseController
     return head :unprocessable_entity unless session_key.match?(SESSION_KEY)
 
     render json: { token: ConsoleToken.issue(restaurant: current_restaurant, session_key: session_key) }
+  end
+
+  # Fallback attach. The normal path is the signed console token (the server tells the page which call is its own). If the
+  # token never reaches the webhook, the browser still learns its call id from the Vapi SDK and asks to be attached to it.
+  # Scoped to the signed-in user's restaurant, and "not there yet" and "not yours" answer identically.
+  def attach
+    call_id = params[:call_id].to_s
+    return head :unprocessable_entity unless call_id.match?(CALL_ID)
+
+    call_log = current_restaurant.call_logs.find_by(external_call_id: call_id)
+    return render(json: { status: "pending" }, status: :accepted) unless call_log
+
+    Rails.logger.info("[Console] attached call #{call_log.id} by call id (no console token)")
+    render turbo_stream: turbo_stream.update("console-call", partial: "admin/console/call_attached", locals: { call_log: call_log, via: "call_id" })
   end
 
   # Observe an in-progress call, or review a past one. Only calls of the signed-in user's restaurant exist here.

@@ -5,8 +5,9 @@
 
 <div
   data-controller="voice-console console-sync"
+  data-console-sync-attach-url-value="<%= admin_console_attach_path %>"
   data-console-sync-claim-patterns-value="<%= ClaimDetector.browser_patterns.to_json %>"
-  data-action="voice-console:tool-calls->console-sync#pending voice-console:transcript-final->console-sync#transcriptFinal voice-console:call-start->console-sync#callStart console-sync:unbacked-claim->voice-console#markUnbacked"
+  data-action="voice-console:tool-calls->console-sync#pending voice-console:transcript-final->console-sync#transcriptFinal voice-console:call-start->console-sync#callStart voice-console:call-created->console-sync#attachFallback console-sync:unbacked-claim->voice-console#markUnbacked"
   data-state="idle"
   <% if @voice %>
     data-voice-console-public-key-value="<%= @voice[:public_key] %>"

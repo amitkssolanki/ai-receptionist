@@ -1,4 +1,5 @@
 import { Controller } from "@hotwired/stimulus"
+import { Turbo } from "@hotwired/turbo-rails"
 import { ClaimTracker, toolCallDomId } from "console/claims"
 
 // Keeps the client's observations and the server's records side by side without ever merging them:
@@ -13,6 +14,7 @@ export default class extends Controller {
   static targets = ["cable"]
   static values = {
     claimPatterns: Array,
+    attachUrl: String,
     responseTimeoutMs: { type: Number, default: 20000 }
   }
 
@@ -36,6 +38,38 @@ export default class extends Controller {
     this.streams.disconnect()
     clearInterval(this.ticker)
     this.pendingRows.forEach(({ timer }) => clearTimeout(timer))
+  }
+
+  // Fallback for the signed-token path: if the server has not attached this page to a call a few seconds after Vapi created
+  // one, ask the server to attach it by the call id the SDK reported. The server decides (its own restaurant's calls only).
+  async attachFallback(event) {
+    const callId = event.detail.callId
+    for (const delay of [3000, 3000, 4000, 5000, 5000]) {
+      await new Promise((resolve) => setTimeout(resolve, delay))
+      if (!this.element.isConnected || this.attached()) return
+      if (await this.tryAttach(callId)) return
+    }
+  }
+
+  attached() {
+    return this.element.querySelector("#call-status[data-call-id], [data-attached-via]") !== null
+  }
+
+  async tryAttach(callId) {
+    try {
+      const response = await fetch(this.attachUrlValue, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Accept: "text/vnd.turbo-stream.html", "X-CSRF-Token": document.querySelector("meta[name=csrf-token]")?.content || "" },
+        credentials: "same-origin",
+        body: JSON.stringify({ call_id: callId })
+      })
+      if (response.status !== 200) return false
+
+      Turbo.renderStreamMessage(await response.text())
+      return true
+    } catch (_) {
+      return false
+    }
   }
 
   callStart() {

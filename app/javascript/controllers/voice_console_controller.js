@@ -104,6 +104,14 @@ export default class extends Controller {
     vapi.on("speech-end", () => { this.setAgentSpeaking(false); this.setLevel(0) })
     vapi.on("volume-level", (level) => this.setLevel(level))
     vapi.on("message", (message) => this.onMessage(message))
+    // The SDK reports the new call's id as soon as Vapi creates it: the console can use it to find its call on the server
+    // even if the signed token never reaches the webhook.
+    vapi.on("call-start-progress", (event) => {
+      const callId = event?.metadata?.callId
+      if (event?.stage === "web-call-creation" && event?.status === "completed" && callId && callId !== "unknown") {
+        this.dispatch("call-created", { detail: { callId } })
+      }
+    })
     vapi.on("call-start-failed", (event) => this.fail(event))
     vapi.on("error", (event) => this.fail(event))
   }

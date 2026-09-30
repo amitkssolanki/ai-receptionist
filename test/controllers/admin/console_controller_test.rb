@@ -133,4 +133,61 @@ class Admin::ConsoleControllerTest < ActionDispatch::IntegrationTest
     get admin_console_call_path(theirs)
     assert_response :not_found
   end
+
+  # --- fallback attach by call id ---
+
+  def make_call(restaurant, external_id)
+    restaurant.call_logs.create!(external_call_id: external_id, customer: restaurant.customers.create!(phone_number: "unknown-#{external_id}"), phone_number: "unknown-#{external_id}")
+  end
+
+  test "attach needs sign-in" do
+    post admin_console_attach_path, params: { call_id: "x" }, as: :json
+    assert_response :unauthorized
+  end
+
+  test "attach answers with the call's panels and its stream when the call is the user's restaurant's" do
+    call = make_call(@restaurant, "019fd4fa-attach-1")
+    sign_in @user
+    post admin_console_attach_path, params: { call_id: call.external_call_id }, as: :json
+
+    assert_response :success
+    assert_equal "text/vnd.turbo-stream.html", response.media_type
+    assert_select "turbo-stream[action=update][target=console-call]" do
+      assert_select "template turbo-cable-stream-source[channel=ConsoleChannel]", count: 1
+      assert_select "template turbo-frame#call-state[src='#{admin_console_call_state_path(call)}']"
+      assert_select "template turbo-frame#call-events[src='#{admin_console_call_state_path(call)}']"
+      assert_select "template [data-attached-via=call_id]"
+    end
+  end
+
+  test "attach says pending, identically, for a call that does not exist yet and for another restaurant's call" do
+    other = Restaurant.create!(name: "Other", phone_number: "+15550009292")
+    theirs = make_call(other, "theirs-attach")
+    sign_in @user
+
+    post admin_console_attach_path, params: { call_id: "not-here-yet" }, as: :json
+    assert_response :accepted
+    unknown_body = response.body
+    post admin_console_attach_path, params: { call_id: theirs.external_call_id }, as: :json
+    assert_response :accepted
+    assert_equal unknown_body, response.body, "no way to tell 'not yours' from 'not there'"
+    assert_no_match(/#{theirs.id}/, response.body)
+  end
+
+  test "attach rejects malformed call ids" do
+    sign_in @user
+    [ "", "a b", "x" * 101, "../etc", "id;drop" ].each do |bad|
+      post admin_console_attach_path, params: { call_id: bad }, as: :json
+      assert_response :unprocessable_entity, bad.inspect
+    end
+  end
+
+  test "the console page wires the fallback: attach url and the call-created action" do
+    configure!
+    sign_in @user
+    get admin_console_path
+    root = css_select("[data-controller~=voice-console]").first
+    assert_equal admin_console_attach_path, root["data-console-sync-attach-url-value"]
+    assert_includes root["data-action"], "voice-console:call-created->console-sync#attachFallback"
+  end
 end
