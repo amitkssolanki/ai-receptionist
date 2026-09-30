@@ -48,10 +48,12 @@ speaking indicator.
 **Server events (bottom, "source: RAILS · authoritative"), in this order:**
 `call started` · `get_menu` (✓, ~6 categories · 20 items) · `get_menu_item` · `add_to_cart` `v0 → v1` · `add_to_cart` `v1 → v2` ·
 `get_cart` (read-back v2) · `submit_order` (✓ confirmed v2 · sms skipped_web_call) · `call ended · customer-ended-call · <s> · $<cost>`.
-Under the `submit_order` row (and in `bin/rails calls:last`): `⏱ N s since the last get_cart (elapsed time only…)` and the shadow
-turn evidence (◌): caller turns since the last get_cart result, whether one model completion answered the get_cart result and issued
-the submit, any caller speech that began after the submit request (not counted), and `confirmation gate: shadow only`. These are
-observations; nothing is refused. A caller turn means the caller spoke, not that they said yes.
+Under the `submit_order` row (and in `bin/rails calls:last`): `⏱ N s since the last get_cart (elapsed time only…)` and the turn
+evidence (◌): caller turns since the last get_cart result, whether one model completion answered the get_cart result and issued
+the submit, any caller speech that began after the submit request (not counted), and what the **confirmation gate** did. The gate is
+enforced: a submit with no caller turn after the read-back is refused — the row reads `confirmation required · submit refused (…)`
+and the board says `submit refused: waiting for the caller's answer to the read-back`. After your "Yes, that's right." the next
+submit should be accepted (`confirmation gate: passed`). A caller turn means the caller spoke, not that they said yes.
 Each row shows server milliseconds; the `obs` column fills with the latency the browser observed. Expand "what the agent was told"
 to see the exact answer.
 

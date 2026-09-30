@@ -63,6 +63,7 @@ module ConsoleView
     def result_summary
       body = parsed_result
       return "(no result)" unless body.is_a?(Hash)
+      return confirmation_refused_summary(body) if body.dig("error", "code") == "customer_confirmation_required"
       return "#{body.dig('error', 'code')}: #{body.dig('error', 'message').to_s.truncate(140)}" if body["ok"] == false
 
       case tool
@@ -143,11 +144,20 @@ module ConsoleView
     def completion_observation(completion)
       return shadow("model completion: not identifiable in Vapi's history", false) unless completion.is_a?(Hash) && completion["found"]
 
+      # speech_chars is not shown: Vapi's live history lags the spoken audio, so the count at submit time is unreliable.
       if completion["responds_to_get_cart_result"]
-        shadow("same model completion answered the get_cart result and issued this submit: yes (it spoke #{completion['speech_chars'].to_i} characters)", true)
+        shadow("same model completion answered the get_cart result and issued this submit: yes", true)
       else
         shadow("same model completion answered the get_cart result and issued this submit: no", false)
       end
+    end
+
+    # The server refused the submit because no caller turn followed the read-back: say so plainly, with the structural
+    # evidence it was refused on. (The full guidance the model received is under "what the agent was told".)
+    def confirmation_refused_summary(body)
+      turns = invocation.turn_evidence.is_a?(Hash) ? invocation.turn_evidence["caller_turns_since_last_get_cart"] : nil
+      basis = turns.nil? ? "no readable conversation history" : "#{turns} caller turn#{'s' unless turns == 1} since the last get_cart"
+      "confirmation required · submit refused (#{basis}; nothing was submitted, v#{body.dig('error', 'cart_version')} kept)"
     end
 
     # An accepted add that leaves the same menu item on two cart lines.

@@ -69,7 +69,10 @@ module ConsoleView
       if order.cart_open?
         return "awaiting items" if order.order_items.none?
 
-        order.read_back_version == order.cart_version ? "ready to submit (needs v#{order.cart_version})" : "awaiting read-back"
+        return "awaiting read-back" unless order.read_back_version == order.cart_version
+        return "submit refused: waiting for the caller's answer to the read-back (v#{order.cart_version})" if confirmation_refused_since_read_back?
+
+        "ready to submit (needs v#{order.cart_version})"
       else
         [ "submitted v#{order.cart_version}", (" at #{ConsoleView.clock(order.placed_at, restaurant)}" if order.placed_at), duplicates_note ].compact.join
       end
@@ -86,6 +89,13 @@ module ConsoleView
     end
 
     private
+
+    # The server's confirmation gate refused a submit after the current read-back (a recorded ToolInvocation fact).
+    def confirmation_refused_since_read_back?
+      refusals = call_log.tool_invocations.where(tool_name: "submit_order", error_code: "customer_confirmation_required")
+      refusals = refusals.where(started_at: order.read_back_at..) if order.read_back_at
+      refusals.exists?
+    end
 
     def submit_invocations = call_log.tool_invocations.where(tool_name: "submit_order", status: "ok").order(:id)
 

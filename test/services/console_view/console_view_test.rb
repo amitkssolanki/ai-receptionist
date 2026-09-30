@@ -194,10 +194,37 @@ class ConsoleViewTest < ActiveSupport::TestCase
     assert_equal [
       [ "caller turns since the last get_cart result: 0 (turn-taking only; not a yes)", true ],
       [ "caller began speaking 0.1 s after the submit was requested (1 later turn, not counted)", false ],
-      [ "same model completion answered the get_cart result and issued this submit: yes (it spoke 118 characters)", true ],
+      [ "same model completion answered the get_cart result and issued this submit: yes", true ],
       [ "confirmation gate: submit refused (no caller turn after the read-back)", true ]
     ], shadow(submit).map { |o| [ o.text, o.warn ] }
     assert shadow(submit).none? { |o| o.text.match?(/confirmed by|customer confirmed|caller confirmed/i) }
+  end
+
+  test "a submit refused by the confirmation gate is obvious on the event row and the board" do
+    run_tool("a", "add_to_cart", { "menu_item_id" => @burger.id })
+    run_tool("c", "get_cart")
+    Voice::ToolRunner.call(call_log: CallLog.find(@call.id), artifact: VapiHistory.for_submit("s", caller_turns: 0, same_completion: true),
+                           tool_call: { "id" => "s", "function" => { "name" => "submit_order", "arguments" => { "fulfillment_type" => "pickup", "cart_version" => 1 } } })
+    refused = events.find { |e| e.invocation.tool_call_id == "s" }
+
+    assert_equal "⛔ rejected · customer_confirmation_required", refused.badge
+    assert_equal "confirmation required · submit refused (0 caller turns since the last get_cart; nothing was submitted, v1 kept)", refused.result_summary
+    assert_includes shadow(refused).map(&:text), "confirmation gate: submit refused (no caller turn after the read-back)"
+    assert_equal [ "CART OPEN", "submit refused: waiting for the caller's answer to the read-back (v1)" ], [ board.status_label, board.confirmation ]
+
+    Voice::ToolRunner.call(call_log: CallLog.find(@call.id), artifact: VapiHistory.answered("s2"),
+                           tool_call: { "id" => "s2", "function" => { "name" => "submit_order", "arguments" => { "fulfillment_type" => "pickup", "cart_version" => 1 } } })
+    assert_match(/\Asubmitted v1 at /, board.confirmation)
+    assert_includes shadow(events.find { |e| e.invocation.tool_call_id == "s2" }).map(&:text), "confirmation gate: passed (a caller turn followed the read-back)"
+  end
+
+  test "missing history on a refused submit says so instead of counting turns" do
+    run_tool("a", "add_to_cart", { "menu_item_id" => @burger.id })
+    run_tool("c", "get_cart")
+    Voice::ToolRunner.call(call_log: CallLog.find(@call.id),
+                           tool_call: { "id" => "s", "function" => { "name" => "submit_order", "arguments" => { "fulfillment_type" => "pickup", "cart_version" => 1 } } })
+    assert_equal "confirmation required · submit refused (no readable conversation history; nothing was submitted, v1 kept)",
+                 events.find { |e| e.invocation.tool_call_id == "s" }.result_summary
   end
 
   test "a caller turn after the read-back and a later completion are not flagged" do

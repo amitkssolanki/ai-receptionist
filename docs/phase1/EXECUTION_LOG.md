@@ -557,3 +557,12 @@ Verified against the live Vapi API (read-only) and locally; **no call was made a
   that call `OrderTaking#submit` directly pass `caller_turn_after_read_back: true`.
 - **Not changed:** prompt, tools and the live Vapi assistant (the refusal message carries the guidance); no state machine, no
   classifier, no timers, no `conversation-update` subscription. **Not yet verified on a live call.**
+
+## Console: refused submits made obvious
+
+- A submit refused by the confirmation gate reads `confirmation required · submit refused (N caller turns since the last get_cart;
+  nothing was submitted, vN kept)` (or `no readable conversation history`), with the ◌ turn evidence and
+  `confirmation gate: submit refused (no caller turn after the read-back)` under it; the board's confirmation field says
+  `submit refused: waiting for the caller's answer to the read-back (vN)` until a later submit is accepted. Both come from server
+  records (the rejected `ToolInvocation` and its turn evidence); no transcript or payload text is shown.
+- The same-completion line no longer quotes `speech_chars` (unreliable at submit time). Runbook updated for the next live call.

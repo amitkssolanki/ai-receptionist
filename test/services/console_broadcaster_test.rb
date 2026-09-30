@@ -243,4 +243,20 @@ class ConsoleBroadcasterTest < ActiveSupport::TestCase
     end
     assert_empty actions.select { |a| a["target"] == "events" }, "rolled back: no row should reach any browser"
   end
+
+  test "a submit refused by the confirmation gate is broadcast as a server refusal, with no transcript text" do
+    run_tool("a", "add_to_cart", { "menu_item_id" => @burger.id })
+    run_tool("c", "get_cart")
+    artifact = VapiHistory.for_submit("gated", caller_turns: 0, same_completion: true)
+    artifact["messages"].each { |m| m["message"] = "SENTINEL spoken words" if m.key?("message") }
+    actions = capture do
+      Voice::ToolRunner.call(call_log: CallLog.find(@call.id), artifact: artifact,
+                             tool_call: { "id" => "gated", "function" => { "name" => "submit_order", "arguments" => { "fulfillment_type" => "pickup", "cart_version" => 1 } } })
+    end
+    text = html(actions)
+    assert_includes text, "confirmation required · submit refused"
+    assert_includes text, "submit refused: waiting for the caller's answer to the read-back (v1)"
+    assert_not_includes text, "SENTINEL"
+    no_failures!
+  end
 end
