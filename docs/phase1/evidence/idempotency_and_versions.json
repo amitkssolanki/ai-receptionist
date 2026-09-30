@@ -301,7 +301,7 @@
       "same_id_twice_identical": true,
       "new_id_answer": {
         "already_submitted": true,
-        "confirmation_sms": "already_handled"
+        "confirmation_sms": null
       },
       "order_status": "confirmed",
       "placed_at_set_once": true,

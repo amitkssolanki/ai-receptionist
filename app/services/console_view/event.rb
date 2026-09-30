@@ -189,7 +189,7 @@ module ConsoleView
     def submit_result(body)
       return "already submitted · nothing changed" if body["already_submitted"]
 
-      "confirmed v#{body['cart_version']} · sms #{body['confirmation_sms']}"
+      [ "confirmed v#{body['cart_version']}", ("sms #{body['confirmation_sms']}" if body["confirmation_sms"].present?) ].compact.join(" · ")
     end
 
     def item_name(id)

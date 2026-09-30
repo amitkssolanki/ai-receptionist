@@ -78,14 +78,12 @@ module ConsoleView
       end
     end
 
-    # The first submit that actually confirmed the order says what happened to the SMS; later submits only replay.
-    SMS_LABELS = { "queued" => "confirmation text queued", "skipped_web_call" => "not sent: web call, no phone number" }.freeze
-
+    # The server's own rule (OrderTaking queues the confirmation text only for an SMS-capable number), not what the model
+    # was told: the model only ever hears about a text that was queued.
     def sms
       return "n/a" unless order&.submitted?
 
-      sms = submit_invocations.filter_map { |row| JSON.parse(row.result)["confirmation_sms"] rescue nil }.find { |v| SMS_LABELS.key?(v) }
-      SMS_LABELS.fetch(sms, "not recorded")
+      order.customer.sms_capable? ? "confirmation text queued" : "not sent: web call, no phone number"
     end
 
     private

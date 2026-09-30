@@ -38,7 +38,7 @@ class Evaluation::EvidenceTest < ActiveSupport::TestCase
     assert_equal [ true, 1, 1, 2 ], demos["duplicate_add_to_cart"].values_at("identical_stored_result", "order_lines", "cart_version", "replay_count")
     cart = demos["late_duplicate_get_cart"]
     assert_equal [ 1, 1, true, "cart_changed_since_readback" ], cart.values_at("duplicate_get_cart_returned_version", "read_back_version_after_duplicate", "read_back_at_unchanged", "submit_with_current_version_refused_as")
-    assert_equal [ true, "already_handled", "confirmed" ], demos["duplicate_submit_order"].then { |d| [ d["same_id_twice_identical"], d.dig("new_id_answer", "confirmation_sms"), d["order_status"] ] }
+    assert_equal [ true, true, nil, "confirmed" ], demos["duplicate_submit_order"].then { |d| [ d["same_id_twice_identical"], d.dig("new_id_answer", "already_submitted"), d.dig("new_id_answer", "confirmation_sms"), d["order_status"] ] }
   end
 
   test "the latency file says what it does and does not measure, and covers every tool that ran" do

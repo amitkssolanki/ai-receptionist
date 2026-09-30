@@ -133,7 +133,7 @@ class BaselineReliabilityTest < ActionDispatch::IntegrationTest
     order = c.reload.order
 
     assert_equal "queued", JSON.parse(first)["confirmation_sms"]
-    assert_equal [ true, "already_handled" ], [ JSON.parse(second)["already_submitted"], JSON.parse(second)["confirmation_sms"] ]
+    assert_equal [ true, false ], [ JSON.parse(second)["already_submitted"], JSON.parse(second).key?("confirmation_sms") ]
     assert_equal 1, enqueued_jobs.count { |j| j["job_class"] == "OrderConfirmationSmsJob" }
     assert_equal first_placed, order.placed_at
     assert order.pickup?, "fulfillment was not switched"
@@ -497,7 +497,7 @@ class BaselineReliabilityTest < ActionDispatch::IntegrationTest
     tool(web.external_call_id, "add_to_cart", { menu_item_id: @margherita.id })
     web_result = JSON.parse(submit(web.external_call_id))
     assert web.reload.order.confirmed?
-    assert_equal "skipped_web_call", web_result["confirmation_sms"]
+    assert_not web_result.key?("confirmation_sms"), "the model is told nothing about a text that was not sent"
     assert_equal 0, enqueued_jobs.count { |j| j["job_class"] == "OrderConfirmationSmsJob" }
 
     # Real caller.
@@ -519,7 +519,7 @@ class BaselineReliabilityTest < ActionDispatch::IntegrationTest
       assert_equal "+15557775678", sent[:to]
       assert_equal "Thanks for your order at Baseline Pizzeria! 1x Margherita Pizza (Extra cheese), 1x Garlic Knots. Total: $21.50. We'll have it ready soon.", sent[:body]
       rec(id: "R18", scenario: "SMS confirmation behavior", layer: "job",
-          current: "Step 9: web calls -> confirmation_sms skipped_web_call (nothing enqueued, job also skips synthetic numbers); real number -> queued after commit, itemized body #{sent[:body].inspect}",
+          current: "Step 9 + SMS boundary: web calls -> no SMS field in the model-facing result (nothing enqueued, job also skips synthetic numbers); real number -> confirmation_sms queued after commit, itemized body #{sent[:body].inspect}",
           safe: "Skip non-phone caller ids; itemized body; record send status on the order")
     end
   end

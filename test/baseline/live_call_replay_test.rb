@@ -228,7 +228,7 @@ class BaselineLiveCallReplayTest < ActionDispatch::IntegrationTest
     ids = events.select { |e| e["type"] == "tool-calls" }.map { |e| e["payload"]["toolCallList"].first["id"] }
     ids[1..2].each { |id| assert covers?(JSON.parse(normalize(recorded[id])), JSON.parse(normalize(@results[id]))), id }
     assert_equal true, parsed(@results[ids[3]])["ok"]
-    assert_equal "skipped_web_call", parsed(@results[ids[3]])["confirmation_sms"]
+    assert_not parsed(@results[ids[3]]).key?("confirmation_sms"), "a browser call: the model is told nothing about SMS"
 
     assert call.completed?
     assert order.confirmed?

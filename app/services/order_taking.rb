@@ -143,7 +143,7 @@ class OrderTaking
         placed_at: Time.current
       )
       cart_order.recompute_total!
-      Result.ok(cart_order.cart_summary.merge(confirmation_sms: queue_confirmation_sms(cart_order)))
+      Result.ok(cart_order.cart_summary.merge(sms_note(queue_confirmation_sms(cart_order))))
     end
   end
 
@@ -152,8 +152,14 @@ class OrderTaking
   def refuse(code, message = MESSAGES.fetch(code), details = {}) = Result.rejected(code, message, details)
 
   def already_submitted(cart_order)
-    Result.ok(cart_order.cart_summary.merge(already_submitted: true, confirmation_sms: "already_handled"))
+    Result.ok(cart_order.cart_summary.merge(already_submitted: true))
   end
+
+  # What the model may know about the confirmation text: only that one was queued, so it can say "we'll text you a
+  # confirmation". That no text was sent (a web call has no phone number) is an operational fact the model has no use for;
+  # exposing it led the agent to talk about texts (calls #2 and #6). It stays in the server log, and the console derives it
+  # from the customer's number (ConsoleView::Board#sms).
+  def sms_note(outcome) = outcome == "queued" ? { confirmation_sms: "queued" } : {}
 
   # "queued" for a caller with a real number, "skipped_web_call" for browser/synthetic callers (no SMS is attempted,
   # and the skip is a normal outcome, not a failure). Nothing here can fail the order: the job is enqueued after

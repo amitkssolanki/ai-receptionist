@@ -48,11 +48,33 @@ class SmsGuardTest < ActiveSupport::TestCase
     result = confirm(call)
 
     assert_equal true, result["ok"]
-    assert_equal "skipped_web_call", result["confirmation_sms"]
+    assert_not result.key?("confirmation_sms"), "the model hears nothing about a text that was not sent"
     assert_predicate call.reload.order, :confirmed?
     assert_equal 0, sms_jobs
     assert_match(/\[SMS\] skipped confirmation for order #{call.order.id}: caller has no SMS-capable number/, @log.string)
-    assert_equal "skipped_web_call", JSON.parse(call.tool_invocations.find_by!(tool_call_id: "c_sub").result)["confirmation_sms"], "visible to the console from the audit row"
+    assert_equal "not sent: web call, no phone number", ConsoleView::Board.new(call).sms, "visible to the console, derived from server state"
+  end
+
+  # SMS boundary: the model is told about a confirmation text only when one was queued. The internal "skipped_web_call"
+  # (and the old "already_handled") led the agent to talk about texts it should not mention (live calls #2 and #6).
+  test "the model-facing submit result never exposes internal SMS state" do
+    web = start("boundary_web", nil)
+    run_tool(web, "boundary_web_add", "add_to_cart", { "menu_item_id" => @burger.id })
+    run_tool(web, "boundary_web_cart", "get_cart")
+    web_result = run_tool(web, "boundary_web_sub", "submit_order", { "fulfillment_type" => "pickup", "cart_version" => 1 })
+    repeat = run_tool(web, "boundary_web_again", "submit_order", { "fulfillment_type" => "pickup", "cart_version" => 1 })
+    phone = start("boundary_phone", REAL)
+    run_tool(phone, "boundary_phone_add", "add_to_cart", { "menu_item_id" => @burger.id })
+    run_tool(phone, "boundary_phone_cart", "get_cart")
+    phone_result = run_tool(phone, "boundary_phone_sub", "submit_order", { "fulfillment_type" => "pickup", "cart_version" => 1 })
+
+    [ web_result, repeat ].each do |raw|
+      assert_no_match(/skipped_web_call|already_handled|confirmation_sms|web call|phone number/, raw)
+    end
+    assert_equal [ true, true ], [ JSON.parse(web_result)["ok"], JSON.parse(repeat)["already_submitted"] ]
+    assert_equal "queued", JSON.parse(phone_result)["confirmation_sms"], "a queued text is still reported"
+    assert_no_match(/skipped_web_call/, web.tool_invocations.map(&:result).join, "the audit row stores what the model was told")
+    assert_equal [ "not sent: web call, no phone number", "confirmation text queued" ], [ web, phone ].map { |c| ConsoleView::Board.new(c.reload).sms }
   end
 
   test "a caller with a real number gets exactly one SMS queued" do
@@ -71,7 +93,7 @@ class SmsGuardTest < ActiveSupport::TestCase
     travel(1.minute) do
       assert_equal first, JSON.parse(run_tool(call, "c_sub", "submit_order", { "fulfillment_type" => "pickup", "cart_version" => 1 })), "same toolCallId: stored result"
       again = JSON.parse(run_tool(call, "c_sub_again", "submit_order", { "fulfillment_type" => "delivery", "delivery_address" => "1 Main St", "cart_version" => 1 }))
-      assert_equal [ true, "already_handled" ], [ again["already_submitted"], again["confirmation_sms"] ]
+      assert_equal [ true, false ], [ again["already_submitted"], again.key?("confirmation_sms") ]
       run_tool(call, "c_cart", "get_cart")
     end
     assert_equal 1, sms_jobs

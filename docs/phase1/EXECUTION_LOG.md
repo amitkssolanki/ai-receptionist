@@ -566,3 +566,16 @@ Verified against the live Vapi API (read-only) and locally; **no call was made a
   `submit refused: waiting for the caller's answer to the read-back (vN)` until a later submit is accepted. Both come from server
   records (the rejected `ToolInvocation` and its turn evidence); no transcript or payload text is shown.
 - The same-completion line no longer quotes `speech_chars` (unreliable at submit time). Runbook updated for the next live call.
+
+## SMS boundary: the model hears only about a queued text
+
+- `submit_order` now includes `confirmation_sms: "queued"` only when a confirmation text was actually queued (an SMS-capable
+  caller). For a web call (no phone number) and for an already-submitted order the result carries no SMS field at all; the
+  internal values `skipped_web_call` / `already_handled` are no longer sent to the model. Cause: the agent volunteered SMS facts
+  it should not have (Call #2: "We won't send a text…"; Call #6: "We'll text you a confirmation…" after a skipped text).
+- The server keeps the operational fact: the skip is still logged, and the console's SMS line is derived from server state (the
+  customer's number, the same rule `OrderTaking` uses to queue), not from what the model was told. Nothing else in the SMS path
+  changed (queueing, the job, itemized body).
+- **Known leftover, not changed here:** the system prompt still explains `skipped_web_call` and `already_handled`. The model no
+  longer receives those values; removing the sentence is a prompt change (a live-assistant change and an experiment variable) to
+  schedule separately.
