@@ -11,16 +11,18 @@ module Evaluation
 
     module_function
 
-    def generate
+    # dir: where to write (the committed evidence directory unless a caller - a test - says otherwise).
+    def generate(dir: DIR)
+      dir = Pathname(dir)
       results = Runner.run_all
       files = {
         "garlic_knots_probe.json" => probe(results),
         "latency.json" => latency(results),
         "idempotency_and_versions.json" => idempotency(results)
       }
-      FileUtils.mkdir_p(DIR)
-      files.each { |name, body| DIR.join(name).write(JSON.pretty_generate(body) + "\n") }
-      DIR.join("manifest.json").write(JSON.pretty_generate(manifest(files.keys)) + "\n")
+      FileUtils.mkdir_p(dir)
+      files.each { |name, body| dir.join(name).write(JSON.pretty_generate(body) + "\n") }
+      dir.join("manifest.json").write(JSON.pretty_generate(manifest(files.keys, dir: dir)) + "\n")
       files.keys + [ "manifest.json" ]
     end
 
@@ -137,7 +139,7 @@ module Evaluation
         "not_included" => "RuboCop, Brakeman, bundler-audit and importmap audit are run separately and reported in the commit/step reports." }
     end
 
-    def manifest(names)
+    def manifest(names, dir: DIR)
       {
         "generated_at" => Time.current.iso8601, "git" => git_state, "ruby" => RUBY_VERSION, "rails" => Rails.version, "env" => Rails.env,
         "regenerate" => "RAILS_ENV=test bin/rails evidence:generate   (and evidence:suite for test counts)",
@@ -147,7 +149,7 @@ module Evaluation
           "still_pending" => [ "a scripted set of live calls beyond the first (plan Step 16: 5-8 calls)", "live-model garlic-knots sample (plan Layer 3a, N=20, baseline vs new prompt)",
                                "a live call with a real phone number (SMS path)" ]
         },
-        "files" => names.to_h { |name| [ name, Digest::SHA256.file(DIR.join(name)).hexdigest ] }
+        "files" => names.to_h { |name| [ name, Digest::SHA256.file(Pathname(dir).join(name)).hexdigest ] }
       }
     end
 

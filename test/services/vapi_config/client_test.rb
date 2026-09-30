@@ -54,4 +54,57 @@ class VapiConfig::ClientTest < ActiveSupport::TestCase
     assert_equal [ KEY ], @requests.map(&:last).uniq
     assert_no_match(/#{KEY}/, c.inspect.gsub(/@private_key=[^,>]*/, ""))
   end
+
+  # --- the real transport (http_get), with Net::HTTP replaced: no network ---
+
+  FakeResponse = Struct.new(:code, :body)
+
+  def with_net_http(response: nil, raise_error: nil)
+    seen = {}
+    fake_http = Object.new
+    fake_http.define_singleton_method(:request) do |request|
+      seen[:request] = request
+      response
+    end
+    original = Net::HTTP.method(:start)
+    Net::HTTP.define_singleton_method(:start) do |host, port, **options, &block|
+      seen.merge!(host: host, port: port, options: options)
+      raise raise_error if raise_error
+
+      block.call(fake_http)
+    end
+    yield seen
+  ensure
+    Net::HTTP.define_singleton_method(:start, original)
+  end
+
+  test "the default transport sends one GET over TLS to api.vapi.ai with the key as a bearer token and bounded timeouts" do
+    with_net_http(response: FakeResponse.new("200", { "id" => "a1", "model" => {} }.to_json)) do |seen|
+      assistant, tools = VapiConfig::Client.new(private_key: KEY).assistant_with_tools("a1")
+
+      assert_equal [ "a1", [] ], [ assistant["id"], tools ]
+      assert_equal [ "api.vapi.ai", 443 ], seen.values_at(:host, :port)
+      assert_equal({ use_ssl: true, open_timeout: 10, read_timeout: 20 }, seen[:options])
+      assert_kind_of Net::HTTP::Get, seen[:request]
+      assert_equal "/assistant/a1", seen[:request].path
+      assert_equal "Bearer #{KEY}", seen[:request]["Authorization"]
+    end
+  end
+
+  test "the default transport reports the HTTP status of a failed response" do
+    with_net_http(response: FakeResponse.new("503", "unavailable")) do
+      error = assert_raises(VapiConfig::Client::Error) { VapiConfig::Client.new(private_key: KEY).assistant_with_tools("a1") }
+      assert_equal "Vapi returned HTTP 503 for GET /assistant/:id", error.message
+    end
+  end
+
+  test "network failures become a Client::Error naming only the failure class, never the key or the error text" do
+    [ SocketError.new("getaddrinfo #{KEY}"), Net::OpenTimeout.new(KEY), Errno::ECONNREFUSED.new(KEY), OpenSSL::SSL::SSLError.new(KEY) ].each do |failure|
+      with_net_http(raise_error: failure) do
+        error = assert_raises(VapiConfig::Client::Error) { VapiConfig::Client.new(private_key: KEY).assistant_with_tools("a1") }
+        assert_equal "could not reach Vapi (#{failure.class})", error.message
+        assert_no_match(/#{KEY}/, error.message)
+      end
+    end
+  end
 end
