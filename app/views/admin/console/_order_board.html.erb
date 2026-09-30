@@ -25,6 +25,9 @@
           <% end %>
         </ul>
       <% end %>
+      <% board.repeated_items.each do |repeat| %>
+        <p data-repeated-item class="mt-2 text-xs text-amber-400">⚠ <%= repeat[:name] %> is on <%= repeat[:lines] %> lines of the cart. If the caller meant to change it, the earlier line is still there.</p>
+      <% end %>
       <div class="my-2 border-t border-gray-800"></div>
       <div class="flex justify-between font-semibold"><span>TOTAL</span><span>$<%= "%.2f" % board.total %></span></div>
       <dl class="mt-3 grid grid-cols-[6.5rem_1fr] gap-y-1 text-xs">

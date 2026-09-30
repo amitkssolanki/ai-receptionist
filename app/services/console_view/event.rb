@@ -35,6 +35,12 @@ module ConsoleView
       end
     end
 
+    # Display-only observations computed from server facts (timestamps and results), never refusals.
+    Observation = Data.define(:text, :warn)
+    QUICK_SUBMIT_SECONDS = 10 # amber when a submit follows the last get_cart by less than this; an aid for the eye, not a rule
+
+    def observations = [ submit_timing, second_line ].compact
+
     # Arguments with ids resolved to names; free text and addresses summarised, never echoed.
     def arguments_summary
       args = invocation.arguments
@@ -75,6 +81,26 @@ module ConsoleView
     end
 
     private
+
+    # How long after the last get_cart the submit arrived: the time the caller had to hear the read-back and answer.
+    def submit_timing
+      return unless tool == "submit_order"
+
+      previous = call_log.tool_invocations.where(tool_name: "get_cart", status: "ok").where(started_at: ...invocation.started_at).order(started_at: :desc).first
+      return Observation.new("no get_cart before this submit", true) unless previous
+
+      seconds = (invocation.started_at - previous.started_at).round(1)
+      Observation.new("submitted #{seconds} s after the last get_cart", seconds < QUICK_SUBMIT_SECONDS)
+    end
+
+    # An accepted add that leaves the same menu item on two cart lines.
+    def second_line
+      return unless tool == "add_to_cart" && status == "ok" && invocation.arguments.is_a?(Hash)
+
+      name = item_name(invocation.arguments["menu_item_id"])
+      lines = Array(parsed_result.is_a?(Hash) ? parsed_result["items"] : nil).count { |item| item["menu_item"] == name }
+      Observation.new("#{name} is now on #{lines} lines of the cart", true) if lines > 1
+    end
 
     def parsed_result
       @parsed_result ||= invocation.result.is_a?(String) ? JSON.parse(invocation.result) : invocation.result

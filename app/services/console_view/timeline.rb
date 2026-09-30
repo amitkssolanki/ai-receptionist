@@ -37,11 +37,13 @@ module ConsoleView
       entry(:transferred, call_log.transferred_at, "transferred to a person#{": #{call_log.transfer_reason.to_s.truncate(80)}" if call_log.transfer_reason.present?}")
     end
 
+    # Placed where the call really ended (start + duration): Vapi's report can arrive a minute later.
     def ended_entry
       return unless call_log.ended_at
 
+      at = call_log.duration_seconds && call_log.started_at ? call_log.started_at + call_log.duration_seconds : call_log.ended_at
       parts = [ "call ended", call_log.ended_reason, ("#{call_log.duration_seconds}s" if call_log.duration_seconds), ("$#{'%.4f' % call_log.cost_usd}" if call_log.cost_usd) ]
-      entry(:ended, call_log.ended_at, parts.compact.join(" · "))
+      entry(:ended, at, parts.compact.join(" · "))
     end
   end
 end

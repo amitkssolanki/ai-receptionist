@@ -112,7 +112,7 @@ class VapiConfig::DriftCheckTest < ActiveSupport::TestCase
     assert_drift check(assistant: assistant), /no system prompt/
 
     assistant = conformant
-    assistant["model"]["messages"][0]["content"] = VapiConfig.system_prompt.sub("Never submit an order the caller hasn't confirmed.", "Submit whenever.")
+    assistant["model"]["messages"][0]["content"] = VapiConfig.system_prompt.sub("Never submit an order the caller hasn't said yes to.", "Submit whenever.")
     assert_drift check(assistant: assistant), /system prompt differs from docs\/voice_agent\/system_prompt.md \(1 repo lines absent, 1 extra lines/
   end
 

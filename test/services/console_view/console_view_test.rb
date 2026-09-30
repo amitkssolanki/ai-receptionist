@@ -123,4 +123,66 @@ class ConsoleViewTest < ActiveSupport::TestCase
     status = ConsoleView::Status.new(CallLog.find(@call.id))
     assert_equal [ { ok: 1, rejected: 1, error: 0 }, 1, "IN PROGRESS" ], [ status.tools, status.duplicates_absorbed, status.label ]
   end
+
+  # --- observations from the first live call (display only) ---
+
+  test "the board points out a menu item that sits on two lines, without merging or refusing anything" do
+    run_tool("a", "add_to_cart", { "menu_item_id" => @burger.id })
+    assert_empty board.repeated_items
+    run_tool("b", "add_to_cart", { "menu_item_id" => @burger.id, "modifier_ids" => [ @cheese.id ] })
+
+    assert_equal [ { name: "Burger", lines: 2 } ], board.repeated_items
+    assert_equal 2, CallLog.find(@call.id).order.order_items.count, "nothing was merged"
+  end
+
+  test "an add that leaves the same item on two lines is noted on its event row" do
+    run_tool("a", "add_to_cart", { "menu_item_id" => @burger.id })
+    run_tool("b", "add_to_cart", { "menu_item_id" => @burger.id, "modifier_ids" => [ @cheese.id ] })
+    by_id = events.index_by { |e| e.invocation.tool_call_id }
+
+    assert_empty by_id["a"].observations
+    assert_equal [ "Burger is now on 2 lines of the cart" ], by_id["b"].observations.map(&:text)
+  end
+
+  test "a submit row states how long after the last get_cart it arrived, amber when quick" do
+    travel_to Time.zone.local(2026, 9, 30, 12, 0, 0) do
+      run_tool("a", "add_to_cart", { "menu_item_id" => @burger.id })
+      run_tool("c1", "get_cart")
+      travel 2.seconds
+      run_tool("s1", "submit_order", { "fulfillment_type" => "pickup", "cart_version" => 1 })
+
+      quick = events.find { |e| e.invocation.tool_call_id == "s1" }.observations.sole
+      assert_equal [ "submitted 2.0 s after the last get_cart", true ], [ quick.text, quick.warn ]
+    end
+
+    slow_call = CallLifecycle.start(external_call_id: "view_slow", dialed_number: @restaurant.phone_number, caller_number: "+15557774444")
+    run = ->(id, name, args = {}) { Voice::ToolRunner.call(call_log: slow_call.reload, tool_call: { "id" => id, "function" => { "name" => name, "arguments" => args } }) }
+    travel_to Time.zone.local(2026, 9, 30, 13, 0, 0) do
+      run.("a", "add_to_cart", { "menu_item_id" => @burger.id })
+      run.("c", "get_cart")
+      travel 25.seconds
+      run.("s", "submit_order", { "fulfillment_type" => "pickup", "cart_version" => 1 })
+    end
+    slow = ConsoleView::Timeline.new(slow_call.reload).tool_events.find { |e| e.invocation.tool_call_id == "s" }.observations.sole
+    assert_equal [ "submitted 25.0 s after the last get_cart", false ], [ slow.text, slow.warn ]
+  end
+
+  test "a refused submit is never blocked or altered by the observation, and other tools carry none" do
+    run_tool("a", "add_to_cart", { "menu_item_id" => @burger.id })
+    run_tool("s", "submit_order", { "fulfillment_type" => "pickup", "cart_version" => 1 }) # no read-back: refused by the server rule
+    refused = events.find { |e| e.invocation.tool_call_id == "s" }
+    assert_equal "readback_required", refused.code
+    assert_equal [ "no get_cart before this submit" ], refused.observations.map(&:text)
+    assert_empty events.find { |e| e.invocation.tool_call_id == "a" }.observations
+  end
+
+  test "the ended row sits where the call really ended, not when Vapi's report arrived" do
+    travel_to Time.zone.local(2026, 9, 30, 12, 0, 0) do
+      @call.update!(started_at: Time.current)
+      travel 90.seconds # the report arrives a minute and a half after the call started...
+      CallLifecycle.finish(external_call_id: "view_1", transcript: nil, recording_url: nil, outcome: { duration_seconds: 30, ended_reason: "customer-ended-call" })
+    end
+    ended = ConsoleView::Timeline.new(CallLog.find(@call.id)).lifecycle_entries.find { |e| e.kind == :ended }
+    assert_equal "00:30", ended.offset, "...but the call lasted 30 s"
+  end
 end

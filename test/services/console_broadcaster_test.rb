@@ -99,6 +99,21 @@ class ConsoleBroadcasterTest < ActiveSupport::TestCase
     assert_includes actions.find { |a| a["target"] == "order-board" }.to_html, "STALE: cart v2, read-back v1"
   end
 
+  test "the board and event rows show the observations from server facts" do
+    run_tool("a", "add_to_cart", { "menu_item_id" => @burger.id })
+    actions = capture do
+      run_tool("b", "add_to_cart", { "menu_item_id" => @burger.id, "modifier_ids" => [ @cheese.id ] })
+      run_tool("c", "get_cart")
+      run_tool("s", "submit_order", { "fulfillment_type" => "pickup", "cart_version" => 2 })
+    end
+    text = html(actions)
+    assert_includes text, "Burger is now on 2 lines of the cart"
+    assert_includes text, "Burger is on 2 lines of the cart"
+    assert_match(/submitted \d+\.\d s after the last get_cart/, text)
+    assert_includes text, "data-repeated-item"
+    no_failures!
+  end
+
   test "submit shows the confirmation, the lock and the SMS outcome" do
     run_tool("a", "add_to_cart", { "menu_item_id" => @burger.id })
     run_tool("c", "get_cart")

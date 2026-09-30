@@ -15,7 +15,7 @@
     "type": "function",
     "function": {
       "name": "get_menu_item",
-      "description": "Get one menu item's description, modifiers (with ids and prices) and suggested pairings. Call it before discussing an item's details or modifiers, and before adding an item with modifiers. Use an id from get_menu.",
+      "description": "Get one menu item's description, modifiers (with ids and prices) and suggested pairings. Call it when the caller asks about an item, and before adding an item that has modifiers. Asking about an item is not ordering it: do not add it until the caller says they want it. Use an id from get_menu.",
       "parameters": {
         "type": "object",
         "required": [
@@ -34,7 +34,7 @@
     "type": "function",
     "function": {
       "name": "add_to_cart",
-      "description": "Add an item to the customer's order. Use the numeric id from get_menu results for menu_item_id and modifier_ids — never guess an id. After it succeeds, state the change using the result's confirmation_text. If it returns an error, follow the error message; do not tell the caller the item was added. The result's suggest_with lists pairings you may offer once.",
+      "description": "Add an item to the customer's order. Call it only when the caller has asked to order this item, not when they ask about it. Ask about options first, then add once with the chosen options in modifier_ids. Use the numeric id from get_menu results for menu_item_id and modifier_ids — never guess an id. After it succeeds, state the change using the result's confirmation_text. If it returns an error, follow the error message; do not tell the caller the item was added. The result's suggest_with lists pairings you may offer once.",
       "parameters": {
         "type": "object",
         "required": [
@@ -69,7 +69,7 @@
     "type": "function",
     "function": {
       "name": "update_cart_item_quantity",
-      "description": "Change the quantity of an item already in the cart. Use the order_item_id returned by add_to_cart or get_cart.",
+      "description": "Change the quantity of an item already in the cart. Quantity only: to change an item's options, use remove_cart_item and then add_to_cart. Use the order_item_id returned by add_to_cart or get_cart.",
       "parameters": {
         "type": "object",
         "required": [
@@ -92,7 +92,7 @@
     "type": "function",
     "function": {
       "name": "remove_cart_item",
-      "description": "Remove an item from the cart entirely. Use the order_item_id returned by add_to_cart or get_cart.",
+      "description": "Remove an item from the cart entirely. Also use it to change an item's options: remove that line, then add_to_cart the corrected item, so the cart never holds both. Use the order_item_id returned by add_to_cart or get_cart.",
       "parameters": {
         "type": "object",
         "required": [
@@ -110,7 +110,7 @@
     "type": "function",
     "function": {
       "name": "get_cart",
-      "description": "Read the cart back. Returns readback_text, which you must say to the customer exactly as written, and cart_version, which you must pass to submit_order. Call it again after any change before submitting.",
+      "description": "Read the cart back. Returns readback_text, which you must say to the customer exactly as written and in one piece (never split or paraphrase it), and cart_version, which you must pass to submit_order. After calling it, say the readback_text, ask if it is right, and wait for the caller's answer before doing anything else. Call it again after any change before submitting.",
       "parameters": {
         "type": "object",
         "required": [],
@@ -122,7 +122,7 @@
     "type": "function",
     "function": {
       "name": "submit_order",
-      "description": "Finalize and submit the order. Only call this after get_cart, after reading its readback_text to the customer exactly as written, and after the customer clearly said yes. Pass the cart_version that get_cart returned. If it says the cart changed, call get_cart and read the order back again. The result's confirmation_sms says whether a text confirmation was queued; only promise a text when it is \"queued\".",
+      "description": "Finalize and submit the order. Call it only in a later turn than get_cart: after you have said the readback_text aloud in full and the customer has clearly said yes to it. Never call it in the same turn as get_cart, and never right after the caller answered a different question. Pass the cart_version that get_cart returned. If it says the cart changed, call get_cart and read the order back again. The result's confirmation_sms says whether a text confirmation was queued; only promise a text when it is \"queued\".",
       "parameters": {
         "type": "object",
         "required": [

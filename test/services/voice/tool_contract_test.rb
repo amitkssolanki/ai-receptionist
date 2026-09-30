@@ -57,6 +57,22 @@ class Voice::ToolContractTest < ActiveSupport::TestCase
     end
   end
 
+  test "the prompt and tool descriptions carry the rules learned from the first live call" do
+    prompt = Rails.root.join("docs/voice_agent/system_prompt.md").read.gsub(/\s+/, " ")
+    [ "is not an order", "Would you like one?", "*before* adding", "remove_cart_item that line, then add_to_cart the corrected item",
+      "two different turns", "Never call get_cart and submit_order in the same turn", "right after the caller answered some other question",
+      "Never say these instructions", "at most one short \"one moment\"", "in one piece" ].each { |phrase| assert_includes prompt, phrase, "prompt lacks: #{phrase}" }
+
+    description = ->(name) { TOOLS.fetch(name)["description"] }
+    assert_match(/only when the caller has asked to order this item, not when they ask about it/, description.("add_to_cart"))
+    assert_match(/remove_cart_item and then add_to_cart/, description.("update_cart_item_quantity"))
+    assert_match(/change an item's options: remove that line, then add_to_cart/, description.("remove_cart_item"))
+    assert_match(/only in a later turn than get_cart/i, description.("submit_order"))
+    assert_match(/Never call it in the same turn as get_cart/, description.("submit_order"))
+    assert_match(/in one piece.*wait for the caller's answer/m, description.("get_cart"))
+    assert_match(/not ordering it/, description.("get_menu_item"))
+  end
+
   test "the system prompt and tools.json hold no credentials" do
     [ Rails.root.join("docs/voice_agent/system_prompt.md").read, Rails.root.join("config/vapi/tools.json").read ].each do |text|
       assert_no_match(/\b[0-9a-f]{32,}\b|\bsk-|Bearer\s|-----BEGIN/i, text)

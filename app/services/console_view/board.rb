@@ -39,6 +39,12 @@ module ConsoleView
       end
     end
 
+    # Menu items that sit on more than one line of the cart: an observation from server facts (a model that meant to change
+    # an item can leave the old line behind). Display only; nothing is refused or merged.
+    def repeated_items
+      lines.group_by(&:name).select { |_, group| group.size > 1 }.map { |name, group| { name: name, lines: group.size } }
+    end
+
     def total = order ? order.total_cents / 100.0 : 0.0
     def cart_version = order&.cart_version || 0
 
