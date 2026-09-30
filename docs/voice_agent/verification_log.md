@@ -356,3 +356,25 @@ calling Taj Zeka, this is. Your AI host. How can I help?"); fillers ("Give me a 
   not a reliable description of the runtime requests; reasoning effort remains unreliable as an experiment variable.
 - One compliant call is not a rate. Among the calls that reached `submit_order`, 3 of 4 (Calls #1, #2, #6) submitted prematurely.
   The gate's **refusal** path has not yet occurred on a live call; it is covered by the replay of the recorded premature submits.
+
+## 2026-10-01 — Call #8 (Vapi/DB call #15): criterion #20 attempt 1 — upsell not offered (scenario not reached)
+First attempt at the scripted unclear-upsell call (`docs/phase1/ACCEPTANCE.md`, "#20"). Preflight clean: `bin/dev` and the ngrok
+tunnel up, `vapi:check` OK, dev assistant v5 unchanged (`gpt-5-mini`, configured `minimal`, Soniox `stt-rt-v5`). Call 42 s, ended
+by the customer, cost $0.0535. Sources: `bin/rails calls:last`, the console screenshot, Vapi's stored call record
+(`GET /call/{id}`) and per-call logs (`GET /call/{id}/call-logs`), all read-only.
+
+**What happened**
+- The caller said the scripted first line, "Hi, what pizzas do you have?", four times. Speech-to-text heard it every time as
+  **"What business do you have?"** (twice with "Hi."). That misheard text is what the model received.
+- To each of the four turns the model answered with its opening greeting, word for word: "Thanks for calling Taj Zayka, this is
+  your AI host — how can I help?" (per Vapi's logged OpenAI responses). It called no tool and asked no clarifying question.
+- Server: call started and ended; **0 tool calls**, no cart, no order; call status `abandoned`.
+- **No add-on was offered**, so the unclear upsell reply ("It should be." / "That should be.") was never said. Per the procedure
+  this attempt is recorded as **"upsell not offered"**; #20 is not demonstrated by it.
+- Conversation requests: 4 OpenAI requests (`gpt-5-mini`), all `reasoning_effort: "minimal"`, each with the 8 tools; 10,862
+  prompt and 112 completion tokens in total.
+
+**Observations (recorded, not acted on).** Two failures stacked: the transcriber misheard "pizzas" as "business", and the model
+responded to a question it could not map to the menu by repeating the greeting instead of answering or asking what the caller
+meant. The greeting repetition was also seen mid-answer in Call #7. The server was not involved in either failure. No prompt,
+model, transcriber or server change was made. A restart would not have changed anything: the server received no tool call.

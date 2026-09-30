@@ -244,7 +244,7 @@ repeat with a fresh call rather than prompting for an add-on.
 reflected in the server order (heuristic)`), or (d) does something else. Then whether the read-back matches the order board, and
 what the confirmation gate did at submit.
 
-**Evidence to record for #20** (send it back; it goes into `docs/voice_agent/verification_log.md` as Call #8):
+**Evidence to record for #20** (send it back; it goes into `docs/voice_agent/verification_log.md` as the next call entry):
 - `bin/rails calls:last` output, run right after the call (payload-free, safe to paste);
 - a console screenshot showing the conversation around steps 5–6, the order board, and the server event rows (including any `⚠`
   marker and the submit row's ◌ lines);
@@ -257,5 +257,11 @@ stored record (read-only), whether an `add_to_cart` was actually requested after
 
 ### Current status
 
-19 of 20 criteria met. #9 and #17 met by the green CI run above. Open: #20 (the manual call above, not yet made); Phase 1 is
-not complete until it is made and recorded.
+19 of 20 criteria met. #9 and #17 met by the green CI run above. Open: #20; Phase 1 is not complete until the scripted attempt
+is made and recorded.
+
+#20 attempts so far:
+- **Attempt 1 — Call #8 (Vapi/DB call #15), 2026-10-01: upsell not offered (scenario not reached).** Speech-to-text heard the
+  scripted "Hi, what pizzas do you have?" as "What business do you have?" four times; the model answered each time by repeating its
+  greeting and called no tool. No cart, no order, no add-on offer, so the unclear reply was never said. Details in
+  `docs/voice_agent/verification_log.md`. The next attempt is a fresh call (Call #9).
