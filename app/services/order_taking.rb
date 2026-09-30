@@ -67,7 +67,8 @@ class OrderTaking
         notes: notes
       )
       cart_order.recompute_total!(bump_version: true)
-      Result.ok(cart_order.cart_summary.merge(confirmation_text: Readback.added(added, cart_order)))
+      Result.ok(cart_order.cart_summary.merge(confirmation_text: Readback.added(added, cart_order),
+                                              suggest_with: MenuCatalog.new(restaurant).pairings(menu_item)))
     end
   end
 

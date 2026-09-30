@@ -163,10 +163,10 @@ class BaselineLiveCallReplayTest < ActionDispatch::IntegrationTest
     assert_equal %w[get_menu add_to_cart get_cart submit_order], names
     assert_equal recorded.keys.sort, results.keys.sort
     timeline_ids = events.select { |e| e["type"] == "tool-calls" }.map { |e| e["payload"]["toolCallList"].first["id"] }
-    timeline_ids[0..2].each do |id|
+    # get_menu itself changed shape in Step 6 (compact overview); see the dedicated menu test below.
+    timeline_ids[1..2].each do |id|
       assert covers?(JSON.parse(normalize(recorded[id])), JSON.parse(normalize(results[id]))), "recorded result no longer covered for #{id}: #{results[id]}"
     end
-    assert_equal recorded[timeline_ids[0]], results[timeline_ids[0]], "get_menu is unchanged until Step 6"
 
     submit = parsed(results[timeline_ids[3]])
     assert_equal false, submit["ok"]
@@ -179,6 +179,26 @@ class BaselineLiveCallReplayTest < ActionDispatch::IntegrationTest
     assert_equal [ [ "Margherita Pizza", 1, [ "Extra cheese" ] ] ],
                  order.order_items.map { |i| [ i.menu_item.name, i.quantity, i.selected_modifiers.map { |m| m["name"] } ] }
     assert_equal 0, enqueued_jobs.count { |j| j["job_class"] == "OrderConfirmationSmsJob" }
+  end
+
+  # Step 6: the recorded get_menu (full menu, 4,554 bytes, 51 queries) is now split into a compact get_menu plus
+  # get_menu_item. Between them they must still carry everything the real call's get_menu carried.
+  test "call #7 menu: get_menu + get_menu_item cover the recorded full get_menu" do
+    recorded_id = recorded_results("call7").keys.first
+    full_menu = JSON.parse(recorded_results("call7").fetch(recorded_id))
+    catalog = MenuCatalog.new(@restaurant)
+    overview = catalog.overview
+
+    assert_equal full_menu.map { |c| c["category"] }, overview.map { |c| c[:category] }
+    full_menu.zip(overview).each do |recorded_category, category|
+      assert_equal recorded_category["items"].map { |i| i["id"] }, category[:items].map { |i| i[:id] }
+      recorded_category["items"].zip(category[:items]).each do |recorded_item, item|
+        assert_equal [ recorded_item["name"], recorded_item["price"], recorded_item["modifiers"].any? ],
+                     [ item[:name], item[:price], item[:customizable] ], recorded_item["name"]
+        detail = JSON.parse(catalog.item(recorded_item["id"]).to_json)
+        assert_equal recorded_item, detail, "get_menu_item must carry the recorded detail for #{recorded_item['name']}"
+      end
+    end
   end
 
   test "call #7 adapted (cart_version injected from get_cart) replays to the same confirmed $16 order" do
@@ -196,7 +216,7 @@ class BaselineLiveCallReplayTest < ActionDispatch::IntegrationTest
     recorded = recorded_results("call7")
     assert_equal recorded.keys.sort, @results.keys.sort
     ids = events.select { |e| e["type"] == "tool-calls" }.map { |e| e["payload"]["toolCallList"].first["id"] }
-    ids[0..2].each { |id| assert covers?(JSON.parse(normalize(recorded[id])), JSON.parse(normalize(@results[id]))), id }
+    ids[1..2].each { |id| assert covers?(JSON.parse(normalize(recorded[id])), JSON.parse(normalize(@results[id]))), id }
     assert_equal true, parsed(@results[ids[3]])["ok"]
 
     assert call.completed?

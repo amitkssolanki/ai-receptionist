@@ -3,7 +3,7 @@
     "type": "function",
     "function": {
       "name": "get_menu",
-      "description": "Get the restaurant's current menu: categories, items, prices, modifiers, and suggested pairings. Call this before answering any question about what's available or before adding items to the order.",
+      "description": "Get the restaurant's menu overview: categories and items with their ids, prices, and whether an item can be customized. Call this before answering what's available or before adding items. It is deliberately short: for an item's description, modifiers, or pairings call get_menu_item.",
       "parameters": {
         "type": "object",
         "required": [],
@@ -14,8 +14,27 @@
   {
     "type": "function",
     "function": {
+      "name": "get_menu_item",
+      "description": "Get one menu item's description, modifiers (with ids and prices) and suggested pairings. Call it before discussing an item's details or modifiers, and before adding an item with modifiers. Use an id from get_menu.",
+      "parameters": {
+        "type": "object",
+        "required": [
+          "menu_item_id"
+        ],
+        "properties": {
+          "menu_item_id": {
+            "type": "integer",
+            "description": "The id of the menu item from get_menu"
+          }
+        }
+      }
+    }
+  },
+  {
+    "type": "function",
+    "function": {
       "name": "add_to_cart",
-      "description": "Add an item to the customer's order. Use the numeric id from get_menu results for menu_item_id and modifier_ids — never guess an id. After it succeeds, state the change using the result's confirmation_text. If it returns an error, follow the error message; do not tell the caller the item was added.",
+      "description": "Add an item to the customer's order. Use the numeric id from get_menu results for menu_item_id and modifier_ids — never guess an id. After it succeeds, state the change using the result's confirmation_text. If it returns an error, follow the error message; do not tell the caller the item was added. The result's suggest_with lists pairings you may offer once.",
       "parameters": {
         "type": "object",
         "required": [

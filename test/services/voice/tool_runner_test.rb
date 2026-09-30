@@ -13,7 +13,7 @@ class Voice::ToolRunnerTest < ActiveSupport::TestCase
   end
 
   test "dispatches each tool to its service and returns JSON strings" do
-    assert_equal "Burger", JSON.parse(run_tool("get_menu")).dig(0, "items", 0, "name")
+    assert_equal "Burger", JSON.parse(run_tool("get_menu")).dig("categories", 0, "items", 0, "name")
     assert_equal 10.0, JSON.parse(run_tool("add_to_cart", { "menu_item_id" => @item.id }))["total"]
     assert_equal 10.0, JSON.parse(run_tool("get_cart"))["total"]
 
@@ -68,6 +68,9 @@ class Voice::ToolRunnerTest < ActiveSupport::TestCase
       assert_no_match LEAK, result, "#{name} #{args.inspect}"
       assert_equal false, JSON.parse(result)["ok"], "#{name} #{args.inspect} should be refused"
     end
+    # Even a call with no (or a nonsense) tool name is audited rather than silently dropped.
+    assert_equal battery.size, @call_log.tool_invocations.where("tool_call_id LIKE 'leak_%'").count
+    assert_equal "(none)", @call_log.tool_invocations.find_by!(tool_call_id: "leak_#{battery.size - 1}").tool_name
   end
 
   test "a model validation that slips past the rules becomes invalid_arguments naming fields, not exception text" do
@@ -102,5 +105,27 @@ class Voice::ToolRunnerTest < ActiveSupport::TestCase
       assert row, "row must be persisted for timestamp #{ts.inspect}"
       assert_nil row.vapi_requested_at
     end
+  end
+
+  test "get_menu_item returns one item's detail, and a menu_item_unavailable refusal for anything else" do
+    modifier = @item.menu_item_modifiers.create!(name: "Extra cheese", price_cents: 150)
+
+    detail = JSON.parse(run_tool("get_menu_item", { "menu_item_id" => @item.id }))
+    assert_equal true, detail["ok"]
+    assert_equal [ "Burger", [ modifier.id ] ], [ detail["name"], detail["modifiers"].map { |m| m["id"] } ]
+
+    assert_equal "menu_item_unavailable", JSON.parse(run_tool("get_menu_item", { "menu_item_id" => 0 })).dig("error", "code")
+    assert_equal "invalid_arguments", JSON.parse(run_tool("get_menu_item", {})).dig("error", "code")
+  end
+
+  test "add_to_cart offers the item's available pairings" do
+    sides = @restaurant.menu_categories.create!(name: "Sides", position: 2)
+    fries = sides.menu_items.create!(restaurant: @restaurant, name: "Fries", price_cents: 400)
+    gone = sides.menu_items.create!(restaurant: @restaurant, name: "Gone", price_cents: 400, available: false)
+    @item.menu_item_upsells.create!(upsell_item: fries)
+    @item.menu_item_upsells.create!(upsell_item: gone)
+
+    result = JSON.parse(run_tool("add_to_cart", { "menu_item_id" => @item.id }))
+    assert_equal [ { "id" => fries.id, "name" => "Fries", "price" => 4.0 } ], result["suggest_with"]
   end
 end

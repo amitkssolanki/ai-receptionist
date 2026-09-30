@@ -13,6 +13,9 @@ module Voice
 
     SCHEMAS = {
       "get_menu" => {},
+      "get_menu_item" => {
+        menu_item_id: { type: :integer, required: true }
+      },
       "get_cart" => {},
       "add_to_cart" => {
         menu_item_id: { type: :integer, required: true },

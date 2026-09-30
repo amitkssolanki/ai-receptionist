@@ -79,7 +79,7 @@ class Voice::ToolArgumentsTest < ActiveSupport::TestCase
   end
 
   test "every tool the runner dispatches has a schema" do
-    assert_equal %w[add_to_cart get_cart get_menu remove_cart_item submit_order transfer_to_human update_cart_item_quantity],
+    assert_equal %w[add_to_cart get_cart get_menu get_menu_item remove_cart_item submit_order transfer_to_human update_cart_item_quantity],
                  Voice::ToolArguments::SCHEMAS.keys.sort
     assert_not Voice::ToolArguments.known?("nope")
   end

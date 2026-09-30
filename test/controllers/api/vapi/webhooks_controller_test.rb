@@ -66,7 +66,7 @@ class Api::Vapi::WebhooksControllerTest < ActionDispatch::IntegrationTest
     body = JSON.parse(response.body)
     assert_equal "toolu_1", body["results"].first["toolCallId"]
     menu = JSON.parse(body["results"].first["result"])
-    assert_equal "Burger", menu.dig(0, "items", 0, "name")
+    assert_equal "Burger", menu.dig("categories", 0, "items", 0, "name")
   end
 
   test "add_to_cart then submit_order builds and confirms an order" do

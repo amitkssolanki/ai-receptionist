@@ -138,3 +138,32 @@ duplicate-submit/idempotency yet", so plan Step 4's R02 is **not** flipped (see 
   unchanged. The frozen originals still pass verbatim against the tag (`baseline:verify`).
 - Deviations: see "ok:true" above; the brief's replay requirement is met by the plan's Layer 2 restructuring rather
   than literal unchanged assertions, because the contract changed by design.
+
+## Step 6 — menu optimization (plan Step 8's menu work)
+
+Numbering note: the review brief's "Step 6" is the menu work the plan schedules as Step 8 (the plan's own Step 6
+input rules were delivered in Step 4 above). Only the menu code/tool contract is done here; nothing from Steps 7+.
+
+Measured on the real 6-category / 20-item Taj Zayka menu (dev database; `bin/rails runner script/menu_benchmark.rb`,
+the same file run against a worktree of `portfolio-baseline` for "before", median of 50):
+
+| | queries | bytes | median |
+|---|---|---|---|
+| get_menu before (`Restaurant#voice_menu_json`) | 51 | 4,554 | 17.7 ms |
+| get_menu after (`MenuCatalog#overview`) | 3 | 1,526 (1,551 with the `ok` envelope) | 0.9 ms |
+| get_menu_item (new) | 3 | 310 | 1.0 ms |
+
+- `MenuCatalog#overview`: categories → items `{id, name, price, customizable}`; 3 queries regardless of menu size
+  (tested at 20 and 40 items). Categories with nothing orderable are omitted. `MenuCatalog#item(id)`: description,
+  modifiers (id, name, price), available pairings; `nil` for unknown / sold-out / other-restaurant items.
+- `get_menu_item` tool (`menu_item_id`) added to `Voice::ToolArguments`, the runner, `config/vapi/tools.json` (parity
+  test covers it) and the prompt. Unknown item → `menu_item_unavailable`.
+- Pairings: dropped from get_menu, so `add_to_cart` results now carry `suggest_with` (available pairings) and
+  `get_menu_item` carries them too.
+- `get_menu` result is now `{"ok":true,"categories":[...]}`. Preloading replaced the per-item `.available` scope calls.
+- Tests: `menu_catalog_test.rb` (contents/exclusions/order), `menu_performance_test.rb` (query counts, doubling,
+  byte budget, runner envelope), replay test proving `get_menu` + `get_menu_item` together still carry everything the
+  recorded real-call `get_menu` carried (ids, names, prices, descriptions, modifiers, pairings).
+- Also in this commit: a call with no/invalid tool name is now audited with tool_name `(none)` (the Step 3 battery
+  test showed its ToolInvocation row was being silently dropped by the presence validation - same class of problem as
+  the Step 2 timestamp bug). No caching was added.

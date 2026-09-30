@@ -75,7 +75,8 @@ module Voice
       order_taking = OrderTaking.new(@call_log)
 
       case name
-      when "get_menu" then Result.ok(MenuCatalog.new(@call_log.restaurant).full)
+      when "get_menu" then Result.ok({ categories: MenuCatalog.new(@call_log.restaurant).overview })
+      when "get_menu_item" then menu_item(values[:menu_item_id])
       when "add_to_cart" then order_taking.add_item(**values)
       when "update_cart_item_quantity" then order_taking.update_quantity(**values)
       when "remove_cart_item" then order_taking.remove_item(**values)
@@ -87,8 +88,13 @@ module Voice
       end
     end
 
-    # Successful object payloads carry "ok": true; get_menu's list changes shape in Step 6.
-    def serialize(payload) = payload.is_a?(Hash) ? { ok: true }.merge(payload).to_json : payload.to_json
+    def menu_item(id)
+      item = MenuCatalog.new(@call_log.restaurant).item(id)
+      item ? Result.ok(item) : Result.rejected(:menu_item_unavailable, OrderTaking::MESSAGES.fetch(:menu_item_unavailable))
+    end
+
+    # Successful payloads are objects and carry "ok": true.
+    def serialize(payload) = { ok: true }.merge(payload).to_json
 
     def reject(outcome, code, message, details = {})
       outcome.merge(result: self.class.error_json(code, message, details), status: "rejected", error_code: code.to_s)
@@ -99,7 +105,7 @@ module Voice
       return Rails.logger.warn("[Vapi] tool call without an id on call #{@call_log.external_call_id}; not recorded") if tool_call_id.blank?
 
       ToolInvocation.record!(
-        call_log: @call_log, order: @call_log.reload.order, tool_call_id: tool_call_id, tool_name: outcome[:name].to_s,
+        call_log: @call_log, order: @call_log.reload.order, tool_call_id: tool_call_id, tool_name: outcome[:name].to_s.strip.presence&.first(100) || "(none)",
         arguments: outcome[:arguments], result: outcome[:result], status: outcome[:status],
         error_code: outcome[:error_code], error_class: outcome[:error_class], started_at: started_at,
         duration_ms: duration_ms, vapi_requested_at: requested_at
