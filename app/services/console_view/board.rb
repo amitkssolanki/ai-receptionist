@@ -76,7 +76,7 @@ module ConsoleView
       return "n/a" unless order&.submitted?
 
       sms = submit_invocations.filter_map { |row| JSON.parse(row.result)["confirmation_sms"] rescue nil }.find { |v| SMS_LABELS.key?(v) }
-      SMS_LABELS.fetch(sms, "unknown")
+      SMS_LABELS.fetch(sms, "not recorded")
     end
 
     private

@@ -442,3 +442,33 @@ still no Vapi write automation):
   secret is verifiable, not just "unverifiable".
 - Still manual / unverified: the public key's restrictions (assistant, origins, no transient assistants) and any spend limit
   are not readable through the API; ngrok was not running, so no request has reached Rails yet; no call has been made.
+
+## Preflight for the first live call (nothing here is a live-call result)
+
+Verified against the live Vapi API (read-only) and locally; **no call was made and Start was not pressed**.
+- Credentials: `config/credentials.yml.enc` holds top-level `secret_key_base` and `vapi` with exactly `private_key`,
+  `public_key`, `dev_assistant_id`, `server_secret` (all present, values never printed; no env overrides set; public, private
+  and secret are three distinct values; the id is a UUID and not the baseline's). The file is modified in the working tree and
+  intentionally left uncommitted: it holds the owner's keys (encrypted with the untracked `config/master.key`).
+- Dev assistant `f858bbe9…` "Taj Zayka Receptionist (dev)": 8 inline tools (names match the repo, none async, no per-tool
+  server), system prompt equal to `system_prompt.md`, `openai/gpt-5-mini` reasoning `minimal`, voice `vapi/Elliot`, transcriber
+  `soniox stt-rt-v5` `en`, `maxDurationSeconds` 300, `serverMessages` exactly `status-update`/`tool-calls`/`end-of-call-report`,
+  webhook `https://salaried-earplugs-appendix.ngrok-free.dev/api/vapi/webhooks`, secret header present and equal to Rails'.
+  `bin/rails vapi:check` (host pinned): OK. Baseline `8f2053ae…` and "Riley" `updatedAt` unchanged since before Step 11.
+- Public key restrictions / spend limit: **not inspectable**. The published API spec (71 paths) has no key or org endpoint;
+  `GET /api-key` and `/public-key` return 404 and `/org` returns 401 with the private key (dashboard-session auth). Left as a
+  manual dashboard check, spelled out in `docs/voice_agent/first_live_call.md`.
+- Networking: ngrok 3.39.11 installed; static host still accepted by ngrok and mapped to `localhost:3000`. Started `bin/dev`
+  (port 3000 was free) and the tunnel. Synthetic routing probes only: `/up` via the tunnel 200; `POST /api/vapi/webhooks`
+  with no secret and with a wrong secret 401; `GET` on the webhook path 404; `/admin/console` unauthenticated 302 to sign-in;
+  no rows were created (call_logs 7 before and after, tool_invocations 0).
+- Console (browser, `http://localhost:3000`, seeded admin): Start enabled, no setup warning, Action Cable `● connected`,
+  assistant id on the page is the dev one, the public key is present once (attribute only), the SDK loads, the token endpoint
+  issues a token, and the attach endpoint answers 202 for an unknown call. Server-side crawl of the page and all 15 assets:
+  the private key and webhook secret appear nowhere; the public key appears only in the page attribute, not in any script.
+- Logs: no key or secret occurrences in `development.log`, `test.log` or the ngrok log; no `[Vapi] event` payload lines.
+- Repo fixes made during preflight (separate commits): the test suite no longer depends on the developer's real Vapi credentials
+  (it broke two tests once the credentials were filled in); the console can attach to its call by the call id the SDK reports if
+  the signed token never reaches the webhook; `bin/rails calls:last` (payload-free call summary) and this runbook.
+- Known, not changed: the development restaurant's hours are still `00:00-23:59` (seeds now use `00:00-24:00`), so orders are
+  refused during 23:59:00-23:59:59 local time.
