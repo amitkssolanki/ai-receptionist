@@ -23,12 +23,14 @@ class Evaluation::EvidenceTest < ActiveSupport::TestCase
     assert_equal probe["scenarios"].size, probe["totals"]["invariant_every_order_line_came_from_an_accepted_add_to_cart_held_in"]
   end
 
-  test "live evidence is marked pending, never reported as a result" do
+  test "what is not live-verified stays marked pending; live results live in the verification log, not in generated files" do
     probe = committed("garlic_knots_probe.json")
     assert_match(/\APENDING/, probe["live_model_sample"])
     manifest = committed("manifest.json")
-    assert_equal "PENDING", manifest["live_evidence"]["status"]
-    assert_operator manifest["live_evidence"]["items"].size, :>=, 3
+    assert_equal "PARTIAL", manifest["live_evidence"]["status"]
+    assert_operator manifest["live_evidence"]["still_pending"].size, :>=, 3
+    assert_match(/Layer 3a/, manifest["live_evidence"]["still_pending"].join)
+    assert_path_exists Rails.root.join("docs/voice_agent/verification_log.md")
   end
 
   test "the duplicate-delivery demos show one execution, stored results, and no refreshed read-back" do

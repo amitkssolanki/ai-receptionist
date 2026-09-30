@@ -63,7 +63,7 @@ module Evaluation
       baseline = JSON.parse(BASELINE_TIMINGS.read)["tools"].to_h { |t| [ t["tool"], { "server_total_ms" => t["server_total_ms"], "queries" => t["queries"], "response_bytes" => t["response_bytes"] } ] }
       {
         "what_it_measures" => "Server-side execution time of each tool call as recorded in ToolInvocation.duration_ms (argument parsing, business logic, audit row in one transaction), measured on the machine that generated this file, test database, single process.",
-        "not_measured" => "Vapi round-trip latency, STT/LLM/TTS time, network, or the browser-observed latency (those need a live call: PENDING).",
+        "not_measured" => "Vapi round-trip latency, STT/LLM/TTS time, network, or the browser-observed latency. (One live call measured them: see docs/voice_agent/verification_log.md; they are not part of this generated file.)",
         "after_phase1" => by_tool.sort.to_h,
         "baseline_one_sample_for_reference" => baseline.merge("note" => "Phase 0, one real call; server_total_ms is the whole Rails request on the dev server, so it is not like-for-like with duration_ms. The menu payload went from 4,554 bytes / 53 queries to about 1.5 KB / 3 queries (see the Step 6 log entry)."),
         "measured_on" => { "ruby" => RUBY_VERSION, "rails" => Rails.version, "env" => Rails.env }
@@ -141,8 +141,12 @@ module Evaluation
       {
         "generated_at" => Time.current.iso8601, "git" => git_state, "ruby" => RUBY_VERSION, "rails" => Rails.version, "env" => Rails.env,
         "regenerate" => "RAILS_ENV=test bin/rails evidence:generate   (and evidence:suite for test counts)",
-        "live_evidence" => { "status" => "PENDING", "items" => [ "a real browser call through the console with the dev assistant", "vapi:check against the live development assistant",
-                                                                 "live-model garlic-knots sample (plan Layer 3a, N=20)", "browser-observed latency on a live call" ] },
+        "live_evidence" => {
+          "status" => "PARTIAL",
+          "recorded_in" => "docs/voice_agent/verification_log.md (one real browser call, call #8, 2026-09-30, and vapi:check against the live dev assistant)",
+          "still_pending" => [ "a scripted set of live calls beyond the first (plan Step 16: 5-8 calls)", "live-model garlic-knots sample (plan Layer 3a, N=20, baseline vs new prompt)",
+                               "a live call with a real phone number (SMS path)" ]
+        },
         "files" => names.to_h { |name| [ name, Digest::SHA256.file(DIR.join(name)).hexdigest ] }
       }
     end
