@@ -63,4 +63,16 @@ class CallLifecycleTest < ActiveSupport::TestCase
   test "finish for an unknown call does nothing" do
     assert_nil CallLifecycle.finish(external_call_id: "nope", transcript: "x", recording_url: nil)
   end
+
+  test "finish keeps the report's outcome facts, defensively typed, and nothing else" do
+    call_log = start(id: "outcome_1")
+    CallLifecycle.finish(external_call_id: "outcome_1", transcript: "x", recording_url: nil,
+                         outcome: { ended_reason: "customer-ended-call\nforged", duration_seconds: 182.45, cost: 0.2008, assistant_version: "v4" })
+    call_log.reload
+    assert_equal [ "customer-ended-callforged", 182, BigDecimal("0.2008"), "v4" ], [ call_log.ended_reason, call_log.duration_seconds, call_log.cost_usd, call_log.assistant_version ]
+
+    junk = start(id: "outcome_2")
+    CallLifecycle.finish(external_call_id: "outcome_2", transcript: nil, recording_url: nil, outcome: { ended_reason: nil, duration_seconds: "soon", cost: "free" })
+    assert_equal [ nil, nil, nil ], [ junk.reload.ended_reason, junk.duration_seconds, junk.cost_usd ]
+  end
 end

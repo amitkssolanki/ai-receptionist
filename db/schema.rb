@@ -10,14 +10,19 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_30_160000) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_30_170000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
   create_table "call_logs", force: :cascade do |t|
+    t.string "assistant_version"
+    t.string "console_session_key"
+    t.decimal "cost_usd", precision: 10, scale: 4
     t.datetime "created_at", null: false
     t.bigint "customer_id"
+    t.integer "duration_seconds"
     t.datetime "ended_at"
+    t.string "ended_reason"
     t.string "external_call_id", null: false
     t.bigint "order_id"
     t.string "phone_number", null: false
@@ -29,6 +34,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_30_160000) do
     t.string "transfer_reason"
     t.datetime "transferred_at", precision: 3
     t.datetime "updated_at", null: false
+    t.index ["console_session_key"], name: "index_call_logs_on_console_session_key"
     t.index ["customer_id"], name: "index_call_logs_on_customer_id"
     t.index ["external_call_id"], name: "index_call_logs_on_external_call_id", unique: true
     t.index ["order_id"], name: "index_call_logs_on_order_id"

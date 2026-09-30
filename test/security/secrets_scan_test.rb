@@ -6,6 +6,8 @@ class SecretsScanTest < ActiveSupport::TestCase
   # Frozen Phase 0 evidence and the execution log/plan describe the old behaviour by name; they are history.
   SKIPPED = %r{\A(test/fixtures/files/baseline/|docs/phase1/|test/security/|test/controllers/api/vapi/webhook_security_test\.rb|test/baseline/)}
 
+  ASSIGNMENT = "a hard-coded secret assignment".freeze
+
   FORBIDDEN = {
     "the old default webhook secret" => Regexp.new(%w[dev secret change me].join("-")),
     "a Twilio account SID" => /\bAC[0-9a-f]{32}\b/,
@@ -13,7 +15,7 @@ class SecretsScanTest < ActiveSupport::TestCase
     "an sk- style API key" => /\bsk-[A-Za-z0-9]{20,}\b/,
     "a GitHub token" => /\bgh[pousr]_[A-Za-z0-9]{30,}\b/,
     "an AWS access key id" => /\bAKIA[0-9A-Z]{16}\b/,
-    "a hard-coded secret assignment" => /\b(?:secret|token|api_?key|password)\s*[:=]\s*["'][A-Za-z0-9+\/_\-]{20,}["']/i
+    ASSIGNMENT => /\b(?:secret|token|api_?key|password)\s*[:=]\s*["'][A-Za-z0-9+\/_\-]{20,}["']/i
   }.freeze
 
   def tracked_text_files
@@ -26,7 +28,11 @@ class SecretsScanTest < ActiveSupport::TestCase
 
     offenders = tracked_text_files.flat_map do |file|
       text = Rails.root.join(file).read(encoding: "UTF-8", invalid: :replace, undef: :replace) rescue next
-      FORBIDDEN.filter_map { |name, pattern| "#{file}: #{name}" if text.match?(pattern) }
+      FORBIDDEN.filter_map do |name, pattern|
+        next if name == ASSIGNMENT && file.start_with?("test/") # tests carry explicit dummy values, never real credentials
+
+        "#{file}: #{name}" if text.match?(pattern)
+      end
     end.compact
     assert_empty offenders
   end

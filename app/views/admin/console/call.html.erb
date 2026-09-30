@@ -1,0 +1,24 @@
+<% content_for :title, "Call ##{@call_log.id}" %>
+
+<section class="rounded border border-gray-800 bg-gray-900 px-4 py-3 mb-3 text-sm">
+  <div class="flex items-center justify-between">
+    <span class="font-semibold">Call #<%= @call_log.id %> · <%= @call_log.status.humanize %></span>
+    <%= link_to "New console call", admin_console_path, class: "text-emerald-400 hover:underline" %>
+  </div>
+  <p class="text-gray-500 mt-1">
+    <%= @call_log.started_at&.strftime("%b %-d, %-l:%M:%S%P") %>
+    <% if @call_log.ended_at %> · ended <%= @call_log.ended_at.strftime("%-l:%M:%S%P") %><% end %>
+  </p>
+</section>
+
+<section class="rounded border border-gray-800 bg-gray-900">
+  <header class="flex items-center justify-between border-b border-gray-800 px-4 py-2 text-xs">
+    <span class="font-semibold tracking-wide">CONVERSATION</span>
+    <span class="rounded bg-gray-800 px-2 py-0.5 text-gray-400">source: VAPI end-of-call report · not authoritative</span>
+  </header>
+  <% if @call_log.transcript.present? %>
+    <pre class="px-4 py-3 text-sm whitespace-pre-wrap font-mono"><%= @call_log.transcript %></pre>
+  <% else %>
+    <p class="px-4 py-3 text-sm text-gray-500">The live transcript only appears in the tab that hosts the call; the persisted transcript appears here after Vapi's end-of-call report.</p>
+  <% end %>
+</section>

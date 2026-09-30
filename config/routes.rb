@@ -10,6 +10,11 @@ Rails.application.routes.draw do
     resources :orders, only: [ :index, :show, :update ]
     resources :call_logs, only: [ :index, :show ]
     resource :restaurant, only: [ :edit, :update ]
+
+    # Voice test console: start a browser call, watch the conversation (Vapi) next to what the server did (Rails).
+    get "console", to: "console#show", as: :console
+    post "console/token", to: "console#token", as: :console_token
+    get "console/calls/:id", to: "console#call", as: :console_call
   end
 
   namespace :api do

@@ -40,6 +40,10 @@ module AiReceptionist
     # rolls back: enqueue it only once the transaction commits (Phase 1 / Step 7).
     config.active_job.enqueue_after_transaction_commit = true
 
+    # R23: with no valid console token and no dialed-number match, a call may fall back to the sole restaurant only
+    # where this is on (development and test). Off everywhere else: an unresolvable call is refused, never guessed.
+    config.x.vapi.default_restaurant_fallback = false
+
     # Don't generate system test files.
     config.generators.system_tests = nil
   end

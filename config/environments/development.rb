@@ -28,6 +28,9 @@ Rails.application.configure do
   # Change to :null_store to avoid any caching.
   config.cache_store = :memory_store
 
+  # Single-restaurant development convenience (R23): a call with no token or dialed number goes to the only restaurant.
+  config.x.vapi.default_restaurant_fallback = true
+
   # Store uploaded files on the local file system (see config/storage.yml for options).
   config.active_storage.service = :local
 

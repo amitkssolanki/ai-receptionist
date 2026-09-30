@@ -430,16 +430,46 @@ class BaselineReliabilityTest < ActionDispatch::IntegrationTest
         safe: "Mark the cart abandoned/cancelled at end of call")
   end
 
-  test "R23 a call with no dialed number is silently dropped once a second restaurant exists" do
-    create_other_restaurant_item
-    c = start_call("orphan_call")
-    menu = tool("orphan_call", "get_menu")
+  test "R23 restaurant resolution: a signed console token decides; without one a web call is refused, never guessed" do
+    other = Restaurant.create!(name: "Other Place", phone_number: "+15550002222")
+    session_key = SecureRandom.hex(8)
+    token = ConsoleToken.issue(restaurant: other, session_key: session_key)
 
-    assert_nil c
+    # Two restaurants and no token or dialed number: refused (no CallLog, tools answer no_active_call).
+    refused = start_call("orphan_call")
+    assert_nil refused
     assert_response :success
-    assert_equal "no_active_call", error_of(menu).first
+    assert_equal "no_active_call", error_of(tool("orphan_call", "get_menu")).first
+
+    # A valid token attaches the call to the token's restaurant (not the first one) and records the session key.
+    vapi(type: "status-update", status: "in-progress",
+         call: { id: "console_call", type: "webCall", assistantOverrides: { metadata: { console_token: token } } })
+    console_call = CallLog.find_by!(external_call_id: "console_call")
+    assert_equal [ other, session_key ], [ console_call.restaurant, console_call.console_session_key ]
+
+    # Forged, tampered, expired, wrong-purpose and malformed tokens are refused.
+    verifier = Rails.application.message_verifier(:vapi_console)
+    bad = { "forged" => "not-a-token", "tampered" => token.sub(/.\z/) { |c| c == "a" ? "b" : "a" },
+            "wrong purpose" => verifier.generate({ "restaurant_id" => other.id, "session_key" => session_key }, purpose: :something_else),
+            "unknown restaurant" => verifier.generate({ "restaurant_id" => 0, "session_key" => session_key }, purpose: :vapi_console),
+            "bad key" => verifier.generate({ "restaurant_id" => other.id, "session_key" => "short" }, purpose: :vapi_console) }
+    bad["expired"] = verifier.generate({ "restaurant_id" => other.id, "session_key" => session_key }, expires_in: -1.minute, purpose: :vapi_console)
+    bad.each do |name, value|
+      vapi(type: "status-update", status: "in-progress", call: { id: "bad_#{name.tr(' ', '_')}", type: "webCall", assistantOverrides: { metadata: { console_token: value } } })
+      assert_nil CallLog.find_by(external_call_id: "bad_#{name.tr(' ', '_')}"), "#{name} token must not create a call"
+    end
+
+    # The development convenience is explicit: with the fallback off, even the sole restaurant is not guessed.
+    Restaurant.where.not(id: @restaurant.id).destroy_all
+    Rails.configuration.x.vapi.default_restaurant_fallback = false
+    begin
+      assert_nil start_call("strict_call")
+    ensure
+      Rails.configuration.x.vapi.default_restaurant_fallback = true
+    end
+    assert start_call("lenient_call")
     rec(id: "R23", scenario: "Restaurant resolution for web calls (no dialed number)", layer: "vapi",
-        current: "Works only while exactly one Restaurant exists (Restaurant.count == 1 fallback). With two, no CallLog is created (HTTP 200, warning log only) and every tool returns 'No active call found'",
+        current: "Step 12: signed console token (15 min, purpose-bound) -> dialed number -> sole-restaurant fallback only where config.x.vapi.default_restaurant_fallback is on (dev/test) -> otherwise refused with a warning log and no CallLog",
         safe: "Explicit restaurant resolution (e.g. assistant metadata) and a loud failure; documented single-tenant assumption")
   end
 

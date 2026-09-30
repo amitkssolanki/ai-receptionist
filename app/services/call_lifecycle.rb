@@ -22,12 +22,13 @@ class CallLifecycle
 
   # Returns the new CallLog, or nil when nothing was created (no id, already started, or no restaurant resolved).
   # Two concurrent starts for one call id create exactly one record; the loser sees the winner's and returns nil.
-  def self.start(external_call_id:, dialed_number:, caller_number:)
+  def self.start(external_call_id:, dialed_number:, caller_number:, console_token: nil)
     return if external_call_id.blank? || CallLog.exists?(external_call_id: external_call_id)
 
-    restaurant = resolve_restaurant(dialed_number)
+    console = ConsoleToken.verify(console_token)
+    restaurant = console&.fetch(:restaurant) || resolve_restaurant(dialed_number)
     unless restaurant
-      Rails.logger.warn("[Vapi] Could not resolve a restaurant for call #{external_call_id} - check the dialed-number field path")
+      Rails.logger.warn("[Vapi] Could not resolve a restaurant for call #{external_call_id}: no valid console token, no dialed-number match, no default restaurant")
       return
     end
 
@@ -36,7 +37,8 @@ class CallLifecycle
       CallLog.transaction(requires_new: true) do
         customer = customer_for(restaurant, caller_number)
         restaurant.call_logs.create!(
-          external_call_id: external_call_id, customer: customer, phone_number: caller_number, started_at: Time.current
+          external_call_id: external_call_id, customer: customer, phone_number: caller_number, started_at: Time.current,
+          console_session_key: console&.fetch(:session_key)
         )
       end
     rescue ActiveRecord::RecordNotUnique, ActiveRecord::RecordInvalid
@@ -64,7 +66,7 @@ class CallLifecycle
     end
   end
 
-  def self.finish(external_call_id:, transcript:, recording_url:)
+  def self.finish(external_call_id:, transcript:, recording_url:, outcome: {})
     call_log = CallLog.find_by(external_call_id: external_call_id)
     return unless call_log
 
@@ -73,11 +75,23 @@ class CallLifecycle
 
       order = call_log.order
       order&.lock!
-      call_log.update!(status: final_status(call_log, order), transcript: transcript, recording_url: recording_url, ended_at: Time.current)
+      call_log.update!(status: final_status(call_log, order), transcript: transcript, recording_url: recording_url, ended_at: Time.current,
+                       **outcome_attributes(outcome))
       # A cart still open when the call ends was never submitted: keep its items, but it is no longer a live cart.
       order.update!(status: :abandoned) if order&.cart_open?
     end
   end
+
+  # The report's outcome facts, each optional and defensively typed. Nothing else from the report is kept.
+  def self.outcome_attributes(outcome)
+    {
+      ended_reason: outcome[:ended_reason].to_s.gsub(/[^\w.:\-]/, "").first(64).presence,
+      duration_seconds: (Float(outcome[:duration_seconds]).round if outcome[:duration_seconds].present? rescue nil),
+      cost_usd: (BigDecimal(outcome[:cost].to_s).round(4) if outcome[:cost].present? rescue nil),
+      assistant_version: outcome[:assistant_version].to_s.gsub(/[^\w.\-]/, "").first(32).presence
+    }
+  end
+  private_class_method :outcome_attributes
 
   def self.final_status(call_log, order)
     return "transferred" if call_log.transferred_at
@@ -86,10 +100,14 @@ class CallLifecycle
   end
   private_class_method :final_status
 
-  # Single restaurant pilot: fall back to the only restaurant in the system if the
-  # dialed-number lookup comes up empty, so an unexpected field name doesn't hard-fail.
+  # Restaurant resolution (R23), in order: a valid signed console token (handled by the caller), the dialed number,
+  # and - only where config.x.vapi.default_restaurant_fallback is on (development and test) - the sole restaurant.
+  # Otherwise nothing: the call is refused rather than attached to a guess.
   def self.resolve_restaurant(dialed_number)
-    Restaurant.find_by(phone_number: dialed_number) || (Restaurant.count == 1 ? Restaurant.first : nil)
+    found = Restaurant.find_by(phone_number: dialed_number) if dialed_number.present?
+    return found if found
+
+    Restaurant.first if Rails.configuration.x.vapi.default_restaurant_fallback && Restaurant.count == 1
   end
   private_class_method :resolve_restaurant
 end

@@ -47,6 +47,13 @@ class Api::Vapi::WebhooksController < ActionController::API
     VapiConfig.webhook_secret
   end
 
+  # A browser console call passes its signed token as assistant-override metadata when it starts
+  # (vapi.start(assistantId, { metadata: { console_token } })); Vapi echoes overrides on the call object.
+  def console_token(message, call)
+    [ call.dig("assistantOverrides", "metadata"), call["metadata"], message.dig("assistant", "metadata") ]
+      .filter_map { |metadata| metadata["console_token"] if metadata.is_a?(Hash) }.first
+  end
+
   def call_id(message)
     call = message["call"]
     call["id"] if call.is_a?(Hash)
@@ -61,7 +68,8 @@ class Api::Vapi::WebhooksController < ActionController::API
     CallLifecycle.start(
       external_call_id: call["id"],
       dialed_number: call.dig("phoneNumber", "number") || message.dig("phoneNumber", "number"),
-      caller_number: message.dig("customer", "number") || call.dig("customer", "number")
+      caller_number: message.dig("customer", "number") || call.dig("customer", "number"),
+      console_token: console_token(message, call)
     )
   end
 
@@ -70,7 +78,9 @@ class Api::Vapi::WebhooksController < ActionController::API
     CallLifecycle.finish(
       external_call_id: message.dig("call", "id"),
       transcript: artifact["transcript"],
-      recording_url: artifact.dig("recording", "stereoUrl") || artifact.dig("recording", "url")
+      recording_url: artifact.dig("recording", "stereoUrl") || artifact.dig("recording", "url"),
+      outcome: { ended_reason: message["endedReason"], duration_seconds: message["durationSeconds"], cost: message["cost"],
+                 assistant_version: message["assistantVersion"] }
     )
   end
 

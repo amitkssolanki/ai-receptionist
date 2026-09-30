@@ -324,3 +324,35 @@ reports, and these are exactly what a hand-built dev assistant must fix:
 - Not achievable here: the public-key restrictions and the spend limit cannot be read through the API; both are manual
   (documented in `assistant.md`). Temporary-drift exercise against a real assistant: not possible without access;
   covered by the unit tests instead.
+
+## Step 12 (brief numbering) — browser voice console shell, R23, Web SDK
+
+Brief numbering note: steps 12-14 of the current brief are the plan's console work (plan Steps 7-tail, 13-15 here, then
+the evaluation layer). Nothing in this entry was tested against Vapi live: no key, no assistant, no call was made.
+
+- **R23 / console token (was open since Step 8):** `ConsoleToken` = `message_verifier(:vapi_console)` token of
+  `{restaurant_id, session_key}`, 15 minutes, purpose-bound, verified at the webhook. `CallLifecycle.start` resolves the
+  restaurant as: valid token -> dialed number -> sole restaurant only where
+  `config.x.vapi.default_restaurant_fallback` is on (development and test; off in production) -> otherwise refused
+  (warning log, no CallLog). The token is read from `call.assistantOverrides.metadata.console_token` (real payloads show
+  `call.assistantOverrides`; that the SDK's `metadata` override is echoed there is **unverified until a live call**),
+  with `call.metadata` and `assistant.metadata` as fallbacks. The session key is stored on `call_logs.console_session_key`.
+  R23 flipped. Forged, tampered, expired, wrong-purpose, malformed and unknown-restaurant tokens are all refused.
+- **Outcome facts (plan §4):** `call_logs.ended_reason`, `duration_seconds`, `cost_usd`, `assistant_version` from the
+  end-of-call report (defensively typed; nothing else from the report is kept).
+- **Console:** `/admin/console` (Devise-protected, own dark layout), `POST /admin/console/token` (fresh token per call
+  start), `/admin/console/calls/:id` (only the signed-in restaurant's calls). `voice_console_controller.js` starts/stops
+  the call, shows status, elapsed time, agent speaking/volume, mute, live partial/final transcript, error states (mic
+  denied, key/origin rejected, call failed), a `beforeunload`/Turbo leave warning, and renders with `textContent`
+  only. `console/transcript.js` is a pure module (Node-tested). The page receives only the restricted public key and the dev
+  assistant id (`VAPI_PUBLIC_KEY`, `VAPI_DEV_ASSISTANT_ID`; credentials `vapi.public_key` / `vapi.dev_assistant_id`);
+  when unset it shows what to configure and disables Start; the frozen baseline assistant id is refused.
+- **Web SDK packaging spike (plan risk):** jspm's download of `@vapi-ai/web` is unusable under importmap (it imports a
+  sibling `./api.js` that is not downloaded). Vendored instead from jsDelivr's `+esm` builds: `vendor/javascript/vapi-web.js`
+  (@vapi-ai/web 2.7.1, one edit: its absolute daily-js import now uses the importmap name) and `daily-js.js`
+  (@daily-co/daily-js 0.87.0). **Verified in the built-in browser against the local dev app:** both modules resolve through
+  the importmap and `new Vapi(<fake key>)` constructs with `start/stop/on/setMuted/isMuted`; the SDK's class is
+  `sdk.default.default` (CommonJS wrapper), which the controller unwraps. The page rendering and transcript row handling
+  were exercised there with *synthetic* messages fed to the controller, including an HTML-looking string that stayed text.
+  No call was started and no microphone permission was requested.
+- Not in this step (next): the order board, server event stream, Action Cable, correlation and the unbacked-claim marker.
