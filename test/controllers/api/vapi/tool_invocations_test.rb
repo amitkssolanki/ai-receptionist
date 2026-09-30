@@ -40,7 +40,7 @@ class Api::Vapi::ToolInvocationsTest < ActionDispatch::IntegrationTest
     assert_operator invocation.duration_ms, :>=, 0
     assert_operator invocation.finished_at, :>=, invocation.started_at
     assert_equal Time.zone.at(1_790_000_000, 123, :millisecond), invocation.vapi_requested_at
-    assert_nil invocation.cart_version_before
+    assert_equal [ 0, 1 ], [ invocation.cart_version_before, invocation.cart_version_after ]
   end
 
   test "string arguments are stored parsed" do
@@ -83,12 +83,15 @@ class Api::Vapi::ToolInvocationsTest < ActionDispatch::IntegrationTest
     assert_equal "{not json", invocation.arguments
   end
 
-  test "a redelivered toolCallId is still executed, and bumps replay_count on the original row" do
-    2.times { tool("add_to_cart", { menu_item_id: @item.id }, id: "tc_dup") }
+  test "a redelivered toolCallId is not executed again: stored result returned, replay_count counts the duplicates" do
+    first = tool("add_to_cart", { menu_item_id: @item.id }, id: "tc_dup")
+    second = tool("add_to_cart", { menu_item_id: @item.id }, id: "tc_dup")
 
-    assert_equal 2, @call_log.reload.order.order_items.count
+    assert_equal first, second
+    assert_equal 1, @call_log.reload.order.order_items.count
     invocation = @call_log.tool_invocations.sole
     assert_equal 1, invocation.replay_count
+    assert_equal first, invocation.result
   end
 
   test "no call log means nothing to attach to: same reply, no row" do
@@ -102,7 +105,7 @@ class Api::Vapi::ToolInvocationsTest < ActionDispatch::IntegrationTest
     assert_equal 0, ToolInvocation.count
   end
 
-  test "a recording failure never changes the tool response" do
+  test "a recording failure never changes the tool response (the change is applied once, unrecorded)" do
     expected = tool("get_cart", {}, id: "tc_before")
 
     original = ToolInvocation.method(:record!)

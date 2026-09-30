@@ -360,15 +360,18 @@ class BaselineReliabilityTest < ActionDispatch::IntegrationTest
     assert c
   end
 
-  test "R14 the same tool-call id delivered twice adds the item twice" do
+  test "R14 the same tool-call id delivered twice executes once and returns the stored result" do
     c = start_call
-    tool(c.external_call_id, "add_to_cart", { menu_item_id: @margherita.id }, tool_call_id: "call_same")
-    tool(c.external_call_id, "add_to_cart", { menu_item_id: @margherita.id }, tool_call_id: "call_same")
+    first = tool(c.external_call_id, "add_to_cart", { menu_item_id: @margherita.id }, tool_call_id: "call_same")
+    second = tool(c.external_call_id, "add_to_cart", { menu_item_id: @margherita.id }, tool_call_id: "call_same")
 
-    assert_equal 2, c.reload.order.order_items.count
-    assert_equal 2800, c.order.total_cents
+    assert_equal first, second
+    assert_equal 1, c.reload.order.order_items.count
+    assert_equal 1400, c.order.total_cents
+    assert_equal 1, c.order.cart_version
+    assert_equal [ 1, 1 ], [ c.tool_invocations.count, c.tool_invocations.sole.replay_count ]
     rec(id: "R14", scenario: "Duplicate tool call (same toolCallId redelivered)", layer: "vapi",
-        current: "Two order items, total doubled (2800 cents). toolCallId is not recorded anywhere",
+        current: "Step 7: the duplicate is answered from the stored ToolInvocation result: one order item (1400 cents), cart_version 1, replay_count 1",
         safe: "Replay of a toolCallId returns the stored result without re-executing")
   end
 

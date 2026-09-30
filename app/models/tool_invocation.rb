@@ -11,19 +11,23 @@ class ToolInvocation < ApplicationRecord
 
   validates :tool_call_id, :tool_name, :started_at, :finished_at, :duration_ms, presence: true
 
-  # Records one execution. A repeat delivery of the same (call, toolCallId) does not add a row; it bumps
-  # replay_count on the original.
+  # Inserts the record of one execution. Voice::ToolRunner calls this inside the same transaction as the business
+  # change; the unique (call_log_id, tool_call_id) index is the backstop that makes a second record impossible.
   def self.record!(call_log:, tool_call_id:, tool_name:, arguments:, result:, status:, started_at:, duration_ms:,
-                   order: nil, error_code: nil, error_class: nil, vapi_requested_at: nil, source: "vapi")
-    existing = find_by(call_log: call_log, tool_call_id: tool_call_id)
-    return existing.tap { |row| row.increment!(:replay_count) } if existing
-
+                   order: nil, error_code: nil, error_class: nil, vapi_requested_at: nil, source: "vapi",
+                   cart_version_before: nil, cart_version_after: nil)
     create!(
       call_log: call_log, order: order, tool_call_id: tool_call_id, source: source, tool_name: tool_name,
       arguments: cap_arguments(arguments), result: result, status: status, error_code: error_code,
       error_class: error_class, vapi_requested_at: vapi_requested_at, started_at: started_at,
-      finished_at: started_at + duration_ms / 1000.0, duration_ms: duration_ms
+      finished_at: started_at + duration_ms / 1000.0, duration_ms: duration_ms,
+      cart_version_before: cart_version_before, cart_version_after: cart_version_after
     )
+  end
+
+  # A redelivery of this tool call was detected and answered from the stored result (nothing re-executed).
+  def register_replay!
+    increment!(:replay_count)
   end
 
   def self.cap_arguments(arguments)

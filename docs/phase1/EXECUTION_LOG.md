@@ -167,3 +167,28 @@ the same file run against a worktree of `portfolio-baseline` for "before", media
 - Also in this commit: a call with no/invalid tool name is now audited with tool_name `(none)` (the Step 3 battery
   test showed its ToolInvocation row was being silently dropped by the presence validation - same class of problem as
   the Step 2 timestamp bug). No caching was added.
+
+## Step 7 — transactional ToolInvocation + idempotency (R14)
+
+- **Transaction boundary** (`Voice::ToolRunner#call`): `BEGIN` → lock the call row (`call_logs`, then the order row
+  as every mutation already did - lock order unchanged) → look up `(call_log_id, tool_call_id)` → if found, replay;
+  otherwise run the tool inside a savepoint, insert the `ToolInvocation` (result, status, error code/class, cart
+  versions, timing, Vapi timestamp) → `COMMIT`. Business change and audit row commit or roll back together. An
+  unexpected tool exception rolls back only its savepoint, and the `error` row (with `internal_error`) commits.
+- **Idempotency:** a redelivery finds the committed row, does `replay_count += 1`, and returns the stored `result`
+  string. Nothing else runs: no mutation, no version bump, no read-back refresh, no SMS, no new order. Concurrent
+  deliveries queue on the call-row lock, so the loser always sees the winner's committed row; the unique index is
+  the backstop (a `RecordNotUnique` retries once and then replays). `replay_count` now means "duplicate deliveries
+  detected and answered from the stored result", never executions.
+- **Cart versions:** `cart_version_before/after` are recorded on every row (0 while there is no order). Reads and
+  refused/failed calls record before == after.
+- **Audit failure:** if the audit insert itself fails (not the business), the transaction rolls back - the business
+  change with it - and the request is served once, unrecorded and non-idempotent (logged). The model response is
+  unchanged, and nothing is ever applied twice. Calls with no `toolCallId` take the same unrecorded path.
+- **SMS:** `config.active_job.enqueue_after_transaction_commit = true`, so the confirmation job is enqueued only when
+  the tool call's transaction commits (it was `false`, i.e. enqueued inside the transaction).
+- `ToolInvocation.record!` is now insert-only; the old "bump replay_count inside record!" is gone.
+- Flipped: R14. Step 6 replay structure and the timestamp / "no could-not-record" assertions unchanged and green.
+- Deviations: none from the plan. Two details: every tool call on a call now serializes on the call row lock (the
+  plan's idempotency design needs this or the unique-index wait); the audit-failure path above is a deliberate
+  reading of "an audit failure cannot alter the model response" given atomicity.

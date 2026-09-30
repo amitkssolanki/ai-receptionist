@@ -36,6 +36,10 @@ module AiReceptionist
     # config.time_zone = "Central Time (US & Canada)"
     # config.eager_load_paths << Rails.root.join("extras")
 
+    # A job enqueued inside a tool call's transaction (the order-confirmation SMS) must not run if that transaction
+    # rolls back: enqueue it only once the transaction commits (Phase 1 / Step 7).
+    config.active_job.enqueue_after_transaction_commit = true
+
     # Don't generate system test files.
     config.generators.system_tests = nil
   end
