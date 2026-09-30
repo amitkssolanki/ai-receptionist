@@ -155,3 +155,24 @@ starting 104 ms after the request, same completion (118 characters spoken); call
 **Limits:** a caller turn is evidence of turn-taking, **not of a yes** (no classifier, by decision). The observation trusts the
 order of Vapi's list and its speech-to-text; a caller who speaks during the read-back counts as a turn only if Vapi recorded that
 utterance before the submit entry. Not yet seen live with this code: the next call (#3 in the owner's numbering) is the first.
+
+## 2026-09-30 — Call #10: INVALID RUN (infrastructure failure, not a model-behaviour sample)
+Intended as "Call #3" in the owner's numbering: the call #9 script, prompt, model and reasoning effort, with the new shadow turn
+evidence. Call 76 s, ended by the customer, cost $0.0988, assistant v2. **No conclusion about model behaviour or turn evidence is
+drawn from this call**, and it is not counted in any comparison. The experiment is to be re-run unchanged.
+
+- **Immediate cause: a stale running server.** `bin/dev` had been running since 19:53; the `turn_evidence` migration was run at about
+  21:04 from a separate process. The running server's column information predated the column, so every tool invocation's audit
+  insert raised `ActiveModel::UnknownAttributeError (unknown attribute 'turn_evidence' for ToolInvocation)`.
+- **Secondary defect: the "served unrecorded" fallback.** `get_menu` and both `get_menu_item` calls were served unrecorded as
+  designed (hence the agent could describe the Margherita). The first `add_to_cart` created the order, the audit insert failed, the
+  transaction rolled back, and the in-memory `CallLog` still held the rolled-back `order_id`; the fallback's `lock!` raised
+  `Locking a record with unpersisted changes`, the request returned 500, the agent said "I'm having a technical problem", and no
+  order was created. The fallback had never worked for a call's first cart change outside tests: the transactional test wrapper
+  turns the runner's transactions into savepoints, which masked it. Fixed (the fallback and the unique-conflict retry now start
+  again from the persisted call row); regression tests run with real transactions
+  (`test/services/voice/tool_runner_unrecorded_fallback_test.rb`).
+- **What the console showed, correctly:** four tool calls that Vapi reported (`get_menu`, `get_menu_item` ×2, `add_to_cart`) marked
+  "⚠ no server record of this tool call was observed", an empty order board ("No cart yet"), server tools ✓0 ⛔0 ✖0, and the agent's
+  "Adding that to your order right now." flagged as a claim not reflected in the server order.
+- Server state: call #10 `abandoned`, 0 `tool_invocations`, no order.

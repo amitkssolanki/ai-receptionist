@@ -507,3 +507,12 @@ Verified against the live Vapi API (read-only) and locally; **no call was made a
   SMS decisions with and without history, and with the observer raising). Prompt, tools, model, reasoning effort, SMS, fillers
   and the Vapi assistant are unchanged (`vapi:check` clean).
 - **Not done, by decision:** no enforcement, no yes/no classifier, no four-state machine, no `conversation-update` subscription.
+
+## After call #10 (invalid run): unrecorded-fallback fix
+
+- Call #10 failed for infrastructure reasons (stale `bin/dev` after the `turn_evidence` migration), exposing that the "served
+  unrecorded" fallback crashed on a call's first cart change after a real rollback (`lock!` on a record still holding the
+  rolled-back `order_id`). `Voice::ToolRunner` now re-reads the call row before the fallback and before the unique-conflict retry.
+  Regression tests use real top-level transactions. Recorded as an invalid run in `docs/voice_agent/verification_log.md`; the
+  runbook now says to restart `bin/dev` after any migration. No prompt, tool, model, reasoning, SMS, filler, turn-evidence or
+  enforcement change.

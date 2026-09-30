@@ -15,6 +15,8 @@ This is the one step that needs a person: a real browser call to the **developme
 2. **Processes.** `bin/dev` (port 3000) and `ngrok http --url=salaried-earplugs-appendix.ngrok-free.dev 3000` must be running.
    Check: `curl -s -o /dev/null -w "%{http_code}\n" https://salaried-earplugs-appendix.ngrok-free.dev/up` prints `200`.
    Check the assistant: `VAPI_EXPECTED_HOST=salaried-earplugs-appendix.ngrok-free.dev bin/rails vapi:check` prints `OK`.
+3. **After any database migration or schema change, restart the running Rails server (`bin/dev`) before a live call.** A server
+   started before the migration keeps the old column information and cannot record tool calls (call #10).
 
 ## The call
 

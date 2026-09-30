@@ -59,17 +59,29 @@ module Voice
         attempts += 1
         run_recorded
       rescue ActiveRecord::RecordNotUnique
-        retry if attempts < 2 # something beat us to the row without taking the lock; the retry replays it
+        if attempts < 2 # something beat us to the row without taking the lock; the retry replays it
+          reacquire_call_log
+          retry
+        end
         raise
       end
     rescue AuditFailure => e
       log_failure("could not record tool invocation #{tool_call_id}; served unrecorded", e.cause || e)
+      reacquire_call_log
       run_unrecorded
     end
 
     private
 
     def tool_call_id = @tool_call["id"]
+
+    # After a rolled-back attempt the database is back to its prior state, but this process is not: @call_log (and its
+    # cached associations, e.g. an order created and then rolled back) can still hold the rolled-back changes, and
+    # locking such a record raises. Every retry or fallback therefore starts again from the persisted row.
+    # (Live call #10: the first add_to_cart's rollback left order_id set in memory and the fallback's lock! failed.)
+    def reacquire_call_log
+      @call_log = CallLog.find(@call_log.id)
+    end
 
     # Exception messages can carry customer data (SQL values, provider responses), so the log gets the class and the
     # first application frame - enough to find the bug - and never the message. ToolInvocation.error_class has the class.
