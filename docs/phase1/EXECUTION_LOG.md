@@ -279,3 +279,48 @@ R23 / restaurant resolution (`Restaurant.count == 1` fallback is untouched), HMA
   (`openssl rand -hex 32`) and that it is never committed. Other stale `api/voice` text stays for Step 17.
 - Flipped: R20. Known gap: development logs at debug level still show SQL with customer phone values (INSERT
   statements) - framework behaviour, dev only.
+
+## Step 11 — Vapi configuration parity (repo side done; live alignment NOT done)
+
+**Blocked on access, recorded honestly.** This session has no Vapi credential: none in the environment or in Rails
+credentials (`vapi.*` does not exist), and the built-in browser is not signed in to the Vapi dashboard (it lands on the
+sign-up page). Per instructions I did not ask for credentials and did not sign in or create an account, so the
+development assistant could **not** be inspected, created or changed, and `bin/rails vapi:check` could not run
+against a live assistant. No Vapi write of any kind was made; the baseline assistant `8f2053ae…` and all other
+assistants are untouched. The plan's own design is that the dev assistant is created by hand from `config/vapi/*`
+(`assistant.md` is the checklist); `vapi:check` is what verifies it afterwards.
+
+**Known differences (repo vs the last captured assistant, not live).** The only assistant configuration available is
+the baseline v4 assistant as Vapi sent it with call #7 (frozen fixture). Running `VapiConfig::DriftCheck` on it
+reports, and these are exactly what a hand-built dev assistant must fix:
+- tools: `get_menu_item` missing; `submit_order` lacks `cart_version` (and its `required`); `notes` has no `maxLength` 300
+  on `add_to_cart`/`submit_order`; descriptions of `get_menu`, `add_to_cart`, `get_cart`, `submit_order` differ
+  from `config/vapi/tools.json`;
+- prompt: differs from `system_prompt.md` (38 repo lines absent, 27 extra);
+- `serverMessages` is unset (defaults to everything); must be exactly `status-update`, `tool-calls`, `end-of-call-report`;
+- webhook secret: sent as header `X-Vapi-Secret`; its value is redacted in the capture, so match/mismatch is unverifiable
+  from here (and the Step 10 rules now require a 16+ character `VAPI_SERVER_SECRET`);
+- already equal: model `openai/gpt-5-mini` (reasoning `minimal`), voice `vapi/Elliot`, STT `soniox stt-rt-v5`, server URL
+  path `/api/vapi/webhooks`, `maxDurationSeconds` 300.
+
+**Delivered (repository only, no Vapi writes):**
+- `config/vapi/assistant.json` (machine-readable settings) and `config/vapi/assistant.md` (hand checklist, what the API
+  cannot show: public-key restrictions, spend limit). `tools.json` and `system_prompt.md` remain the other two sources.
+- `bin/rails vapi:check`: read-only (`VapiConfig::Client` has GET of `/assistant/:id` and `/tool/:id` only). Needs
+  `VAPI_PRIVATE_KEY` + `VAPI_DEV_ASSISTANT_ID` (env or credentials); refuses the baseline id; output lists tools,
+  prompt, model/voice/STT, max duration, serverMessages, server URL (https, path, optional `VAPI_EXPECTED_HOST`),
+  and the webhook secret as match / mismatch / missing / unverifiable - never the value. Exit 1 on drift.
+- `VapiConfig::DriftCheck` is pure (no I/O, never sees a credential) and unit-tested with fixtures: missing, unexpected
+  and duplicated tools, the zero-tool assistant (call #6), argument add/remove/type/enum/items/required differences,
+  description drift, async or per-tool server overrides, prompt drift (whitespace-insensitive), model/voice/STT, the
+  300 s limit, serverMessages, backoffPlan, URL/path/https/host, secret verdicts, and the baseline refusal.
+- CI parity (`tool_contract_test`): tools.json definitions-only (no URL/header/secret), exactly the server's handlers
+  and argument schemas, prompt mentions every tool and the protocol terms (`cart_version`, `readback_text`,
+  `confirmation_sms`, ...), `assistant.json` agrees with its checklist, and the webhook route exists.
+- Prompt: new "order system is the source of truth" section (you propose, the server decides; `ok:false` means not
+  done; state changes only from results; `get_cart` read-back; `cart_version`; `get_menu_item` for details;
+  `confirmation_sms` is informational and never claims delivery). `VapiConfig.webhook_secret` is now shared by the
+  controller and the checker.
+- Not achievable here: the public-key restrictions and the spend limit cannot be read through the API; both are manual
+  (documented in `assistant.md`). Temporary-drift exercise against a real assistant: not possible without access;
+  covered by the unit tests instead.

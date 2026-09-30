@@ -1,0 +1,12 @@
+{
+  "name": "Taj Zayka Receptionist (dev)",
+  "model": { "provider": "openai", "model": "gpt-5-mini", "reasoningEffort": "minimal" },
+  "voice": { "provider": "vapi", "voiceId": "Elliot" },
+  "transcriber": { "provider": "soniox", "model": "stt-rt-v5", "language": "en" },
+  "firstMessage": "Thanks for calling Taj Zayka, this is your AI host — how can I help?",
+  "maxDurationSeconds": 300,
+  "serverMessages": ["status-update", "tool-calls", "end-of-call-report"],
+  "serverUrlPath": "/api/vapi/webhooks",
+  "serverSecretHeader": "X-Vapi-Secret",
+  "backoffPlan": null
+}

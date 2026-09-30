@@ -7,8 +7,6 @@
 # inspector at http://localhost:4040; the application itself never logs payloads (they carry phone numbers,
 # transcripts and provider URLs).
 class Api::Vapi::WebhooksController < ActionController::API
-  MIN_SECRET_LENGTH = 16
-
   before_action :authenticate_vapi!
 
   def create
@@ -37,7 +35,7 @@ class Api::Vapi::WebhooksController < ActionController::API
   def authenticate_vapi!
     expected = configured_secret
     unless expected
-      Rails.logger.error("[Vapi] VAPI_SERVER_SECRET is missing or shorter than #{MIN_SECRET_LENGTH} characters; refusing webhook requests")
+      Rails.logger.error("[Vapi] VAPI_SERVER_SECRET is missing or shorter than #{VapiConfig::MIN_SECRET_LENGTH} characters; refusing webhook requests")
       return head :unauthorized
     end
 
@@ -46,8 +44,7 @@ class Api::Vapi::WebhooksController < ActionController::API
   end
 
   def configured_secret
-    secret = ENV["VAPI_SERVER_SECRET"].presence || Rails.application.credentials.dig(:vapi, :server_secret).presence
-    secret if secret.to_s.length >= MIN_SECRET_LENGTH
+    VapiConfig.webhook_secret
   end
 
   def call_id(message)
