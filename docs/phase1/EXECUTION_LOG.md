@@ -423,3 +423,22 @@ says so in every output.
   `evidence_test.rb` keeps them from going stale and keeps live items marked PENDING.
 - PENDING (not done, not faked): a real browser call through the console; `vapi:check` against the live dev assistant; the
   Layer 3a live-model sample; browser-observed latency on a live call; metadata arrival of the console token at the webhook.
+
+## Step 11 follow-up — the development assistant exists and `vapi:check` is clean
+
+With the owner's explicit instruction and the Vapi private key they saved in Rails credentials (never printed), the
+development assistant was created with one `POST /assistant` (a one-off script, not part of the repository; there is
+still no Vapi write automation):
+- Read first: `GET /assistant` showed two assistants, the frozen baseline `8f2053ae…` and a default "Riley" template with
+  no tools; there was no dev assistant. Nothing existing was modified or deleted.
+- Created "Taj Zayka Receptionist (dev)" (`f858bbe9…`) from the repository files: model, voice and transcriber from
+  `config/vapi/assistant.json`, the system prompt, the 8 tools from `config/vapi/tools.json` (inline, synchronous, no
+  per-tool server), `maxDurationSeconds` 300, `serverMessages` exactly `status-update` / `tool-calls` /
+  `end-of-call-report`, server URL `https://salaried-earplugs-appendix.ngrok-free.dev/api/vapi/webhooks` (the owner's static
+  ngrok host, taken from their development log) with the `X-Vapi-Secret` header set from `vapi.server_secret`.
+- The new id was written to credentials `vapi.dev_assistant_id` (it held placeholder text).
+- `bin/rails vapi:check` (with `VAPI_EXPECTED_HOST` pinned): tools, prompt, events, limits and webhook match the repository;
+  webhook secret: configured, matches. This resolves an open question: the Vapi API returns the secret header value, so the
+  secret is verifiable, not just "unverifiable".
+- Still manual / unverified: the public key's restrictions (assistant, origins, no transient assistants) and any spend limit
+  are not readable through the API; ngrok was not running, so no request has reached Rails yet; no call has been made.
