@@ -430,3 +430,24 @@ Recorded before any Phase 2 change, so Phase 2 can show the normal assistant was
 - Re-checked after the Phase 2 repository work (commits `b10bc79`, `2f69775`, `5e174cf`): identical `updatedAt` and
   fingerprints; `vapi:check` OK. The fault-injection assistant does not exist yet (`vapi:check PROFILE=fault_injection`
   reports no id configured).
+
+## 2026-10-01 — Fault-injection assistant created (Phase 2, P2-1)
+At the owner's instruction, created with one `POST /assistant`, the same mechanism as the development assistant (a one-off
+script, not part of the repository; there is still no Vapi write automation). Before: `GET /assistant` listed only the dev
+assistant, the frozen baseline and the "Riley" template; nothing existing was modified.
+
+- **"Taj Zayka Receptionist (FAULT INJECTION)" `5e1f3eec-b883-4562-9947-fb2b5e932aa8`**, built from
+  `VapiConfig.profile("fault_injection")`: name and first message from `config/vapi/fault_injection.json`; system prompt
+  byte-for-byte `docs/voice_agent/system_prompt.md` + `config/vapi/fault_injection_prompt.md`; model, voice, transcriber,
+  the 8 tools from `config/vapi/tools.json`, server URL, `X-Vapi-Secret`, server messages and the 300 s limit as for the dev
+  assistant.
+- Compared with the live dev assistant field by field: apart from id, name, first message and timestamps, the only
+  difference is `model.messages` (the system prompt). Tools, model/reasoning effort, server URL and secret header identical.
+- Rails: credentials `vapi.fault_injection_assistant_id` set (non-interactive `credentials:edit`; the credentials file stays
+  uncommitted). `bin/dev` restarted (it predated the `assistant_id` migration).
+- `vapi:check PROFILE=fault_injection`: OK. `vapi:check`: OK. Dev assistant `updatedAt` and fingerprints identical to the
+  Phase 2 reference record above.
+- `/admin/console?assistant=fault_injection` shows the red fault-injection banner, carries `5e1f3eec…`, Start enabled;
+  `/admin/console` still carries the dev assistant `f858bbe9…`, no banner.
+- **Not done by API (manual):** adding `5e1f3eec…` to the restricted browser public key's allowed assistants. Public-key
+  restrictions are dashboard-only in this project (see Phase 1 Step 11).
