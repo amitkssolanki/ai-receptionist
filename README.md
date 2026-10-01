@@ -104,8 +104,14 @@ bin/dev
 ```
 
 `bin/dev` runs Rails and the Tailwind watcher on `http://localhost:3000`. The seed creates the restaurant, its menu and a local-only
-admin login (`admin@example.com` / `password123` — never use it anywhere real). **After any migration, restart `bin/dev`**: a server
+admin login (`admin@example.com` / `password123`, development and test only). **After any migration, restart `bin/dev`**: a server
 started before a migration cannot record tool calls.
+
+Outside development and test the seed never creates that login: it creates an admin only from `ADMIN_EMAIL` and `ADMIN_PASSWORD`
+(at least 16 characters), and without them no one can sign in. That is a one-time bootstrap of an empty database: once any user
+exists, later seeds ignore both variables and never create, recreate or change an account. There is no sign-up and no emailed password reset; change a
+password with `bin/rails runner`. Every page except the public homepage (`/`), sign-in and `/up` requires a signed-in admin (the dashboard is `/admin`), and the Vapi webhook requires
+its secret (`test/security/anonymous_boundary_test.rb`).
 
 ### Configuration
 
@@ -163,6 +169,8 @@ bin/rubocop; bin/brakeman --no-pager; bin/bundler-audit; bin/importmap audit
   [CONFIRMATION_PROPOSAL.md](docs/phase1/CONFIRMATION_PROPOSAL.md) — the confirmation design and what was implemented.
 - [docs/voice_agent/verification_log.md](docs/voice_agent/verification_log.md) — every live call and live check, with what it does
   and does not show; [system_prompt.md](docs/voice_agent/system_prompt.md) — the prompt the assistant runs.
+- [docs/deploy/PRODUCTION.md](docs/deploy/PRODUCTION.md) — the production deployment runbook (Kamal, the production Vapi assistant
+  and public key, secret names and where they live, checks and rollback). No secret values.
 - Stale, not yet updated for Phase 1: `docs/voice_agent/tools.md`, `vapi_setup.md` and parts of `local_setup.md` still describe
   the removed `api/voice` layer. The current tool definitions are `config/vapi/tools.json`; the assistant checklist is
   `config/vapi/assistant.md`.

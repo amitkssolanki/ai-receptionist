@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+  <head>
+    <title><%= content_for(:title) || "AI Restaurant Receptionist" %></title>
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <meta name="description" content="<%= content_for(:description) %>">
+    <meta name="application-name" content="AI Restaurant Receptionist">
+    <meta property="og:title" content="<%= content_for(:title) %>">
+    <meta property="og:description" content="<%= content_for(:description) %>">
+    <meta property="og:type" content="website">
+    <meta name="theme-color" content="#030712">
+    <%= csrf_meta_tags %>
+    <%= csp_meta_tag %>
+
+    <link rel="icon" href="/icon.png" type="image/png">
+    <link rel="icon" href="/icon.svg" type="image/svg+xml">
+    <link rel="apple-touch-icon" href="/icon.png">
+
+    <%= stylesheet_link_tag :app, "data-turbo-track": "reload" %>
+    <%= javascript_importmap_tags %>
+  </head>
+
+  <body class="bg-gray-950 text-gray-300 antialiased">
+    <%= yield %>
+  </body>
+</html>

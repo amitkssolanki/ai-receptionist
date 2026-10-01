@@ -57,8 +57,12 @@ Rails.application.configure do
   # Set this to true and configure the email server for immediate delivery to raise delivery errors.
   # config.action_mailer.raise_delivery_errors = false
 
+  # The deployed hostname (config/deploy.yml sets RAILS_HOST). The default is the production host, so a missing variable
+  # still restricts Host headers rather than opening them.
+  app_host = ENV.fetch("RAILS_HOST", "restaurant-receptionist.railsfanatics.com")
+
   # Set host to be used by links generated in mailer templates.
-  config.action_mailer.default_url_options = { host: "example.com" }
+  config.action_mailer.default_url_options = { host: app_host, protocol: "https" }
 
   # Specify outgoing SMTP server. Remember to add smtp/* credentials via bin/rails credentials:edit.
   # config.action_mailer.smtp_settings = {
@@ -79,12 +83,10 @@ Rails.application.configure do
   # Only use :id for inspections in production.
   config.active_record.attributes_for_inspect = [ :id ]
 
-  # Enable DNS rebinding protection and other `Host` header attacks.
-  # config.hosts = [
-  #   "example.com",     # Allow requests from example.com
-  #   /.*\.example\.com/ # Allow requests from subdomains like `www.example.com`
-  # ]
-  #
-  # Skip DNS rebinding protection for the default health check endpoint.
-  # config.host_authorization = { exclude: ->(request) { request.path == "/up" } }
+  # Enable DNS rebinding protection and other `Host` header attacks: only the deployed hostname is answered.
+  config.hosts = [ app_host ]
+
+  # kamal-proxy health-checks the container directly (its Host is not app_host), so /up is exempt. /up returns only
+  # 200 or 500 and reads no data.
+  config.host_authorization = { exclude: ->(request) { request.path == "/up" } }
 end

@@ -84,9 +84,13 @@ test:
 # Read https://guides.rubyonrails.org/configuring.html#configuring-a-database
 # for a full overview on how database connection configuration can be specified.
 #
+# Production runs on its own Postgres accessory (config/deploy.yml: ai-receptionist-postgres) holding these four
+# databases. DB_HOST names that container; the password comes from Kamal secrets. Do not set DATABASE_URL: it would
+# replace the primary's settings and is not applied to cache, queue and cable.
 production:
   primary: &primary_production
     <<: *default
+    host: <%= ENV["DB_HOST"] %>
     database: ai_receptionist_production
     username: ai_receptionist
     password: <%= ENV["AI_RECEPTIONIST_DATABASE_PASSWORD"] %>
