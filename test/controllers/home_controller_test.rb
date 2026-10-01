@@ -29,6 +29,16 @@ class HomeControllerTest < ActionDispatch::IntegrationTest
     assert_select "title", text: /AI Restaurant Receptionist/
   end
 
+  test "link previews get an absolute 1200x630 image that exists" do
+    get root_path
+    assert_select "meta[property='og:image'][content='http://www.example.com/og.png']"
+    assert_select "meta[property='og:image:width'][content='1200']"
+    assert_select "meta[name='twitter:card'][content='summary_large_image']"
+    png = Rails.root.join("public/og.png").binread
+    assert_equal "\x89PNG".b, png[0, 4]
+    assert_equal [ 1200, 630 ], png[16, 8].unpack("NN")
+  end
+
   test "it explains the thesis with the real evidence: a call, the garlic knots and the refused submit" do
     get root_path
     assert_select "#how-it-works h2"
