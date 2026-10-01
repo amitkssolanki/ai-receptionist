@@ -9,6 +9,7 @@ class HermeticCredentialsTest < ActiveSupport::TestCase
     assert_nil VapiConfig.public_key
     assert_nil VapiConfig.dev_assistant_id
     assert_nil VapiConfig.webhook_secret
+    assert_nil VapiConfig.fault_injection_assistant_id
   end
 
   test "the Rails secret key base is still available (only vapi.* is hidden)" do

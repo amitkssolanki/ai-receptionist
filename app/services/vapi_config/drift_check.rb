@@ -14,9 +14,11 @@ module VapiConfig
     SCHEMA_KEYS = %w[type enum maxLength].freeze
 
     # assistant: the GET /assistant/:id body. tools: every tool the assistant uses (inline model.tools plus the
-    # bodies fetched for model.toolIds). webhook_secret: what Rails expects (nil when Rails has none).
-    def initialize(assistant:, tools:, webhook_secret:, expected_host: nil)
+    # bodies fetched for model.toolIds). webhook_secret: what Rails expects (nil when Rails has none). profile: which
+    # repository description to compare with (VapiConfig.profile; the development assistant unless told otherwise).
+    def initialize(assistant:, tools:, webhook_secret:, expected_host: nil, profile: VapiConfig.profile)
       @assistant = assistant
+      @profile = profile
       @tools = tools
       @webhook_secret = webhook_secret
       @expected_host = expected_host
@@ -38,12 +40,23 @@ module VapiConfig
     def warn(area, message) = @findings << Finding.new(:warn, area, message)
 
     def model = @assistant["model"] || {}
-    def expected = VapiConfig.settings
+    def expected = @profile.settings
 
     def check_identity
-      return unless @assistant["id"] == VapiConfig::BASELINE_ASSISTANT_ID
+      id = @assistant["id"]
+      if id == VapiConfig::BASELINE_ASSISTANT_ID
+        error("assistant", "this is the frozen baseline assistant, not the development assistant; it must never be aligned or used here")
+      elsif @profile.excluded_ids.include?(id)
+        error("assistant", "this is the development assistant; the fault-injection assistant must be a separate assistant")
+      end
+      error("assistant", "id #{id.to_s[0, 8]}… is not the configured #{@profile.key} assistant") if @profile.assistant_id.present? && id != @profile.assistant_id
+      return unless @profile.fault_injection?
 
-      error("assistant", "this is the frozen baseline assistant, not the development assistant; it must never be aligned or used here")
+      # The fault-injection assistant must say what it is: its name and spoken first message are part of the profile.
+      error("assistant", "name is #{@assistant['name'].inspect}, expected #{expected['name'].inspect}") if @assistant["name"] != expected["name"]
+      if normalize(@assistant["firstMessage"]) != normalize(expected["firstMessage"])
+        error("assistant", "firstMessage differs from config/vapi/fault_injection.json (it must announce the fault-injection assistant)")
+      end
     end
 
     # --- tools ---
@@ -100,13 +113,19 @@ module VapiConfig
       return error("prompt", "the assistant has no system prompt") if system.empty?
 
       error("prompt", "#{system.size} system messages; expected exactly one") if system.size > 1
-      return if normalize(system.first["content"]) == normalize(VapiConfig.system_prompt)
+      return if normalize(system.first["content"]) == normalize(@profile.system_prompt)
 
-      error("prompt", "system prompt differs from docs/voice_agent/system_prompt.md (#{prompt_difference(system.first['content'])})")
+      error("prompt", "system prompt differs from #{prompt_source} (#{prompt_difference(system.first['content'])})")
+    end
+
+    def prompt_source
+      return "docs/voice_agent/system_prompt.md" unless @profile.fault_injection?
+
+      "docs/voice_agent/system_prompt.md followed by config/vapi/fault_injection_prompt.md"
     end
 
     def prompt_difference(actual)
-      expected_lines = normalized_lines(VapiConfig.system_prompt)
+      expected_lines = normalized_lines(@profile.system_prompt)
       actual_lines = normalized_lines(actual)
       "#{(expected_lines - actual_lines).size} repo lines absent, #{(actual_lines - expected_lines).size} extra lines in Vapi"
     end
@@ -130,6 +149,8 @@ module VapiConfig
         error("events", "serverMessages are #{@assistant['serverMessages'].inspect}, expected #{expected['serverMessages']} (status-update starts the call record, end-of-call-report ends it)")
       end
       error("settings", "a backoffPlan is set; it must not be") if @assistant["backoffPlan"].present?
+      return if @profile.fault_injection? # name and first message are identity checks for this profile (check_identity)
+
       warn("settings", "firstMessage differs from config/vapi/assistant.json") if normalize(@assistant["firstMessage"]) != normalize(expected["firstMessage"])
     end
 
