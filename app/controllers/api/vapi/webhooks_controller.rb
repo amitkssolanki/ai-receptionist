@@ -69,7 +69,8 @@ class Api::Vapi::WebhooksController < ActionController::API
       external_call_id: call["id"],
       dialed_number: call.dig("phoneNumber", "number") || message.dig("phoneNumber", "number"),
       caller_number: message.dig("customer", "number") || call.dig("customer", "number"),
-      console_token: console_token(message, call)
+      console_token: console_token(message, call),
+      assistant_id: call["assistantId"]
     )
   end
 
@@ -80,7 +81,7 @@ class Api::Vapi::WebhooksController < ActionController::API
       transcript: artifact["transcript"],
       recording_url: artifact.dig("recording", "stereoUrl") || artifact.dig("recording", "url"),
       outcome: { ended_reason: message["endedReason"], duration_seconds: message["durationSeconds"], cost: message["cost"],
-                 assistant_version: message["assistantVersion"] }
+                 assistant_version: message["assistantVersion"], assistant_id: message.dig("call", "assistantId") }
     )
   end
 

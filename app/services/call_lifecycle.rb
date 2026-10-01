@@ -22,7 +22,7 @@ class CallLifecycle
 
   # Returns the new CallLog, or nil when nothing was created (no id, already started, or no restaurant resolved).
   # Two concurrent starts for one call id create exactly one record; the loser sees the winner's and returns nil.
-  def self.start(external_call_id:, dialed_number:, caller_number:, console_token: nil)
+  def self.start(external_call_id:, dialed_number:, caller_number:, console_token: nil, assistant_id: nil)
     return if external_call_id.blank? || CallLog.exists?(external_call_id: external_call_id)
 
     console = ConsoleToken.verify(console_token)
@@ -38,7 +38,7 @@ class CallLifecycle
         customer = customer_for(restaurant, caller_number)
         created = restaurant.call_logs.create!(
           external_call_id: external_call_id, customer: customer, phone_number: caller_number, started_at: Time.current,
-          console_session_key: console&.fetch(:session_key)
+          console_session_key: console&.fetch(:session_key), assistant_id: clean_assistant_id(assistant_id)
         )
         ConsoleBroadcaster.after_commit do
           ConsoleBroadcaster.call_attached(created)
@@ -82,23 +82,29 @@ class CallLifecycle
       order = call_log.order
       order&.lock!
       call_log.update!(status: final_status(call_log, order), transcript: transcript, recording_url: recording_url, ended_at: Time.current,
-                       **outcome_attributes(outcome))
+                       **outcome_attributes(outcome, call_log))
       # A cart still open when the call ends was never submitted: keep its items, but it is no longer a live cart.
       order.update!(status: :abandoned) if order&.cart_open?
       ConsoleBroadcaster.after_commit { ConsoleBroadcaster.lifecycle(call_log.reload, :ended) }
     end
   end
 
-  # The report's outcome facts, each optional and defensively typed. Nothing else from the report is kept.
-  def self.outcome_attributes(outcome)
+  # The report's outcome facts, each optional and defensively typed. Nothing else from the report is kept. The assistant
+  # id is filled in only if the start event did not carry one (the first value recorded is kept).
+  def self.outcome_attributes(outcome, call_log)
     {
       ended_reason: outcome[:ended_reason].to_s.gsub(/[^\w.:\-]/, "").first(64).presence,
       duration_seconds: (Float(outcome[:duration_seconds]).round if outcome[:duration_seconds].present? rescue nil),
       cost_usd: (BigDecimal(outcome[:cost].to_s).round(4) if outcome[:cost].present? rescue nil),
-      assistant_version: outcome[:assistant_version].to_s.gsub(/[^\w.\-]/, "").first(32).presence
+      assistant_version: outcome[:assistant_version].to_s.gsub(/[^\w.\-]/, "").first(32).presence,
+      assistant_id: call_log.assistant_id || clean_assistant_id(outcome[:assistant_id])
     }
   end
   private_class_method :outcome_attributes
+
+  # Which Vapi assistant handled the call: evidence for the console and calls:last only, never used to decide anything.
+  def self.clean_assistant_id(value) = value.to_s.gsub(/[^\w.\-]/, "").first(64).presence
+  private_class_method :clean_assistant_id
 
   def self.final_status(call_log, order)
     return "transferred" if call_log.transferred_at
