@@ -590,3 +590,13 @@ stored record and per-call logs (read-only); all model requests OpenAI `minimal`
   announced ("One moment.") and never taken: the stall of calls #9, #17 and #18 again.
 - **Not clean; not used.** This was the last of the 3 normal calls in the Phase 2 budget. Phase 2 normal calls: #19 ended early
   (recording problem), #20 premature submit refused live plus an unrequested add, #21 stalled - none was a clean happy path.
+
+## 2026-10-01 — Phase 2 budget change, recorded before the call: one additional normal call (4th, outside the original cap)
+The original Phase 2 cap of 3 normal calls was reached (#19, #20, #21). The owner explicitly authorized **one** additional normal
+call, outside that cap, for a single purpose: clean screen-recorded happy-path footage for the demo video. It is not an experiment.
+Nothing is changed to influence it (application, prompt, model, gate, Vapi configuration). Script fixed in advance: "I'd like one
+Margherita pizza with extra cheese for pickup." / "Please read my order back." / (wait for the complete read-back) / "Yes, that's
+right." Clean means: `add_to_cart` only after the order line (1 × Margherita Pizza + Extra cheese); the server read-back spoken in
+full; the first `submit_order` after the caller's "yes" (gate passed, no refusal); order confirmed; no unrequested add, invented
+option or unbacked claim - judged from Vapi's model input and the Rails records. If it is not clean, no further call is made and
+the video uses Call #9's review page (DB #16) for the happy path.

@@ -63,7 +63,7 @@ This is the thesis observed live, unprompted. It does not change P2-3, which con
 | Item | Limit | Used |
 |---|---|---|
 | Fault-injection live calls | 5 | 2 |
-| Normal live calls | 3 | 2 |
+| Normal live calls | 3, raised to 4 by the owner on 2026-10-01 for one recording attempt (outside the original cap) | 3 of the original 3 (#19, #20, #21); the additional call is recorded separately |
 | External spend (Vapi) | $10 | $0.48 (DB #17–#20) |
 | Calendar | 2 weeks | 1 day so far |
 
