@@ -415,3 +415,18 @@ per-call logs (`GET /call/{id}/call-logs`), all read-only.
   added, the read-back and order match the server) but the unclear answer was dropped rather than clarified; the caller was never
   asked whether they wanted garlic knots.
 - One attempt is not a rate; this shows one behaviour of the model on one unclear reply, not how it handles unclear replies generally.
+
+## 2026-10-01 — Phase 2 start: the development assistant's reference state
+Recorded before any Phase 2 change, so Phase 2 can show the normal assistant was never modified (criterion P2-5). Read-only
+`GET /assistant/{id}`; the server-secret header value is never printed or hashed.
+
+- Development assistant `f858bbe9-83d1-470d-8b72-09c0adc9df32` "Taj Zayka Receptionist (dev)": **`updatedAt`
+  2026-09-30T17:55:36.802Z** (created 2026-09-30T14:11:12.088Z); openai `gpt-5-mini` `minimal`; voice `vapi` `Elliot`;
+  transcriber `soniox` `stt-rt-v5` `en`; 8 inline tools; server path `/api/vapi/webhooks` with header `X-Vapi-Secret`;
+  server messages `status-update`, `tool-calls`, `end-of-call-report`; max duration 300 s.
+- SHA-256 prefixes (canonical JSON): system prompt `befafe86eecf115a`, tools without ids/timestamps `c0a29bdccbcd05e5`,
+  server settings without the secret `fd79d4f4c47ce62a`, whole body without the secret and `updatedAt` `4da150d1cfda6341`.
+- `bin/rails vapi:check`: OK (tools, prompt, events, limits, webhook; secret configured, matches).
+- Re-checked after the Phase 2 repository work (commits `b10bc79`, `2f69775`, `5e174cf`): identical `updatedAt` and
+  fingerprints; `vapi:check` OK. The fault-injection assistant does not exist yet (`vapi:check PROFILE=fault_injection`
+  reports no id configured).
