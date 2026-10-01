@@ -19,5 +19,11 @@ module ConsoleView
     end
 
     def duplicates_absorbed = call_log.tool_invocations.sum(:replay_count)
+
+    # The call was handled by the fault-injection assistant (Phase 2): a label for the console and calls:last only.
+    def fault_injection?
+      id = VapiConfig.fault_injection_assistant_id
+      id.present? && call_log.assistant_id == id
+    end
   end
 end

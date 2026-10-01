@@ -59,11 +59,19 @@ module VapiConfig
   # Client messages the console asks Vapi to send over the data channel (set per call, not on the assistant).
   CLIENT_MESSAGES = %w[transcript speech-update status-update tool-calls user-interrupted hang].freeze
 
-  # Why the console cannot start a call right now; empty when it can. Shown on the page, never a secret.
-  def browser_problems
+  # Why the console cannot start a call right now; empty when it can. Shown on the page, never a secret. The
+  # fault-injection console (opt-in) never falls back to the development assistant.
+  def browser_problems(profile = "development")
     problems = []
     problems << "No Vapi public key is configured (set VAPI_PUBLIC_KEY or credentials vapi.public_key: the restricted browser key, never the private key)." if public_key.blank?
-    if dev_assistant_id.blank?
+    if profile.to_s == "fault_injection"
+      id = fault_injection_assistant_id
+      if id.blank?
+        problems << "No fault-injection assistant id is configured (set VAPI_FAULT_INJECTION_ASSISTANT_ID or credentials vapi.fault_injection_assistant_id; see config/vapi/fault_injection.md)."
+      elsif [ BASELINE_ASSISTANT_ID, dev_assistant_id ].include?(id)
+        problems << "The configured fault-injection assistant is the development or baseline assistant; it must be a separate assistant."
+      end
+    elsif dev_assistant_id.blank?
       problems << "No development assistant id is configured (set VAPI_DEV_ASSISTANT_ID or credentials vapi.dev_assistant_id)."
     elsif dev_assistant_id == BASELINE_ASSISTANT_ID
       problems << "The configured assistant is the frozen baseline assistant; the console only uses the development assistant."

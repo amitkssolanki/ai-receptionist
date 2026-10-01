@@ -6,11 +6,15 @@ class Admin::ConsoleController < Admin::BaseController
   SESSION_KEY = /\A[0-9a-f]{16,64}\z/
   CALL_ID = /\A[\w-]{1,100}\z/
 
-  # The idle console: generates the session key this page's call will carry.
+  # The idle console: generates the session key this page's call will carry. ?assistant=fault_injection (Phase 2, opt-in)
+  # calls the deliberately misconfigured fault-injection assistant instead, under a red banner; the server treats its
+  # calls exactly like any other.
   def show
     @session_key = SecureRandom.hex(16)
-    @problems = VapiConfig.browser_problems
-    @voice = { public_key: VapiConfig.public_key, assistant_id: VapiConfig.dev_assistant_id, client_messages: VapiConfig::CLIENT_MESSAGES } if @problems.empty?
+    @fault_injection = params[:assistant] == "fault_injection"
+    @problems = VapiConfig.browser_problems(@fault_injection ? "fault_injection" : "development")
+    assistant_id = @fault_injection ? VapiConfig.fault_injection_assistant_id : VapiConfig.dev_assistant_id
+    @voice = { public_key: VapiConfig.public_key, assistant_id: assistant_id, client_messages: VapiConfig::CLIENT_MESSAGES } if @problems.empty?
   end
 
   # A fresh signed token for a call about to start (they expire in 15 minutes; the page may have been open for hours).
