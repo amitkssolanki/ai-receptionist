@@ -583,7 +583,8 @@ class BaselineReliabilityTest < ActionDispatch::IntegrationTest
     assert_not defined?(Api::Voice), "Api::Voice should be gone"
   end
 
-  # --- Confirmation gate (added after live calls #1, #2 and #6 submitted before the caller answered) ---
+  # --- Confirmation gate (added after live calls #1 and #6 submitted before the caller answered; #2 looked the same in
+  #     its webhook history, but the model had the caller's answer - see the verification log, 2026-10-01) ---
 
   test "R24 submit_order is refused until the caller has spoken after the read-back" do
     c = start_call

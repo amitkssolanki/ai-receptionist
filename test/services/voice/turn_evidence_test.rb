@@ -133,7 +133,7 @@ class Voice::TurnEvidenceTest < ActiveSupport::TestCase
 
   def live(call) = JSON.parse(file_fixture("vapi/live_submit_webhook_#{call}.json").read)
 
-  test "live call #9: read-back and submit in one completion, 0 caller turns, the 'yes' began 104 ms after the submit" do
+  test "live call #9's webhook history: read-back and submit in one message, 0 caller turns, the 'yes' stamped 104 ms after the submit" do
     payload = live("call9")
     e = Voice::TurnEvidence.for_submit(payload["artifact"], tool_call_id: payload.dig("toolCallList", 0, "id"))
 
@@ -177,7 +177,7 @@ class Voice::TurnEvidenceTest < ActiveSupport::TestCase
     assert_not gate?(base.merge("caller_turns_since_last_get_cart" => 0, "completion" => { "responds_to_get_cart_result" => false, "speech_chars" => 900 }))
   end
 
-  test "on the real live submits: calls #1, #2 and #6's first submit fail the gate; #6's second submit passes" do
+  test "on the real live submits: calls #1, #2 (a false refusal) and #6's first submit fail the gate; #6's second submit passes" do
     { "call8" => false, "call9" => false, "call13_first" => false, "call13_second" => true }.each do |name, expected|
       payload = live(name)
       e = Voice::TurnEvidence.for_submit(payload["artifact"], tool_call_id: payload.dig("toolCallList", 0, "id"))

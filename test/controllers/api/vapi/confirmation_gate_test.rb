@@ -3,8 +3,10 @@ require "test_helper"
 # The server-side confirmation gate, through the real webhook path: submit_order is refused
 # (customer_confirmation_required) unless Vapi's conversation history shows at least one caller turn after the last
 # get_cart result. It is a turn-taking gate: it never judges what the caller said. Missing or unreadable history fails
-# closed. The live evidence for it: calls #1, #2 and #6 (Vapi/DB calls #8, #9, #13) all submitted before the caller
-# answered - structure-only copies of those webhooks are in test/fixtures/files/vapi/.
+# closed. The live evidence for it: calls #1 and #6 (Vapi/DB calls #8, #13) submitted before the caller answered.
+# Call #2 (#9) looked the same in its webhook history, but Vapi's model log shows the model had the caller's answer: the
+# history stamps that turn 0.1 s after the submit, so the gate refuses it - a known false refusal (verification log,
+# 2026-10-01). Structure-only copies of those webhooks are in test/fixtures/files/vapi/.
 class Api::Vapi::ConfirmationGateTest < ActionDispatch::IntegrationTest
   SPOKEN = "SENTINEL words from the call".freeze
 
@@ -217,7 +219,7 @@ class Api::Vapi::ConfirmationGateTest < ActionDispatch::IntegrationTest
     payload["artifact"]
   end
 
-  test "the premature submits of live calls #1, #2 and #6 would each be refused" do
+  test "the recorded submits of live calls #1, #2 and #6 are each refused (#1 and #6 premature; #2 a false refusal)" do
     %w[call8 call9 call13_first].each do |name|
       call_log = call_ready_to_submit("live_#{name}")
       assert_refused(submit("live_#{name}", "#{name}_s", artifact: live_history(name, "#{name}_s")), call_log, "#{name}_s")

@@ -155,13 +155,13 @@ module Evaluation
                                         say(110, "assistant", "I've added garlic knots to your order."), add_knots(111, "k1") ])
     end
 
-    # The pattern seen in live calls #1, #2 and #6 (Vapi/DB calls #8, #9, #13): the model submits in the same breath as
+    # The pattern seen in live calls #1 and #6 (Vapi/DB calls #8, #13): the model submits in the same breath as
     # the read-back, before the caller can answer. The server's confirmation gate refuses it; after the caller answers,
     # the same submit is accepted.
     def premature_submit_then_answered
       submit = ->(w) { { "fulfillment_type" => "pickup", "cart_version" => w.last_read_back_version } }
       Scenario.new("premature_submit_then_answered", "Read-back and submit in one breath, then the caller answers",
-                   "Live calls #1, #2 and #6 submitted before the caller answered. The server refuses that submit (customer_confirmation_required: no caller turn after the read-back); after the caller's answer the submit is accepted.",
+                   "Live calls #1 and #6 submitted before the caller answered. The server refuses that submit (customer_confirmation_required: no caller turn after the read-back); after the caller's answer the submit is accepted.",
                    prefix_to(98.3) + [ say(102, "assistant", "Anything else, or should I read back your order?"), say(124, "user", "Read back my order."),
                                         Evaluation.tool(131.5, "c1", "get_cart"),
                                         say(132, "assistant", "One Margherita pizza with extra cheese. Total sixteen dollars. Did I get that right?"),

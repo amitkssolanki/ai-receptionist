@@ -19,7 +19,8 @@
 #
 # Two findings from those payloads drive the rules below:
 # - The payload is built slightly after the tool call, so caller speech that began AFTER the submit was requested can
-#   already be in it (call #9: the caller's "yes" starts 104 ms after the submit request). Counting stops at the
+#   already be in it (call #9: the history stamps the caller's "yes" 104 ms after the submit request, although Vapi's
+#   model log shows the model already had it - so this ordering can also produce a false refusal). Counting stops at the
 #   submit's own tool_calls entry; later caller turns are reported separately and never counted.
 # - Completion boundaries exist only in messagesOpenAIFormatted (in `messages` a completion's speech and its tool call
 #   are separate entries), so "same completion" is read from there.

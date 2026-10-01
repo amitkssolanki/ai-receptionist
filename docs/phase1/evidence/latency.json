@@ -5,32 +5,32 @@
     "add_to_cart": {
       "runs": 23,
       "median_ms": 6,
-      "max_ms": 41,
-      "min_ms": 3
+      "max_ms": 44,
+      "min_ms": 2
     },
     "get_cart": {
       "runs": 7,
       "median_ms": 4,
-      "max_ms": 5,
-      "min_ms": 4
+      "max_ms": 6,
+      "min_ms": 3
     },
     "get_menu": {
       "runs": 15,
-      "median_ms": 3,
-      "max_ms": 13,
+      "median_ms": 2,
+      "max_ms": 8,
       "min_ms": 2
     },
     "submit_order": {
       "runs": 11,
       "median_ms": 3,
-      "max_ms": 6,
+      "max_ms": 8,
       "min_ms": 1
     },
     "update_cart_item_quantity": {
       "runs": 1,
-      "median_ms": 5,
-      "max_ms": 5,
-      "min_ms": 5
+      "median_ms": 6,
+      "max_ms": 6,
+      "min_ms": 6
     }
   },
   "baseline_one_sample_for_reference": {

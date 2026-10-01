@@ -1,7 +1,7 @@
 {
-  "generated_at": "2026-09-30T17:50:30Z",
+  "generated_at": "2026-10-01T04:23:05Z",
   "git": {
-    "commit": "ee96de7",
+    "commit": "3a35d62",
     "uncommitted_tracked_changes": true
   },
   "ruby": "3.4.7",
@@ -18,8 +18,8 @@
     ]
   },
   "files": {
-    "garlic_knots_probe.json": "688941b6085a3c6745d6447742e7a7133bfcd553510c5ad0953e0c11e332eaf4",
-    "latency.json": "d4acfcec4855529e63f436fe72515fd034eb4809f2780ab08cccdd08783f329f",
+    "garlic_knots_probe.json": "62efd66b13c9970d7444f8153b4f4dfb26e0ce680be0b26d6593d336cd25cba8",
+    "latency.json": "c19c681b82e490a5307907e8af4b4d633c8e462d20bd7a64ca3c57f2e386aea5",
     "idempotency_and_versions.json": "80a81c238090444ee9535e56ced8c4b24ca68273cc1bb8863937129646f17980"
   }
 }

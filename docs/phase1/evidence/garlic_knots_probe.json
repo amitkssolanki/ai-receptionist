@@ -49,7 +49,7 @@
           "cart_version_before": 0,
           "cart_version_after": 0,
           "mutated_cart": false,
-          "server_ms": 13,
+          "server_ms": 8,
           "replay_count": 0
         },
         {
@@ -61,7 +61,7 @@
           "cart_version_before": 0,
           "cart_version_after": 1,
           "mutated_cart": true,
-          "server_ms": 41,
+          "server_ms": 44,
           "replay_count": 0
         },
         {
@@ -73,7 +73,7 @@
           "cart_version_before": 1,
           "cart_version_after": 1,
           "mutated_cart": false,
-          "server_ms": 4,
+          "server_ms": 5,
           "replay_count": 0
         },
         {
@@ -151,7 +151,7 @@
           "cart_version_before": 0,
           "cart_version_after": 0,
           "mutated_cart": false,
-          "server_ms": 3,
+          "server_ms": 2,
           "replay_count": 0
         },
         {
@@ -163,7 +163,7 @@
           "cart_version_before": 0,
           "cart_version_after": 1,
           "mutated_cart": true,
-          "server_ms": 7,
+          "server_ms": 6,
           "replay_count": 0
         },
         {
@@ -175,7 +175,7 @@
           "cart_version_before": 1,
           "cart_version_after": 1,
           "mutated_cart": false,
-          "server_ms": 5,
+          "server_ms": 3,
           "replay_count": 0
         },
         {
@@ -187,7 +187,7 @@
           "cart_version_before": 1,
           "cart_version_after": 1,
           "mutated_cart": false,
-          "server_ms": 5,
+          "server_ms": 4,
           "replay_count": 0
         }
       ],
@@ -250,7 +250,7 @@
           "cart_version_before": 0,
           "cart_version_after": 1,
           "mutated_cart": true,
-          "server_ms": 9,
+          "server_ms": 7,
           "replay_count": 0
         },
         {
@@ -262,7 +262,7 @@
           "cart_version_before": 1,
           "cart_version_after": 1,
           "mutated_cart": false,
-          "server_ms": 4,
+          "server_ms": 3,
           "replay_count": 0
         },
         {
@@ -274,7 +274,7 @@
           "cart_version_before": 1,
           "cart_version_after": 1,
           "mutated_cart": false,
-          "server_ms": 5,
+          "server_ms": 4,
           "replay_count": 0
         }
       ],
@@ -350,7 +350,7 @@
           "cart_version_before": 0,
           "cart_version_after": 1,
           "mutated_cart": true,
-          "server_ms": 7,
+          "server_ms": 6,
           "replay_count": 0
         },
         {
@@ -362,7 +362,7 @@
           "cart_version_before": 1,
           "cart_version_after": 2,
           "mutated_cart": true,
-          "server_ms": 7,
+          "server_ms": 9,
           "replay_count": 0
         },
         {
@@ -374,7 +374,7 @@
           "cart_version_before": 2,
           "cart_version_after": 2,
           "mutated_cart": false,
-          "server_ms": 4,
+          "server_ms": 6,
           "replay_count": 0
         },
         {
@@ -386,7 +386,7 @@
           "cart_version_before": 2,
           "cart_version_after": 2,
           "mutated_cart": false,
-          "server_ms": 4,
+          "server_ms": 8,
           "replay_count": 0
         }
       ],
@@ -469,7 +469,7 @@
           "cart_version_before": 0,
           "cart_version_after": 1,
           "mutated_cart": true,
-          "server_ms": 6,
+          "server_ms": 8,
           "replay_count": 0
         },
         {
@@ -481,7 +481,7 @@
           "cart_version_before": 1,
           "cart_version_after": 1,
           "mutated_cart": false,
-          "server_ms": 4,
+          "server_ms": 5,
           "replay_count": 0
         }
       ],
@@ -545,7 +545,7 @@
           "cart_version_before": 0,
           "cart_version_after": 0,
           "mutated_cart": false,
-          "server_ms": 3,
+          "server_ms": 2,
           "replay_count": 0
         },
         {
@@ -569,7 +569,7 @@
           "cart_version_before": 1,
           "cart_version_after": 2,
           "mutated_cart": true,
-          "server_ms": 6,
+          "server_ms": 5,
           "replay_count": 0
         }
       ],
@@ -746,7 +746,7 @@
           "cart_version_before": 0,
           "cart_version_after": 1,
           "mutated_cart": true,
-          "server_ms": 10,
+          "server_ms": 6,
           "replay_count": 0
         }
       ],
@@ -807,7 +807,7 @@
           "cart_version_before": 0,
           "cart_version_after": 0,
           "mutated_cart": false,
-          "server_ms": 3,
+          "server_ms": 2,
           "replay_count": 0
         },
         {
@@ -831,7 +831,7 @@
           "cart_version_before": 1,
           "cart_version_after": 2,
           "mutated_cart": true,
-          "server_ms": 5,
+          "server_ms": 6,
           "replay_count": 0
         }
       ],
@@ -987,7 +987,7 @@
           "cart_version_before": 0,
           "cart_version_after": 0,
           "mutated_cart": false,
-          "server_ms": 3,
+          "server_ms": 2,
           "replay_count": 0
         },
         {
@@ -1011,7 +1011,7 @@
           "cart_version_before": 1,
           "cart_version_after": 1,
           "mutated_cart": false,
-          "server_ms": 4,
+          "server_ms": 3,
           "replay_count": 0
         },
         {
@@ -1023,7 +1023,7 @@
           "cart_version_before": 1,
           "cart_version_after": 2,
           "mutated_cart": true,
-          "server_ms": 5,
+          "server_ms": 6,
           "replay_count": 0
         },
         {
@@ -1047,7 +1047,7 @@
           "cart_version_before": 2,
           "cart_version_after": 2,
           "mutated_cart": false,
-          "server_ms": 3,
+          "server_ms": 2,
           "replay_count": 0
         }
       ],
@@ -1103,7 +1103,7 @@
           "cart_version_before": 0,
           "cart_version_after": 0,
           "mutated_cart": false,
-          "server_ms": 4,
+          "server_ms": 2,
           "replay_count": 0
         },
         {
@@ -1115,7 +1115,7 @@
           "cart_version_before": 0,
           "cart_version_after": 1,
           "mutated_cart": true,
-          "server_ms": 6,
+          "server_ms": 5,
           "replay_count": 0
         },
         {
@@ -1139,7 +1139,7 @@
           "cart_version_before": 1,
           "cart_version_after": 2,
           "mutated_cart": true,
-          "server_ms": 6,
+          "server_ms": 5,
           "replay_count": 0
         },
         {
@@ -1151,7 +1151,7 @@
           "cart_version_before": 2,
           "cart_version_after": 2,
           "mutated_cart": false,
-          "server_ms": 3,
+          "server_ms": 2,
           "replay_count": 0
         }
       ],
@@ -1220,7 +1220,7 @@
           "cart_version_before": 0,
           "cart_version_after": 0,
           "mutated_cart": false,
-          "server_ms": 4,
+          "server_ms": 3,
           "replay_count": 0
         },
         {
@@ -1232,7 +1232,7 @@
           "cart_version_before": 0,
           "cart_version_after": 1,
           "mutated_cart": true,
-          "server_ms": 7,
+          "server_ms": 14,
           "replay_count": 0
         },
         {
@@ -1314,7 +1314,7 @@
           "cart_version_before": 0,
           "cart_version_after": 0,
           "mutated_cart": false,
-          "server_ms": 2,
+          "server_ms": 3,
           "replay_count": 0
         },
         {
@@ -1350,7 +1350,7 @@
           "cart_version_before": 1,
           "cart_version_after": 1,
           "mutated_cart": false,
-          "server_ms": 6,
+          "server_ms": 4,
           "replay_count": 0
         },
         {
@@ -1362,7 +1362,7 @@
           "cart_version_before": 1,
           "cart_version_after": 1,
           "mutated_cart": false,
-          "server_ms": 3,
+          "server_ms": 2,
           "replay_count": 0
         }
       ],
@@ -1401,7 +1401,7 @@
     {
       "id": "premature_submit_then_answered",
       "title": "Read-back and submit in one breath, then the caller answers",
-      "purpose": "Live calls #1, #2 and #6 submitted before the caller answered. The server refuses that submit (customer_confirmation_required: no caller turn after the read-back); after the caller's answer the submit is accepted.",
+      "purpose": "Live calls #1 and #6 submitted before the caller answered. The server refuses that submit (customer_confirmation_required: no caller turn after the read-back); after the caller's answer the submit is accepted.",
       "claims": [],
       "tool_calls": [
         {
@@ -1413,7 +1413,7 @@
           "cart_version_before": 0,
           "cart_version_after": 0,
           "mutated_cart": false,
-          "server_ms": 3,
+          "server_ms": 2,
           "replay_count": 0
         },
         {
@@ -1425,7 +1425,7 @@
           "cart_version_before": 0,
           "cart_version_after": 1,
           "mutated_cart": true,
-          "server_ms": 6,
+          "server_ms": 7,
           "replay_count": 0
         },
         {
@@ -1461,7 +1461,7 @@
           "cart_version_before": 1,
           "cart_version_after": 1,
           "mutated_cart": false,
-          "server_ms": 5,
+          "server_ms": 4,
           "replay_count": 0
         }
       ],
