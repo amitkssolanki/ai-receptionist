@@ -1,0 +1,312 @@
+{
+  "cart_version_traces": [
+    {
+      "scenario": "call7_adapted",
+      "trace": [
+        {
+          "tool": "get_menu",
+          "tool_call_id": "call_DeA64Ufy8pFTMgfLwZh4hQio",
+          "status": "ok",
+          "error_code": null,
+          "cart_version_before": 0,
+          "cart_version_after": 0,
+          "replay_count": 0
+        },
+        {
+          "tool": "add_to_cart",
+          "tool_call_id": "call_oDMrQNdB4sio5vCJD90xITH9",
+          "status": "ok",
+          "error_code": null,
+          "cart_version_before": 0,
+          "cart_version_after": 1,
+          "replay_count": 0
+        },
+        {
+          "tool": "get_cart",
+          "tool_call_id": "call_jJtEB1ikJ9QhOw6CVGp2iaYM",
+          "status": "ok",
+          "error_code": null,
+          "cart_version_before": 1,
+          "cart_version_after": 1,
+          "replay_count": 0
+        },
+        {
+          "tool": "submit_order",
+          "tool_call_id": "call_pDEfuoG8uH3lb3I65XAAUwuB",
+          "status": "ok",
+          "error_code": null,
+          "cart_version_before": 1,
+          "cart_version_after": 1,
+          "replay_count": 0
+        }
+      ],
+      "final": {
+        "status": "confirmed",
+        "cart_version": 1,
+        "read_back_version": 1,
+        "total": 16.0
+      }
+    },
+    {
+      "scenario": "claim_then_accepted_add",
+      "trace": [
+        {
+          "tool": "get_menu",
+          "tool_call_id": "call_DeA64Ufy8pFTMgfLwZh4hQio",
+          "status": "ok",
+          "error_code": null,
+          "cart_version_before": 0,
+          "cart_version_after": 0,
+          "replay_count": 0
+        },
+        {
+          "tool": "add_to_cart",
+          "tool_call_id": "call_oDMrQNdB4sio5vCJD90xITH9",
+          "status": "ok",
+          "error_code": null,
+          "cart_version_before": 0,
+          "cart_version_after": 1,
+          "replay_count": 0
+        },
+        {
+          "tool": "add_to_cart",
+          "tool_call_id": "k1",
+          "status": "ok",
+          "error_code": null,
+          "cart_version_before": 1,
+          "cart_version_after": 2,
+          "replay_count": 0
+        },
+        {
+          "tool": "get_cart",
+          "tool_call_id": "c1",
+          "status": "ok",
+          "error_code": null,
+          "cart_version_before": 2,
+          "cart_version_after": 2,
+          "replay_count": 0
+        },
+        {
+          "tool": "submit_order",
+          "tool_call_id": "s1",
+          "status": "ok",
+          "error_code": null,
+          "cart_version_before": 2,
+          "cart_version_after": 2,
+          "replay_count": 0
+        }
+      ],
+      "final": {
+        "status": "confirmed",
+        "cart_version": 2,
+        "read_back_version": 2,
+        "total": 21.5
+      }
+    },
+    {
+      "scenario": "stale_submit_after_change",
+      "trace": [
+        {
+          "tool": "get_menu",
+          "tool_call_id": "call_DeA64Ufy8pFTMgfLwZh4hQio",
+          "status": "ok",
+          "error_code": null,
+          "cart_version_before": 0,
+          "cart_version_after": 0,
+          "replay_count": 0
+        },
+        {
+          "tool": "add_to_cart",
+          "tool_call_id": "call_oDMrQNdB4sio5vCJD90xITH9",
+          "status": "ok",
+          "error_code": null,
+          "cart_version_before": 0,
+          "cart_version_after": 1,
+          "replay_count": 0
+        },
+        {
+          "tool": "get_cart",
+          "tool_call_id": "c1",
+          "status": "ok",
+          "error_code": null,
+          "cart_version_before": 1,
+          "cart_version_after": 1,
+          "replay_count": 0
+        },
+        {
+          "tool": "add_to_cart",
+          "tool_call_id": "k1",
+          "status": "ok",
+          "error_code": null,
+          "cart_version_before": 1,
+          "cart_version_after": 2,
+          "replay_count": 0
+        },
+        {
+          "tool": "submit_order",
+          "tool_call_id": "s1",
+          "status": "rejected",
+          "error_code": "cart_changed_since_readback",
+          "cart_version_before": 2,
+          "cart_version_after": 2,
+          "replay_count": 0
+        },
+        {
+          "tool": "submit_order",
+          "tool_call_id": "s2",
+          "status": "rejected",
+          "error_code": "cart_changed_since_readback",
+          "cart_version_before": 2,
+          "cart_version_after": 2,
+          "replay_count": 0
+        }
+      ],
+      "final": {
+        "status": "abandoned",
+        "cart_version": 2,
+        "read_back_version": 1,
+        "total": 21.5
+      }
+    },
+    {
+      "scenario": "late_duplicate_get_cart",
+      "trace": [
+        {
+          "tool": "get_menu",
+          "tool_call_id": "call_DeA64Ufy8pFTMgfLwZh4hQio",
+          "status": "ok",
+          "error_code": null,
+          "cart_version_before": 0,
+          "cart_version_after": 0,
+          "replay_count": 0
+        },
+        {
+          "tool": "add_to_cart",
+          "tool_call_id": "call_oDMrQNdB4sio5vCJD90xITH9",
+          "status": "ok",
+          "error_code": null,
+          "cart_version_before": 0,
+          "cart_version_after": 1,
+          "replay_count": 0
+        },
+        {
+          "tool": "get_cart",
+          "tool_call_id": "c1",
+          "status": "ok",
+          "error_code": null,
+          "cart_version_before": 1,
+          "cart_version_after": 1,
+          "replay_count": 1
+        },
+        {
+          "tool": "add_to_cart",
+          "tool_call_id": "k1",
+          "status": "ok",
+          "error_code": null,
+          "cart_version_before": 1,
+          "cart_version_after": 2,
+          "replay_count": 0
+        },
+        {
+          "tool": "submit_order",
+          "tool_call_id": "s1",
+          "status": "rejected",
+          "error_code": "cart_changed_since_readback",
+          "cart_version_before": 2,
+          "cart_version_after": 2,
+          "replay_count": 0
+        }
+      ],
+      "final": {
+        "status": "abandoned",
+        "cart_version": 2,
+        "read_back_version": 1,
+        "total": 21.5
+      }
+    },
+    {
+      "scenario": "claim_after_confirmation",
+      "trace": [
+        {
+          "tool": "get_menu",
+          "tool_call_id": "call_DeA64Ufy8pFTMgfLwZh4hQio",
+          "status": "ok",
+          "error_code": null,
+          "cart_version_before": 0,
+          "cart_version_after": 0,
+          "replay_count": 0
+        },
+        {
+          "tool": "add_to_cart",
+          "tool_call_id": "call_oDMrQNdB4sio5vCJD90xITH9",
+          "status": "ok",
+          "error_code": null,
+          "cart_version_before": 0,
+          "cart_version_after": 1,
+          "replay_count": 0
+        },
+        {
+          "tool": "get_cart",
+          "tool_call_id": "c1",
+          "status": "ok",
+          "error_code": null,
+          "cart_version_before": 1,
+          "cart_version_after": 1,
+          "replay_count": 0
+        },
+        {
+          "tool": "submit_order",
+          "tool_call_id": "s1",
+          "status": "ok",
+          "error_code": null,
+          "cart_version_before": 1,
+          "cart_version_after": 1,
+          "replay_count": 0
+        },
+        {
+          "tool": "add_to_cart",
+          "tool_call_id": "k1",
+          "status": "rejected",
+          "error_code": "order_already_submitted",
+          "cart_version_before": 1,
+          "cart_version_after": 1,
+          "replay_count": 0
+        }
+      ],
+      "final": {
+        "status": "confirmed",
+        "cart_version": 1,
+        "read_back_version": 1,
+        "total": 16.0
+      }
+    }
+  ],
+  "duplicate_delivery_demos": {
+    "duplicate_add_to_cart": {
+      "deliveries": 3,
+      "identical_stored_result": true,
+      "order_lines": 1,
+      "cart_version": 1,
+      "replay_count": 2
+    },
+    "late_duplicate_get_cart": {
+      "original_read_back_version": 1,
+      "cart_version_after_a_change": 2,
+      "duplicate_get_cart_returned_version": 1,
+      "read_back_version_after_duplicate": 1,
+      "read_back_at_unchanged": true,
+      "submit_with_current_version_refused_as": "cart_changed_since_readback"
+    },
+    "duplicate_submit_order": {
+      "same_id_twice_identical": true,
+      "new_id_answer": {
+        "already_submitted": true,
+        "confirmation_sms": null
+      },
+      "order_status": "confirmed",
+      "placed_at_set_once": true,
+      "submit_rows": 3
+    },
+    "threaded_duplicate_delivery": "covered by test/services/voice/tool_runner_concurrency_test.rb (real threads on committed data); not re-run here"
+  }
+}

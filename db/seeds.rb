@@ -3,8 +3,8 @@ restaurant = Restaurant.find_or_create_by!(name: "Taj Zayka") do |r|
   r.address = "123 Main St, Springfield"
   r.timezone = "America/New_York"
   r.business_hours = {
-    "mon" => "00:00-23:59", "tue" => "00:00-23:59", "wed" => "00:00-23:59",
-    "thu" => "00:00-23:59", "fri" => "00:00-23:59", "sat" => "00:00-23:59", "sun" => "00:00-23:59"
+    "mon" => "00:00-24:00", "tue" => "00:00-24:00", "wed" => "00:00-24:00",
+    "thu" => "00:00-24:00", "fri" => "00:00-24:00", "sat" => "00:00-24:00", "sun" => "00:00-24:00"
   }
 end
 

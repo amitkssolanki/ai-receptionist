@@ -1,0 +1,543 @@
+{
+  "captured_from": "ai_receptionist_development (read-only query)",
+  "call_logs": [
+    {
+      "id": 6,
+      "external_call_id": "019fd4eb-3d46-788a-9c27-da2e2d2c1f10",
+      "status": "abandoned",
+      "order_id": null,
+      "phone_number": "unknown-019fd4eb-3d46-788a-9c27-da2e2d2c1f10",
+      "started_at": "2026-08-06T02:33:48.852076",
+      "ended_at": "2026-08-06T02:34:48.260013",
+      "recording_url": "<REMOVED: signed Vapi storage URL>",
+      "transcript_verbatim": "AI: Thanks for calling Taj Zeika, this is your AI host. How can I help?\nUser: I want to order a burger, and.\nAI: Sure, I can help with that. Uh, first, do you want pickup or delivery?\nUser: Pick up.\nAI: Great, pickup. Let me pull up the menu for burgers. One moment.\n"
+    },
+    {
+      "id": 7,
+      "external_call_id": "019fd4fa-7f12-7227-ba8a-3f777c3af6d1",
+      "status": "completed",
+      "order_id": 3,
+      "phone_number": "unknown-019fd4fa-7f12-7227-ba8a-3f777c3af6d1",
+      "started_at": "2026-08-06T02:50:22.211126",
+      "ended_at": "2026-08-06T02:53:22.982473",
+      "recording_url": "<REMOVED: signed Vapi storage URL>",
+      "transcript_verbatim": "AI: Thanks for calling Taj Zeika, this is your AI host. How can I help?\nUser: What pizzas do you have?\nAI: We have these pizzas right now, um, Margherita pizza, fresh mozzarella, basil, San Marzano tomato sauce, $14.\nAI: Modifiers, extra cheese plus $2, add pepperoni plus $2.50, gluten-free crust plus $3. Pepperoni pizza, classic pepperoni and mozzarella, $15.50. Modifiers, extra cheese plus $2, extra pepperoni plus $2.50, stuffed crust plus $3.50. BBQ. Chicken. Pizza, grilled chicken, red onion, BBQ sauce, $16.50. Modifiers, extra chicken plus $3, add jalapeños, plus $1. Veggie. Supreme pizza, bell peppers, mushrooms, red onion, olives, mozzarella, $15. Modifiers, add extra veggies, plus $1.50. Vegan cheese plus $2.50. Want to. Order one for pickup or delivery?\nUser: Uh, pickup, please.\nAI: Great. Pickup. Which pizza would you like? Margherita, pepperoni, BBQ chicken, or veggie? Supreme.\nUser: My computer.\nAI: It sounds like.\nUser: Margarita.\nAI: Got it. Pickup: Margherita pizza. Any modifiers? You can choose extra cheese, add pepperoni, or gluten-free crust. One.\nUser: Extra cheese.\nAI: All right. One Margherita pizza with extra cheese for pickup. Would you like anything else?\nAI: We have garlic knots, fries.\nUser: It should be.\nAI: Sorry, did you mean you want garlic knots or fries with that?\nUser: That should be.\nAI: Great. I'll add garlic knots. One Margherita pizza with extra cheese, and one. Order of garlic knots for pickup. Anything else, or should I read back your order?\nUser: Uh, read back my order.\nAI: I've got one Margherita pizza with extra cheese for pickup, total $16. Did I get that right?\nUser: Yes.\nAI: Thanks. Your pickup order is confirmed. You'll get a text confirmation shortly. Thanks for calling Taj Zeika. Have a great day.\nUser: Hmm. Thank you.\nAI: You're welcome. Your pickup order is all set. You'll get a text confirmation soon. Thanks for calling Taj Zeika. Enjoy your meal.\nUser: Thank you so much.\nAI: My pleasure. Enjoy your pizza. If you need anything else, just call back.\nUser: Mm-hm.\nAI: Thanks. Take care.\n"
+    }
+  ],
+  "customers": [
+    {
+      "id": 5,
+      "phone_number": "unknown-019fd4eb-3d46-788a-9c27-da2e2d2c1f10",
+      "name": null
+    },
+    {
+      "id": 6,
+      "phone_number": "unknown-019fd4fa-7f12-7227-ba8a-3f777c3af6d1",
+      "name": null
+    }
+  ],
+  "orders": [
+    {
+      "id": 3,
+      "status": "confirmed",
+      "fulfillment_type": "pickup",
+      "total_cents": 1600,
+      "placed_at": "2026-08-06T02:52:38.537883",
+      "delivery_address": null,
+      "notes": null,
+      "customer_id": 6,
+      "items": [
+        {
+          "id": 3,
+          "menu_item_id": 5,
+          "menu_item": "Margherita Pizza",
+          "quantity": 1,
+          "unit_price_cents": 1600,
+          "selected_modifiers": [
+            {
+              "name": "Extra cheese",
+              "price_cents": 200
+            }
+          ],
+          "notes": null
+        }
+      ]
+    }
+  ],
+  "menu_reference": {
+    "menu_last_updated_at": "2026-07-20T05:26:39.668535",
+    "categories": [
+      {
+        "id": 1,
+        "name": "Starters",
+        "position": 1
+      },
+      {
+        "id": 2,
+        "name": "Mains",
+        "position": 2
+      },
+      {
+        "id": 3,
+        "name": "Pizzas",
+        "position": 3
+      },
+      {
+        "id": 4,
+        "name": "Sides",
+        "position": 4
+      },
+      {
+        "id": 5,
+        "name": "Drinks",
+        "position": 5
+      },
+      {
+        "id": 6,
+        "name": "Combos",
+        "position": 6
+      }
+    ],
+    "items": [
+      {
+        "id": 1,
+        "menu_category_id": 1,
+        "name": "Fried Calamari",
+        "description": "Crispy calamari with marinara sauce",
+        "price_cents": 1400,
+        "available": true,
+        "position": 1
+      },
+      {
+        "id": 2,
+        "menu_category_id": 2,
+        "name": "Bistro Burger",
+        "description": "Half-pound burger with cheddar, lettuce, tomato",
+        "price_cents": 1900,
+        "available": true,
+        "position": 1
+      },
+      {
+        "id": 3,
+        "menu_category_id": 1,
+        "name": "Mozzarella Sticks",
+        "description": "Breaded mozzarella, marinara for dipping",
+        "price_cents": 950,
+        "available": true,
+        "position": 2
+      },
+      {
+        "id": 4,
+        "menu_category_id": 2,
+        "name": "Grilled Chicken Sandwich",
+        "description": "Grilled chicken breast, lettuce, tomato, garlic aioli on a brioche bun",
+        "price_cents": 1600,
+        "available": true,
+        "position": 2
+      },
+      {
+        "id": 5,
+        "menu_category_id": 3,
+        "name": "Margherita Pizza",
+        "description": "Fresh mozzarella, basil, San Marzano tomato sauce",
+        "price_cents": 1400,
+        "available": true,
+        "position": 1
+      },
+      {
+        "id": 6,
+        "menu_category_id": 3,
+        "name": "Pepperoni Pizza",
+        "description": "Classic pepperoni, mozzarella, tomato sauce",
+        "price_cents": 1550,
+        "available": true,
+        "position": 2
+      },
+      {
+        "id": 7,
+        "menu_category_id": 3,
+        "name": "BBQ Chicken Pizza",
+        "description": "Grilled chicken, red onion, BBQ sauce, mozzarella",
+        "price_cents": 1650,
+        "available": true,
+        "position": 3
+      },
+      {
+        "id": 8,
+        "menu_category_id": 3,
+        "name": "Veggie Supreme Pizza",
+        "description": "Bell peppers, mushrooms, red onion, olives, mozzarella",
+        "price_cents": 1500,
+        "available": true,
+        "position": 4
+      },
+      {
+        "id": 9,
+        "menu_category_id": 4,
+        "name": "French Fries",
+        "description": "Crispy golden fries, salted",
+        "price_cents": 450,
+        "available": true,
+        "position": 1
+      },
+      {
+        "id": 10,
+        "menu_category_id": 4,
+        "name": "Garlic Knots",
+        "description": "Baked dough knots tossed in garlic butter and parmesan",
+        "price_cents": 550,
+        "available": true,
+        "position": 2
+      },
+      {
+        "id": 11,
+        "menu_category_id": 4,
+        "name": "Garden Salad",
+        "description": "Mixed greens, tomato, cucumber, choice of dressing",
+        "price_cents": 500,
+        "available": true,
+        "position": 3
+      },
+      {
+        "id": 12,
+        "menu_category_id": 4,
+        "name": "Onion Rings",
+        "description": "Beer-battered onion rings",
+        "price_cents": 550,
+        "available": true,
+        "position": 4
+      },
+      {
+        "id": 13,
+        "menu_category_id": 5,
+        "name": "Coca-Cola",
+        "description": "Canned, 12oz",
+        "price_cents": 250,
+        "available": true,
+        "position": 1
+      },
+      {
+        "id": 14,
+        "menu_category_id": 5,
+        "name": "Sprite",
+        "description": "Canned, 12oz",
+        "price_cents": 250,
+        "available": true,
+        "position": 2
+      },
+      {
+        "id": 15,
+        "menu_category_id": 5,
+        "name": "Bottled Water",
+        "description": "16.9oz bottle",
+        "price_cents": 200,
+        "available": true,
+        "position": 3
+      },
+      {
+        "id": 16,
+        "menu_category_id": 5,
+        "name": "Iced Tea",
+        "description": "Freshly brewed, sweetened or unsweetened",
+        "price_cents": 300,
+        "available": true,
+        "position": 4
+      },
+      {
+        "id": 17,
+        "menu_category_id": 5,
+        "name": "Lemonade",
+        "description": "Fresh-squeezed lemonade",
+        "price_cents": 350,
+        "available": true,
+        "position": 5
+      },
+      {
+        "id": 18,
+        "menu_category_id": 6,
+        "name": "Burger Combo",
+        "description": "Bistro Burger with fries and a drink",
+        "price_cents": 2299,
+        "available": true,
+        "position": 1
+      },
+      {
+        "id": 19,
+        "menu_category_id": 6,
+        "name": "Slice & Drink Combo",
+        "description": "One slice of pepperoni or cheese pizza with a fountain drink",
+        "price_cents": 799,
+        "available": true,
+        "position": 2
+      },
+      {
+        "id": 20,
+        "menu_category_id": 6,
+        "name": "Pizza Lunch Combo",
+        "description": "Personal 8-inch pizza with a side and a drink",
+        "price_cents": 1299,
+        "available": true,
+        "position": 3
+      }
+    ],
+    "modifiers": [
+      {
+        "id": 1,
+        "menu_item_id": 2,
+        "name": "Add bacon",
+        "price_cents": 300,
+        "position": 1
+      },
+      {
+        "id": 2,
+        "menu_item_id": 2,
+        "name": "Add avocado",
+        "price_cents": 250,
+        "position": 2
+      },
+      {
+        "id": 3,
+        "menu_item_id": 4,
+        "name": "Add bacon",
+        "price_cents": 300,
+        "position": 1
+      },
+      {
+        "id": 4,
+        "menu_item_id": 4,
+        "name": "Add cheese",
+        "price_cents": 150,
+        "position": 2
+      },
+      {
+        "id": 5,
+        "menu_item_id": 4,
+        "name": "Gluten-free bun",
+        "price_cents": 200,
+        "position": 3
+      },
+      {
+        "id": 6,
+        "menu_item_id": 5,
+        "name": "Extra cheese",
+        "price_cents": 200,
+        "position": 1
+      },
+      {
+        "id": 7,
+        "menu_item_id": 5,
+        "name": "Add pepperoni",
+        "price_cents": 250,
+        "position": 2
+      },
+      {
+        "id": 8,
+        "menu_item_id": 5,
+        "name": "Gluten-free crust",
+        "price_cents": 300,
+        "position": 3
+      },
+      {
+        "id": 9,
+        "menu_item_id": 6,
+        "name": "Extra cheese",
+        "price_cents": 200,
+        "position": 1
+      },
+      {
+        "id": 10,
+        "menu_item_id": 6,
+        "name": "Extra pepperoni",
+        "price_cents": 250,
+        "position": 2
+      },
+      {
+        "id": 11,
+        "menu_item_id": 6,
+        "name": "Stuffed crust",
+        "price_cents": 350,
+        "position": 3
+      },
+      {
+        "id": 12,
+        "menu_item_id": 7,
+        "name": "Extra chicken",
+        "price_cents": 300,
+        "position": 1
+      },
+      {
+        "id": 13,
+        "menu_item_id": 7,
+        "name": "Add jalapenos",
+        "price_cents": 100,
+        "position": 2
+      },
+      {
+        "id": 14,
+        "menu_item_id": 8,
+        "name": "Add extra veggies",
+        "price_cents": 150,
+        "position": 1
+      },
+      {
+        "id": 15,
+        "menu_item_id": 8,
+        "name": "Vegan cheese",
+        "price_cents": 250,
+        "position": 2
+      },
+      {
+        "id": 16,
+        "menu_item_id": 16,
+        "name": "Add lemon",
+        "price_cents": 0,
+        "position": 1
+      },
+      {
+        "id": 17,
+        "menu_item_id": 18,
+        "name": "Swap fries for garden salad",
+        "price_cents": 100,
+        "position": 1
+      },
+      {
+        "id": 18,
+        "menu_item_id": 18,
+        "name": "Swap fries for onion rings",
+        "price_cents": 150,
+        "position": 2
+      },
+      {
+        "id": 19,
+        "menu_item_id": 18,
+        "name": "Drink: Coca-Cola",
+        "price_cents": 0,
+        "position": 3
+      },
+      {
+        "id": 20,
+        "menu_item_id": 18,
+        "name": "Drink: Sprite",
+        "price_cents": 0,
+        "position": 4
+      },
+      {
+        "id": 21,
+        "menu_item_id": 18,
+        "name": "Drink: Bottled Water",
+        "price_cents": 0,
+        "position": 5
+      },
+      {
+        "id": 22,
+        "menu_item_id": 18,
+        "name": "Drink: Iced Tea",
+        "price_cents": 0,
+        "position": 6
+      },
+      {
+        "id": 23,
+        "menu_item_id": 19,
+        "name": "Upgrade to two slices",
+        "price_cents": 350,
+        "position": 1
+      },
+      {
+        "id": 24,
+        "menu_item_id": 19,
+        "name": "Add side salad",
+        "price_cents": 200,
+        "position": 2
+      },
+      {
+        "id": 25,
+        "menu_item_id": 20,
+        "name": "Side: Garden Salad",
+        "price_cents": 0,
+        "position": 1
+      },
+      {
+        "id": 26,
+        "menu_item_id": 20,
+        "name": "Side: Garlic Knots",
+        "price_cents": 0,
+        "position": 2
+      },
+      {
+        "id": 27,
+        "menu_item_id": 20,
+        "name": "Side: French Fries",
+        "price_cents": 0,
+        "position": 3
+      },
+      {
+        "id": 28,
+        "menu_item_id": 20,
+        "name": "Drink: Coca-Cola",
+        "price_cents": 0,
+        "position": 4
+      },
+      {
+        "id": 29,
+        "menu_item_id": 20,
+        "name": "Drink: Sprite",
+        "price_cents": 0,
+        "position": 5
+      },
+      {
+        "id": 30,
+        "menu_item_id": 20,
+        "name": "Drink: Bottled Water",
+        "price_cents": 0,
+        "position": 6
+      }
+    ],
+    "upsells": [
+      {
+        "id": 1,
+        "menu_item_id": 2,
+        "upsell_item_id": 1
+      },
+      {
+        "id": 2,
+        "menu_item_id": 2,
+        "upsell_item_id": 9
+      },
+      {
+        "id": 3,
+        "menu_item_id": 5,
+        "upsell_item_id": 10
+      },
+      {
+        "id": 4,
+        "menu_item_id": 5,
+        "upsell_item_id": 13
+      },
+      {
+        "id": 5,
+        "menu_item_id": 6,
+        "upsell_item_id": 10
+      },
+      {
+        "id": 6,
+        "menu_item_id": 4,
+        "upsell_item_id": 11
+      }
+    ]
+  },
+  "restaurant": {
+    "id": 1,
+    "name": "Taj Zayka",
+    "phone_number": "[REDACTED]",
+    "timezone": "America/New_York",
+    "business_hours": {
+      "fri": "00:00-23:59",
+      "mon": "00:00-23:59",
+      "sat": "00:00-23:59",
+      "sun": "00:00-23:59",
+      "thu": "00:00-23:59",
+      "tue": "00:00-23:59",
+      "wed": "00:00-23:59"
+    }
+  }
+}

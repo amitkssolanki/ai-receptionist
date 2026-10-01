@@ -10,14 +10,19 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_07_19_151814) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_30_180000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
   create_table "call_logs", force: :cascade do |t|
+    t.string "assistant_version"
+    t.string "console_session_key"
+    t.decimal "cost_usd", precision: 10, scale: 4
     t.datetime "created_at", null: false
     t.bigint "customer_id"
+    t.integer "duration_seconds"
     t.datetime "ended_at"
+    t.string "ended_reason"
     t.string "external_call_id", null: false
     t.bigint "order_id"
     t.string "phone_number", null: false
@@ -26,7 +31,10 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_19_151814) do
     t.datetime "started_at"
     t.string "status", default: "in_progress", null: false
     t.text "transcript"
+    t.string "transfer_reason"
+    t.datetime "transferred_at", precision: 3
     t.datetime "updated_at", null: false
+    t.index ["console_session_key"], name: "index_call_logs_on_console_session_key"
     t.index ["customer_id"], name: "index_call_logs_on_customer_id"
     t.index ["external_call_id"], name: "index_call_logs_on_external_call_id", unique: true
     t.index ["order_id"], name: "index_call_logs_on_order_id"
@@ -100,12 +108,15 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_19_151814) do
   end
 
   create_table "orders", force: :cascade do |t|
+    t.integer "cart_version", default: 0, null: false
     t.datetime "created_at", null: false
     t.bigint "customer_id", null: false
     t.string "delivery_address"
     t.string "fulfillment_type", null: false
     t.text "notes"
     t.datetime "placed_at"
+    t.datetime "read_back_at", precision: 3
+    t.integer "read_back_version"
     t.bigint "restaurant_id", null: false
     t.string "status", default: "pending", null: false
     t.integer "total_cents", default: 0, null: false
@@ -122,6 +133,32 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_19_151814) do
     t.string "phone_number", null: false
     t.string "timezone", default: "America/New_York", null: false
     t.datetime "updated_at", null: false
+  end
+
+  create_table "tool_invocations", force: :cascade do |t|
+    t.jsonb "arguments"
+    t.bigint "call_log_id", null: false
+    t.integer "cart_version_after"
+    t.integer "cart_version_before"
+    t.datetime "created_at", null: false
+    t.integer "duration_ms", null: false
+    t.string "error_class"
+    t.string "error_code"
+    t.datetime "finished_at", precision: 3, null: false
+    t.bigint "order_id"
+    t.integer "replay_count", default: 0, null: false
+    t.jsonb "result"
+    t.string "source", default: "vapi", null: false
+    t.datetime "started_at", precision: 3, null: false
+    t.string "status", null: false
+    t.string "tool_call_id", null: false
+    t.string "tool_name", null: false
+    t.jsonb "turn_evidence", comment: "submit_order only, shadow mode: caller turn-taking observed in Vapi's conversation history (counts/flags/ids; never text). Not enforced."
+    t.datetime "updated_at", null: false
+    t.datetime "vapi_requested_at", precision: 3
+    t.index ["call_log_id", "started_at"], name: "index_tool_invocations_on_call_log_id_and_started_at"
+    t.index ["call_log_id", "tool_call_id"], name: "index_tool_invocations_on_call_log_id_and_tool_call_id", unique: true
+    t.index ["order_id"], name: "index_tool_invocations_on_order_id"
   end
 
   create_table "users", force: :cascade do |t|
@@ -152,5 +189,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_19_151814) do
   add_foreign_key "order_items", "orders"
   add_foreign_key "orders", "customers"
   add_foreign_key "orders", "restaurants"
+  add_foreign_key "tool_invocations", "call_logs"
+  add_foreign_key "tool_invocations", "orders"
   add_foreign_key "users", "restaurants"
 end

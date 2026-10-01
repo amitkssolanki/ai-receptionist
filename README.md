@@ -1,116 +1,174 @@
 # AI Restaurant Receptionist
 
-An AI voice receptionist for a single restaurant (currently "Taj Zayka", open 24/7 in the seed data): answers calls, answers menu questions, takes orders (pickup or delivery), suggests upsells, confirms the order back before submitting, transfers to a human when needed, and sends an SMS confirmation. Built as a single-restaurant pilot, not yet a multi-tenant product.
+A voice ordering agent for a single restaurant (the seed data's "Taj Zayka", open 24/7): a caller asks about the menu, orders
+items with modifiers (pickup or delivery), hears the order read back, and confirms it. Built as a single-restaurant pilot.
 
-**Status**: the voice platform (Vapi) has been chosen and wired up end-to-end — a full test call (menu question → add item with a modifier → read-back confirmation → submit) has been verified working, both in the call transcript and independently in the database. See [Project status](#project-status) below for what's left.
+The design rule is **"the model proposes, the server decides."** The voice pipeline and the language model run on
+[Vapi](https://vapi.ai); every business fact — cart, prices, totals, cart version, read-back, order status, SMS — lives in this
+Rails app and changes only through server-side rules. The model's tool calls are requests, not facts.
+
+**Status:** Phase 1 (reliability + live voice console) is implemented and was verified with seven live browser calls. It is not
+production software and the agent's conversational behaviour is not reliable (see [Known limitations](#known-limitations)).
+Acceptance against the plan: [docs/phase1/ACCEPTANCE.md](docs/phase1/ACCEPTANCE.md).
 
 ## Architecture
 
-This app is deliberately split into two halves that don't overlap:
-
-- **The voice pipeline** (answering the phone, speech-to-text, text-to-speech, turn-taking/interruptions, the LLM itself) is **not built here**. That's [Vapi](https://vapi.ai), with Twilio or a Vapi-hosted number for telephony. Rebuilding real-time audio infrastructure from scratch would be reinventing a very hard, already-solved problem.
-- **This Rails app is the business-logic brain**: menu data, order lifecycle, SMS confirmations, the admin dashboard, and the webhook API Vapi calls mid-call via function-calling (tool calls) and server events (call start/end). It talks to Vapi over fast JSON, never raw audio.
-
 ```
-Caller ⇄ Twilio/Vapi number ⇄ Vapi (voice pipeline, LLM, STT/TTS) ⇄ this Rails app (api/vapi/webhooks)
-                                                                              │
-                                                                       admin dashboard (Devise)
+Browser voice console (/admin/console, Devise)            Vapi (web call)
+  mic / speaker ─────── WebRTC audio ───────────────────▶  speech-to-text → gpt-5-mini → text-to-speech
+  conversation panel ◀── Vapi client messages ──────────   │
+                                                            │ tool-calls / status-update / end-of-call-report
+  order board + server events ◀── Action Cable ──┐          ▼
+                                                  │   POST /api/vapi/webhooks  (X-Vapi-Secret)
+                                                  │     Api::Vapi::WebhooksController   envelope only
+                                                  │       ├─ CallLifecycle            call start / transfer note / end
+                                                  │       └─ Voice::ToolRunner         arguments, idempotency, audit, errors
+                                                  │             ├─ OrderTaking         cart, read-back, submit (row locks)
+                                                  │             └─ MenuCatalog         menu overview / item detail
+                                                  └── ConsoleBroadcaster ◀── after commit
+                                                        Postgres: orders, order_items, tool_invocations, call_logs, …
 ```
+
+| Information | Source of truth |
+|---|---|
+| Speech, transcripts, what the agent said | Vapi (shown in the console as *not authoritative*) |
+| Tool executions: arguments, result, status, error code, cart versions, timing | Rails `ToolInvocation` |
+| Cart lines, modifiers, prices, totals, `cart_version`, read-back state, order status | Rails `Order` / `OrderItem` |
+| Call lifecycle, ended reason, duration, cost | Rails `CallLog` (fed by Vapi server events) |
+
+### Tool execution path
+
+Vapi posts every event to one URL, `POST /api/vapi/webhooks`, authenticated by the `X-Vapi-Secret` header (there is no default
+secret; requests are refused if none is configured). For each tool call the controller hands the tool name, arguments and the
+webhook's conversation history to `Voice::ToolRunner`, which:
+
+1. locks the call row and returns the stored result if this `toolCallId` was already executed (idempotent redelivery);
+2. validates the arguments (`Voice::ToolArguments`); bad input becomes `invalid_arguments`, never an exception;
+3. dispatches to `OrderTaking` / `MenuCatalog` / `CallLifecycle`, which apply the business rules;
+4. records a `ToolInvocation` (arguments, the exact result the model was told, status, error code, cart versions, duration) in the
+   same transaction as the business change;
+5. returns a JSON string: the payload on success, `{"ok":false,"error":{"code":…,"message":…}}` on refusal. No exception text,
+   SQL or class names ever reach the model.
+
+The model has eight tools (`config/vapi/tools.json`): `get_menu`, `get_menu_item`, `add_to_cart`, `update_cart_item_quantity`,
+`remove_cart_item`, `get_cart`, `submit_order`, `transfer_to_human`.
+
+### Server-side rules
+
+- Prices and totals come from the menu, never from tool arguments.
+- The cart has a version (`cart_version`) that every change increments. `get_cart` returns a server-generated `readback_text`
+  and records the read-back version; `submit_order` must quote the current version, and the read-back must be at that version.
+- Submitted orders cannot be changed by the voice tools; an admin cannot reopen them. A repeated submit answers
+  `already_submitted` and changes nothing.
+- Quantity limits, large orders (hand off to staff), closed hours and invalid modifiers are refused with speakable error codes.
+- **Confirmation gate.** `submit_order` is refused with `customer_confirmation_required` unless Vapi's conversation history in the
+  same webhook shows **at least one caller turn after the last `get_cart` result, before the submit**. Missing or unreadable history
+  fails closed. It is a turn-taking check, not a judgement of what the caller said; the evidence (counts and flags, never text) is
+  stored with the submit. It exists because live calls showed the model submitting in the same breath as the read-back.
+- **SMS.** A confirmation text is queued only for a caller with a real phone number (`OrderConfirmationSmsJob`, Twilio). The
+  `submit_order` result mentions `confirmation_sms: "queued"` only when a text was queued; browser (web) calls have no number, so
+  no text is sent and the model is told nothing about SMS.
+- **`transfer_to_human`** records the request and the reason and marks the call transferred. It does **not** transfer the call:
+  no transfer destination is configured, and browser web calls cannot be transferred to a phone.
+
+### Voice test console and admin
+
+- **Console** (`/admin/console`): start/stop a real Vapi web call from the browser microphone. Three areas: the live conversation
+  (Vapi, partial and final transcripts), the **order board** rendered from the database (lines, total, cart version, read-back,
+  confirmation, SMS), and the **server event stream** (every `ToolInvocation` with arguments, result, status, cart change, timing,
+  turn evidence and what the confirmation gate did). Updates arrive over Action Cable after each commit; after a reconnect the page
+  rebuilds from the database. `/admin/console/calls/:id` reviews a past or in-progress call. A heuristic marks agent lines that claim
+  a cart change the server never made. Only the restricted public key and the assistant id reach the browser.
+- **Admin**: menu (categories, items, modifiers, upsell pairings), orders (status transitions, no reopening), call logs, settings
+  (hours, timezone).
 
 ### Data model
 
-`Restaurant` owns everything else, scoped by `restaurant_id` even though there's only one restaurant today — that scoping is there so a second location isn't a rewrite later.
-
-- `MenuCategory` → `MenuItem` → `MenuItemModifier` (add-ons like "add bacon") and `MenuItemUpsell` (self-join for "suggest alongside this item" pairings)
-- `Customer`, identified by phone number
-- `Order` → `OrderItem` (snapshots modifier names/prices at order time, so later menu edits don't rewrite history)
-- `CallLog`, one per phone call, optionally linked to the `Order` it produced
-- `User` — admin dashboard login (Devise), one per restaurant
-
-### Admin dashboard (`app/controllers/admin/`)
-
-Devise-authenticated, one login per restaurant. Covers:
-
-- **Menu** — categories, items, modifiers, and upsell pairings (checkboxes on an item's edit page)
-- **Orders** — list/detail, with a status dropdown (pending → confirmed → preparing → ready → completed/cancelled)
-- **Call Logs** — list/detail, including transcript and recording playback once a platform sends them
-- **Settings** — restaurant name, phone number, address, timezone, and business hours (7 plain-text day fields, `"11:00-21:00"` or `"closed"`)
-
-### Voice integration (`app/controllers/api/`)
-
-There are two layers here, and it's worth understanding why:
-
-- **`api/voice/*`** — a platform-agnostic set of endpoints (call start, menu lookup, cart add/update/remove, get cart, submit order, transfer, call end) built before a specific platform was chosen. Auth via a shared-secret bearer token (`VOICE_WEBHOOK_SECRET`).
-- **`api/vapi/webhooks`** — the actual adapter Vapi talks to. Vapi doesn't template a call id into per-tool URLs the way `api/voice/*` assumed; instead it POSTs every event (call start, every tool call, call end) to **one single webhook URL**, with the call's identity in the JSON body, and expects tool responses back in Vapi's specific `{"results": [...]}` shape. This controller translates that into calls against the same underlying models (`Restaurant#voice_menu_json`, `Order#cart_summary`, etc.) — there's one source of truth for the business logic, just two thin transport layers on top of it. Auth via the `X-Vapi-Secret` header (`VAPI_SERVER_SECRET`).
-
-Full docs, the system prompt, and step-by-step Vapi dashboard configuration are in [docs/voice_agent](docs/voice_agent) — see that section below.
+`Restaurant` → `MenuCategory` → `MenuItem` → `MenuItemModifier`, `MenuItemUpsell` · `Customer` (by phone number) · `Order`
+(`pending` → `confirmed` → …, plus `abandoned`; `cart_version`, `read_back_version`) → `OrderItem` (price and modifier snapshot) ·
+`CallLog` (one per call; ended reason, duration, cost, transfer) · `ToolInvocation` (one per executed tool call; `turn_evidence`
+on submits) · `User` (Devise, one restaurant).
 
 ## Setup
 
-### Prerequisites
-
-- Ruby 3.4.7 (see `.ruby-version`; this repo's `.rvmrc` auto-selects the `ruby-3.4.7@ai-receptionist` RVM gemset if you use RVM)
-- PostgreSQL running locally (e.g. Postgres.app)
+Prerequisites: Ruby 3.4.7 (`.ruby-version`; `.rvmrc` selects the `ruby-3.4.7@ai-receptionist` gemset) and PostgreSQL.
 
 ```
 bundle install
 bin/rails db:create db:migrate db:seed
-```
-
-Seeding creates one restaurant ("Taj Zayka", open 24/7) with a full menu — pizzas, sides, drinks, and combos (entree + side + drink bundles) — see `db/seeds.rb` for the exact items/prices/modifiers — and one admin login:
-
-- Email: `admin@example.com`
-- Password: `password123`
-
-(Local dev only — never use these anywhere real.)
-
-### Running locally
-
-```
 bin/dev
 ```
 
-Not `bin/rails server` — `bin/dev` also runs the Tailwind watcher, so CSS changes show up without a manual rebuild. Visit `http://localhost:3000` and log in with the seeded admin above.
+`bin/dev` runs Rails and the Tailwind watcher on `http://localhost:3000`. The seed creates the restaurant, its menu and a local-only
+admin login (`admin@example.com` / `password123` — never use it anywhere real). **After any migration, restart `bin/dev`**: a server
+started before a migration cannot record tool calls.
 
-### Connecting a real voice platform
+### Configuration
 
-To let Vapi (or any platform) actually call this app, you need a publicly reachable URL. The full walkthrough — upgrading ngrok, starting the tunnel, and the Vapi dashboard configuration (system prompt, the 7 custom tools, server URL/secret, phone number) — is in [docs/voice_agent/local_setup.md](docs/voice_agent/local_setup.md) and [docs/voice_agent/vapi_setup.md](docs/voice_agent/vapi_setup.md). Short version:
+Environment variables, or Rails credentials under `vapi.*`. Never commit any of these values.
 
-```
-bin/dev                              # rails app on :3000
-ngrok http 3000                      # separate terminal
-```
-
-Then in Vapi: set the assistant's Server URL to `<ngrok-url>/api/vapi/webhooks`, set a Server URL Secret (matches `VAPI_SERVER_SECRET`, or use the `dev-secret-change-me` default locally), paste in the system prompt, and add the 7 tools. Full details in the two docs above.
-
-### Environment variables
-
-| Variable | Required | Purpose |
+| Setting | Env var / credential | Used for |
 |---|---|---|
-| `VAPI_SERVER_SECRET` | Recommended | Value Vapi must send in the `X-Vapi-Secret` header on every `api/vapi/webhooks` request. Defaults to `dev-secret-change-me` outside production (always fails in production if unset). |
-| `VOICE_WEBHOOK_SECRET` | Recommended | Same idea, for the generic `api/voice/*` endpoints (`Authorization: Bearer <secret>`). Same default behavior. |
-| `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_FROM_NUMBER` | Optional | SMS order confirmations. `OrderConfirmationSmsJob` silently no-ops if any are missing — safe to leave unset in early dev. |
+| Webhook secret (≥ 16 chars) | `VAPI_SERVER_SECRET` / `vapi.server_secret` | `X-Vapi-Secret` on every webhook; no default |
+| Public key (restricted) | `VAPI_PUBLIC_KEY` / `vapi.public_key` | The browser console's web calls |
+| Development assistant id | `VAPI_DEV_ASSISTANT_ID` / `vapi.dev_assistant_id` | The console and `vapi:check` |
+| Private key | `VAPI_PRIVATE_KEY` / `vapi.private_key` | `vapi:check` only (read-only API calls) |
+| Expected tunnel host (optional) | `VAPI_EXPECTED_HOST` | `vapi:check` pins the webhook host |
+| Twilio (optional) | `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_FROM_NUMBER` | SMS confirmations; the job no-ops without them |
 
-### Tests
+The Vapi assistant is configured by hand from the repository (`config/vapi/assistant.json`, `config/vapi/assistant.md`,
+`config/vapi/tools.json`, `docs/voice_agent/system_prompt.md`); there is no write automation. `bin/rails vapi:check` compares the
+live development assistant with those files (read-only). It checks configuration, not the requests Vapi actually sends to the model.
+
+### Live calls
+
+Vapi must reach the webhook over HTTPS, e.g. `ngrok http 3000` with the assistant's server URL set to
+`https://<host>/api/vapi/webhooks`. The procedure, preflight and what the console should show are in
+[docs/voice_agent/first_live_call.md](docs/voice_agent/first_live_call.md). After a call, `bin/rails calls:last` prints a
+payload-free summary (tool calls, versions, turn evidence, order) that is safe to paste.
+
+## Tests, evaluation and checks
 
 ```
-bin/rails test
+bin/rails test                                               # full suite (about 400 tests)
+bin/rails test test/baseline/reliability_characterization_test.rb   # R01–R24 reliability rules
+bin/rails test test/baseline/live_call_replay_test.rb        # replays of real recorded calls
+bin/rails test test/services/evaluation                      # evaluation harness + evidence freshness
+bin/rails baseline:verify                                    # frozen Phase 0 tests against the portfolio-baseline tag
+RAILS_ENV=test bin/rails evidence:generate                   # rebuild docs/phase1/evidence/*.json
+RAILS_ENV=test bin/rails evidence:suite                      # record suite counts in the evidence
+bin/rails vapi:check                                         # live assistant vs repository (read-only)
+bin/rubocop; bin/brakeman --no-pager; bin/bundler-audit; bin/importmap audit
 ```
 
-23 tests as of this writing. Covers both voice integration layers end-to-end (call lifecycle, cart building, order submission, transfer, tool-call dispatch simulating Vapi's actual payload shapes), admin controllers (restaurant settings), and model business logic (business-hours checks, upsell pairing validations).
+- **Reliability suite** (R01–R24): the Phase 0 characterization tests, each rewritten to the intended behaviour (R21/R22 retired
+  with the removed adapter; R24 is the confirmation gate).
+- **Replays**: real calls recorded in Phase 0 and in live testing, replayed through the webhook (verbatim, adapted to the current
+  contract, and dangerous variants), plus structure-only copies of live `submit_order` webhooks
+  (`test/fixtures/files/vapi/`) used to check the confirmation gate against real payloads.
+- **Evaluation harness** (`app/services/evaluation`): scripted conversations — prefixes verbatim from a recorded call, then
+  deliberate variations — run through the real server path in a rolled-back transaction. It separates what the assistant *claimed*,
+  which tool calls the server *received*, which *mutated* the cart, and the resulting *authoritative order*. Results are committed
+  in [docs/phase1/evidence/](docs/phase1/evidence/); a test fails if they go stale. No model or Vapi call is involved.
 
-## docs/voice_agent
+## Documentation
 
-- [system_prompt.md](docs/voice_agent/system_prompt.md) — the actual system prompt, paste-ready (no placeholders) for Taj Zayka
-- [tools.md](docs/voice_agent/tools.md) — the 7 function-calling tools' name/description/JSON-schema parameters, platform-agnostic
-- [vapi_setup.md](docs/voice_agent/vapi_setup.md) — exact Vapi dashboard steps: server URL/secret, attaching tools, phone number, testing
-- [local_setup.md](docs/voice_agent/local_setup.md) — ngrok setup, cost-management notes for the free-trial bake-off, troubleshooting
+- [docs/phase1/PLAN.md](docs/phase1/PLAN.md) — the Phase 1 plan and its acceptance criteria;
+  [ACCEPTANCE.md](docs/phase1/ACCEPTANCE.md) — status against them;
+  [EXECUTION_LOG.md](docs/phase1/EXECUTION_LOG.md) — what was built, step by step;
+  [CONFIRMATION_PROPOSAL.md](docs/phase1/CONFIRMATION_PROPOSAL.md) — the confirmation design and what was implemented.
+- [docs/voice_agent/verification_log.md](docs/voice_agent/verification_log.md) — every live call and live check, with what it does
+  and does not show; [system_prompt.md](docs/voice_agent/system_prompt.md) — the prompt the assistant runs.
+- Stale, not yet updated for Phase 1: `docs/voice_agent/tools.md`, `vapi_setup.md` and parts of `local_setup.md` still describe
+  the removed `api/voice` layer. The current tool definitions are `config/vapi/tools.json`; the assistant checklist is
+  `config/vapi/assistant.md`.
 
-## Project status
+## Known limitations
 
-- ✅ Rails foundation, admin dashboard (including restaurant settings/business hours)
-- ✅ Conversation/prompt design
-- ✅ Voice webhook API (generic + Vapi-specific adapter)
-- ✅ Business logic (hours awareness, upsells, availability)
-- ✅ Vapi chosen and connected — a full order flow (menu question → add item with modifier → confirm → submit) has been verified end-to-end via a live test call, both in the transcript and in the database
-- ⏳ **Next**: more test scenarios (delivery orders, transfer-to-human, unavailable items), then a real-phone-number test (vs. the browser-based test call used so far) to validate the caller's real phone number is captured correctly, then decide on deploy/hosting
+- Live testing (seven browser calls) found the agent submitting before the caller answered (3 of 4 calls that reached submission —
+  the reason for the confirmation gate), announcing tool calls it never made, speaking its reasoning, and stacking fillers. Only the
+  first is prevented server-side; the others are visible in the console, not fixed. One compliant call is not a rate.
+- The gate's refusal path has been verified against recorded real payloads, not yet in a live call.
+- The model's reasoning effort is not a controllable variable through the assistant configuration (Vapi's requests did not follow
+  it).
+- Not built: payments, multiple restaurants, a second voice provider, call transfer, a real-phone SMS test, deployment.

@@ -1,0 +1,71 @@
+<% content_for :title, "Voice Console" %>
+
+<%# Bootstrap stream: the server tells this page when its call has been attached (the signed name is only ever rendered here). %>
+<%= turbo_stream_from :console_session, @session_key, channel: ConsoleChannel %>
+
+<div
+  data-controller="voice-console console-sync"
+  data-console-sync-attach-url-value="<%= admin_console_attach_path %>"
+  data-console-sync-claim-patterns-value="<%= ClaimDetector.browser_patterns.to_json %>"
+  data-action="voice-console:tool-calls->console-sync#pending voice-console:transcript-final->console-sync#transcriptFinal voice-console:call-start->console-sync#callStart voice-console:call-created->console-sync#attachFallback console-sync:unbacked-claim->voice-console#markUnbacked"
+  data-state="idle"
+  <% if @voice %>
+    data-voice-console-public-key-value="<%= @voice[:public_key] %>"
+    data-voice-console-assistant-id-value="<%= @voice[:assistant_id] %>"
+    data-voice-console-token-url-value="<%= admin_console_token_path %>"
+    data-voice-console-session-key-value="<%= @session_key %>"
+    data-voice-console-client-messages-value="<%= @voice[:client_messages].to_json %>"
+  <% end %>
+>
+  <%# --- call strip --- %>
+  <section class="rounded border border-gray-800 bg-gray-900 px-4 py-3 mb-3">
+    <div class="flex flex-wrap items-center justify-between gap-3">
+      <div class="flex items-center gap-4 text-sm">
+        <span data-voice-console-target="status" class="font-semibold text-gray-400">READY</span>
+        <span data-voice-console-target="elapsed" class="tabular-nums text-gray-300">00:00</span>
+        <span data-voice-console-target="agent" class="text-gray-500">agent listening</span>
+        <span data-console-sync-target="cable" class="text-gray-500">server link ○ not connected</span>
+        <span class="hidden sm:inline-block w-24 h-2 rounded bg-gray-800 overflow-hidden" title="agent volume">
+          <span data-voice-console-target="level" class="block h-full w-0 bg-emerald-500"></span>
+        </span>
+      </div>
+      <div class="flex items-center gap-2">
+        <button type="button" data-voice-console-target="mute" data-action="voice-console#toggleMute" disabled
+                class="px-3 py-1.5 rounded border border-gray-700 text-sm text-gray-300 disabled:opacity-40">Mute mic</button>
+        <button type="button" data-voice-console-target="end" data-action="voice-console#end" disabled
+                class="px-3 py-1.5 rounded border border-red-900 bg-red-950 text-sm text-red-200 disabled:opacity-40">■ End call</button>
+        <button type="button" data-voice-console-target="start" data-action="voice-console#start" <%= "disabled" if @problems.any? %>
+                class="px-3 py-1.5 rounded bg-emerald-600 text-sm font-medium text-white disabled:opacity-40">● Start call</button>
+      </div>
+    </div>
+    <p data-voice-console-target="banner" class="hidden mt-3 rounded bg-red-950 text-red-200 text-sm px-3 py-2" role="alert"></p>
+  </section>
+
+  <% if @problems.any? %>
+    <section class="rounded border border-amber-900 bg-amber-950/40 px-4 py-3 mb-3 text-sm text-amber-100" id="console-setup">
+      <p class="font-semibold mb-1">The console is not configured to place calls yet.</p>
+      <ul class="list-disc pl-5 space-y-1">
+        <% @problems.each do |problem| %><li><%= problem %></li><% end %>
+      </ul>
+      <p class="mt-2 text-amber-200/80">See <code>config/vapi/assistant.md</code> for how the development assistant and the restricted browser key are set up. Run <code>bin/rails vapi:check</code> before a live session.</p>
+    </section>
+  <% end %>
+
+  <div class="grid gap-3 lg:grid-cols-2">
+    <%# --- conversation: source VAPI, non-authoritative (owned by the browser, never replaced by the server) --- %>
+    <section class="rounded border border-gray-800 bg-gray-900">
+      <header class="flex items-center justify-between border-b border-gray-800 px-4 py-2 text-xs">
+        <span class="font-semibold tracking-wide">CONVERSATION</span>
+        <span class="rounded bg-gray-800 px-2 py-0.5 text-gray-400" title="Live transcript arrives from Vapi in this browser only. It shows what was said, not what the order system did.">source: VAPI (client) · not authoritative</span>
+      </header>
+      <div data-voice-console-target="log" class="h-80 overflow-y-auto px-4 py-2 font-mono"></div>
+      <p data-voice-console-target="emptyNote" class="px-4 pb-3 text-xs text-gray-500">No call yet. Press “Start call”, allow the microphone, and speak. Headphones avoid echo.</p>
+    </section>
+
+    <%# --- server panels: filled from the database once the call is attached; "display: contents" lets them join the grid --- %>
+    <div id="console-call" class="contents">
+      <turbo-frame id="call-state" class="min-w-0 block"><section class="rounded border border-gray-800 bg-gray-900 px-4 py-3 text-sm text-gray-500">Waiting for a call. The order board and server events appear here, straight from the server's records.</section></turbo-frame>
+      <turbo-frame id="call-events" class="lg:col-span-2 block min-w-0"></turbo-frame>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,354 @@
+[
+  {
+    "t": 0,
+    "time_ms": 1785984616028,
+    "role": "system",
+    "message_chars": 1003
+  },
+  {
+    "t": 0.72,
+    "time_ms": 1785984617025,
+    "role": "bot",
+    "message": "Thanks for calling Taj Zeika, this is your AI host. How can I help?",
+    "duration_ms": 3120
+  },
+  {
+    "t": 6.365,
+    "time_ms": 1785984622670,
+    "role": "user",
+    "message": "What pizzas do you have?",
+    "duration_ms": 960
+  },
+  {
+    "t": 13.548,
+    "time_ms": 1785984629853,
+    "role": "tool_calls",
+    "tool_calls": [
+      {
+        "id": "call_DeA64Ufy8pFTMgfLwZh4hQio",
+        "name": "get_menu",
+        "arguments": "{}"
+      }
+    ]
+  },
+  {
+    "t": 14.517,
+    "time_ms": 1785984630822,
+    "role": "tool_call_result",
+    "name": "get_menu",
+    "tool_call_id": "call_DeA64Ufy8pFTMgfLwZh4hQio",
+    "result": "[{\"category\":\"Starters\",\"items\":[{\"id\":1,\"name\":\"Fried Calamari\",\"description\":\"Crispy calamari with marinara sauce\",\"price\":14.0,\"modifiers\":[],\"suggest_with\":[]},{\"id\":3,\"name\":\"Mozzarella Sticks\",\"description\":\"Breaded mozzarella, marinara for dipping\",\"price\":9.5,\"modifiers\":[],\"suggest_with\":[]}]},{\"category\":\"Mains\",\"items\":[{\"id\":2,\"name\":\"Bistro Burger\",\"description\":\"Half-pound burger with cheddar, lettuce, tomato\",\"price\":19.0,\"modifiers\":[{\"id\":1,\"name\":\"Add bacon\",\"price\":3.0},{\"id\":2,\"name\":\"Add avocado\",\"price\":2.5}],\"suggest_with\":[{\"id\":1,\"name\":\"Fried Calamari\",\"price\":14.0},{\"id\":9,\"name\":\"French Fries\",\"price\":4.5}]},{\"id\":4,\"name\":\"Grilled Chicken Sandwich\",\"description\":\"Grilled chicken breast, lettuce, tomato, garlic aioli on a brioche bun\",\"price\":16.0,\"modifiers\":[{\"id\":3,\"name\":\"Add bacon\",\"price\":3.0},{\"id\":4,\"name\":\"Add cheese\",\"price\":1.5},{\"id\":5,\"name\":\"Gluten-free bun\",\"price\":2.0}],\"suggest_with\":[{\"id\":11,\"name\":\"Garden Salad\",\"price\":5.0}]}]},{\"category\":\"Pizzas\",\"items\":[{\"id\":5,\"name\":\"Margherita Pizza\",\"description\":\"Fresh mozzarella, basil, San Marzano tomato sauce\",\"price\":14.0,\"modifiers\":[{\"id\":6,\"name\":\"Extra cheese\",\"price\":2.0},{\"id\":7,\"name\":\"Add pepperoni\",\"price\":2.5},{\"id\":8,\"name\":\"Gluten-free crust\",\"price\":3.0}],\"suggest_with\":[{\"id\":10,\"name\":\"Garlic Knots\",\"price\":5.5},{\"id\":13,\"name\":\"Coca-Cola\",\"price\":2.5}]},{\"id\":6,\"name\":\"Pepperoni Pizza\",\"description\":\"Classic pepperoni, mozzarella, tomato sauce\",\"price\":15.5,\"modifiers\":[{\"id\":9,\"name\":\"Extra cheese\",\"price\":2.0},{\"id\":10,\"name\":\"Extra pepperoni\",\"price\":2.5},{\"id\":11,\"name\":\"Stuffed crust\",\"price\":3.5}],\"suggest_with\":[{\"id\":10,\"name\":\"Garlic Knots\",\"price\":5.5}]},{\"id\":7,\"name\":\"BBQ Chicken Pizza\",\"description\":\"Grilled chicken, red onion, BBQ sauce, mozzarella\",\"price\":16.5,\"modifiers\":[{\"id\":12,\"name\":\"Extra chicken\",\"price\":3.0},{\"id\":13,\"name\":\"Add jalapenos\",\"price\":1.0}],\"suggest_with\":[]},{\"id\":8,\"name\":\"Veggie Supreme Pizza\",\"description\":\"Bell peppers, mushrooms, red onion, olives, mozzarella\",\"price\":15.0,\"modifiers\":[{\"id\":14,\"name\":\"Add extra veggies\",\"price\":1.5},{\"id\":15,\"name\":\"Vegan cheese\",\"price\":2.5}],\"suggest_with\":[]}]},{\"category\":\"Sides\",\"items\":[{\"id\":9,\"name\":\"French Fries\",\"description\":\"Crispy golden fries, salted\",\"price\":4.5,\"modifiers\":[],\"suggest_with\":[]},{\"id\":10,\"name\":\"Garlic Knots\",\"description\":\"Baked dough knots tossed in garlic butter and parmesan\",\"price\":5.5,\"modifiers\":[],\"suggest_with\":[]},{\"id\":11,\"name\":\"Garden Salad\",\"description\":\"Mixed greens, tomato, cucumber, choice of dressing\",\"price\":5.0,\"modifiers\":[],\"suggest_with\":[]},{\"id\":12,\"name\":\"Onion Rings\",\"description\":\"Beer-battered onion rings\",\"price\":5.5,\"modifiers\":[],\"suggest_with\":[]}]},{\"category\":\"Drinks\",\"items\":[{\"id\":13,\"name\":\"Coca-Cola\",\"description\":\"Canned, 12oz\",\"price\":2.5,\"modifiers\":[],\"suggest_with\":[]},{\"id\":14,\"name\":\"Sprite\",\"description\":\"Canned, 12oz\",\"price\":2.5,\"modifiers\":[],\"suggest_with\":[]},{\"id\":15,\"name\":\"Bottled Water\",\"description\":\"16.9oz bottle\",\"price\":2.0,\"modifiers\":[],\"suggest_with\":[]},{\"id\":16,\"name\":\"Iced Tea\",\"description\":\"Freshly brewed, sweetened or unsweetened\",\"price\":3.0,\"modifiers\":[{\"id\":16,\"name\":\"Add lemon\",\"price\":0.0}],\"suggest_with\":[]},{\"id\":17,\"name\":\"Lemonade\",\"description\":\"Fresh-squeezed lemonade\",\"price\":3.5,\"modifiers\":[],\"suggest_with\":[]}]},{\"category\":\"Combos\",\"items\":[{\"id\":18,\"name\":\"Burger Combo\",\"description\":\"Bistro Burger with fries and a drink\",\"price\":22.99,\"modifiers\":[{\"id\":17,\"name\":\"Swap fries for garden salad\",\"price\":1.0},{\"id\":18,\"name\":\"Swap fries for onion rings\",\"price\":1.5},{\"id\":19,\"name\":\"Drink: Coca-Cola\",\"price\":0.0},{\"id\":20,\"name\":\"Drink: Sprite\",\"price\":0.0},{\"id\":21,\"name\":\"Drink: Bottled Water\",\"price\":0.0},{\"id\":22,\"name\":\"Drink: Iced Tea\",\"price\":0.0}],\"suggest_with\":[]},{\"id\":19,\"name\":\"Slice \\u0026 Drink Combo\",\"description\":\"One slice of pepperoni or cheese pizza with a fountain drink\",\"price\":7.99,\"modifiers\":[{\"id\":23,\"name\":\"Upgrade to two slices\",\"price\":3.5},{\"id\":24,\"name\":\"Add side salad\",\"price\":2.0}],\"suggest_with\":[]},{\"id\":20,\"name\":\"Pizza Lunch Combo\",\"description\":\"Personal 8-inch pizza with a side and a drink\",\"price\":12.99,\"modifiers\":[{\"id\":25,\"name\":\"Side: Garden Salad\",\"price\":0.0},{\"id\":26,\"name\":\"Side: Garlic Knots\",\"price\":0.0},{\"id\":27,\"name\":\"Side: French Fries\",\"price\":0.0},{\"id\":28,\"name\":\"Drink: Coca-Cola\",\"price\":0.0},{\"id\":29,\"name\":\"Drink: Sprite\",\"price\":0.0},{\"id\":30,\"name\":\"Drink: Bottled Water\",\"price\":0.0}],\"suggest_with\":[]}]}]"
+  },
+  {
+    "t": 12.48,
+    "time_ms": 1785984628785,
+    "role": "bot",
+    "message": "We have these pizzas right now, um, Margherita pizza, fresh mozzarella, basil, San Marzano tomato sauce, $14.",
+    "duration_ms": 7440
+  },
+  {
+    "t": 20.46,
+    "time_ms": 1785984636765,
+    "role": "bot",
+    "message": "Modifiers, extra cheese plus $2, add pepperoni plus $2.50, gluten-free crust plus $3.",
+    "duration_ms": 6540
+  },
+  {
+    "t": 28.26,
+    "time_ms": 1785984644565,
+    "role": "bot",
+    "message": "Pepperoni pizza, classic pepperoni and mozzarella, $15.50. Modifiers, extra cheese plus $2, extra pepperoni plus $2.50, stuffed crust plus $3.50. BBQ.",
+    "duration_ms": 11700
+  },
+  {
+    "t": 40.5,
+    "time_ms": 1785984656805,
+    "role": "bot",
+    "message": "Chicken.",
+    "duration_ms": 60
+  },
+  {
+    "t": 40.86,
+    "time_ms": 1785984657165,
+    "role": "bot",
+    "message": "Pizza, grilled chicken, red onion, BBQ sauce, $16.50. Modifiers, extra chicken plus $3, add jalapeños, plus $1. Veggie.",
+    "duration_ms": 10020
+  },
+  {
+    "t": 51.42,
+    "time_ms": 1785984667725,
+    "role": "bot",
+    "message": "Supreme pizza, bell peppers, mushrooms, red onion, olives, mozzarella, $15. Modifiers, add extra veggies, plus $1.50. Vegan cheese plus $2.50. Want to.",
+    "duration_ms": 11340
+  },
+  {
+    "t": 63.12,
+    "time_ms": 1785984679425,
+    "role": "bot",
+    "message": "Order one for pickup or delivery?",
+    "duration_ms": 1200
+  },
+  {
+    "t": 68.285,
+    "time_ms": 1785984684590,
+    "role": "user",
+    "message": "Uh, pickup, please.",
+    "duration_ms": 600
+  },
+  {
+    "t": 71.52,
+    "time_ms": 1785984687825,
+    "role": "bot",
+    "message": "Great. Pickup. Which pizza would you like?",
+    "duration_ms": 1920
+  },
+  {
+    "t": 74.04,
+    "time_ms": 1785984690345,
+    "role": "bot",
+    "message": "Margherita, pepperoni, BBQ chicken, or veggie?",
+    "duration_ms": 3120
+  },
+  {
+    "t": 78.06,
+    "time_ms": 1785984694365,
+    "role": "bot",
+    "message": "Supreme.",
+    "duration_ms": 60
+  },
+  {
+    "t": 79.145,
+    "time_ms": 1785984695450,
+    "role": "user",
+    "message": "My computer.",
+    "duration_ms": 60
+  },
+  {
+    "t": 81.36,
+    "time_ms": 1785984697665,
+    "role": "bot",
+    "message": "It sounds like.",
+    "duration_ms": 240
+  },
+  {
+    "t": 81.785,
+    "time_ms": 1785984698090,
+    "role": "user",
+    "message": "Margarita.",
+    "duration_ms": 60
+  },
+  {
+    "t": 83.88,
+    "time_ms": 1785984700185,
+    "role": "bot",
+    "message": "Got it. Pickup: Margherita pizza. Any modifiers?",
+    "duration_ms": 3120
+  },
+  {
+    "t": 91.385,
+    "time_ms": 1785984707690,
+    "role": "user",
+    "message": "Extra cheese.",
+    "duration_ms": 180
+  },
+  {
+    "t": 87.48,
+    "time_ms": 1785984703785,
+    "role": "bot",
+    "message": "You can choose extra cheese, add pepperoni, or gluten-free crust. One.",
+    "duration_ms": 4440
+  },
+  {
+    "t": 98.245,
+    "time_ms": 1785984714550,
+    "role": "tool_calls",
+    "tool_calls": [
+      {
+        "id": "call_oDMrQNdB4sio5vCJD90xITH9",
+        "name": "add_to_cart",
+        "arguments": "{\n  \"menu_item_id\": 5,\n  \"modifier_ids\": [6],\n  \"quantity\": 1\n}"
+      }
+    ]
+  },
+  {
+    "t": 99.03,
+    "time_ms": 1785984715335,
+    "role": "tool_call_result",
+    "name": "add_to_cart",
+    "tool_call_id": "call_oDMrQNdB4sio5vCJD90xITH9",
+    "result": "{\"items\":[{\"id\":3,\"menu_item\":\"Margherita Pizza\",\"quantity\":1,\"modifiers\":[{\"name\":\"Extra cheese\",\"price_cents\":200}],\"subtotal\":16.0}],\"total\":16.0}"
+  },
+  {
+    "t": 97.14,
+    "time_ms": 1785984713445,
+    "role": "bot",
+    "message": "All right. One Margherita pizza with extra cheese for pickup. Would you like anything else?",
+    "duration_ms": 4380
+  },
+  {
+    "t": 102.18,
+    "time_ms": 1785984718485,
+    "role": "bot",
+    "message": "We have garlic knots, fries.",
+    "duration_ms": 1980
+  },
+  {
+    "t": 104.405,
+    "time_ms": 1785984720710,
+    "role": "user",
+    "message": "It should be.",
+    "duration_ms": 240
+  },
+  {
+    "t": 106.62,
+    "time_ms": 1785984722925,
+    "role": "bot",
+    "message": "Sorry, did you mean you want garlic knots or fries with that?",
+    "duration_ms": 3180
+  },
+  {
+    "t": 110.165,
+    "time_ms": 1785984726470,
+    "role": "user",
+    "message": "That should be.",
+    "duration_ms": 240
+  },
+  {
+    "t": 112.5,
+    "time_ms": 1785984728805,
+    "role": "bot",
+    "message": "Great. I'll add garlic knots. One Margherita pizza with extra cheese, and one.",
+    "duration_ms": 4980
+  },
+  {
+    "t": 117.9,
+    "time_ms": 1785984734205,
+    "role": "bot",
+    "message": "Order of garlic knots for pickup. Anything else, or should I read back your order?",
+    "duration_ms": 4140
+  },
+  {
+    "t": 124.145,
+    "time_ms": 1785984740450,
+    "role": "user",
+    "message": "Uh, read back my order.",
+    "duration_ms": 1140
+  },
+  {
+    "t": 131.497,
+    "time_ms": 1785984747802,
+    "role": "tool_calls",
+    "tool_calls": [
+      {
+        "id": "call_jJtEB1ikJ9QhOw6CVGp2iaYM",
+        "name": "get_cart",
+        "arguments": "{}"
+      }
+    ]
+  },
+  {
+    "t": 131.923,
+    "time_ms": 1785984748228,
+    "role": "tool_call_result",
+    "name": "get_cart",
+    "tool_call_id": "call_jJtEB1ikJ9QhOw6CVGp2iaYM",
+    "result": "{\"items\":[{\"id\":3,\"menu_item\":\"Margherita Pizza\",\"quantity\":1,\"modifiers\":[{\"name\":\"Extra cheese\",\"price_cents\":200}],\"subtotal\":16.0}],\"total\":16.0}"
+  },
+  {
+    "t": 129.06,
+    "time_ms": 1785984745365,
+    "role": "bot",
+    "message": "I've got one Margherita pizza with extra cheese for pickup, total $16. Did I get that right?",
+    "duration_ms": 5820
+  },
+  {
+    "t": 136.505,
+    "time_ms": 1785984752810,
+    "role": "user",
+    "message": "Yes.",
+    "duration_ms": 60
+  },
+  {
+    "t": 142.064,
+    "time_ms": 1785984758369,
+    "role": "tool_calls",
+    "tool_calls": [
+      {
+        "id": "call_pDEfuoG8uH3lb3I65XAAUwuB",
+        "name": "submit_order",
+        "arguments": "{\"fulfillment_type\": \"pickup\"}"
+      }
+    ]
+  },
+  {
+    "t": 142.553,
+    "time_ms": 1785984758858,
+    "role": "tool_call_result",
+    "name": "submit_order",
+    "tool_call_id": "call_pDEfuoG8uH3lb3I65XAAUwuB",
+    "result": "{\"items\":[{\"id\":3,\"menu_item\":\"Margherita Pizza\",\"quantity\":1,\"modifiers\":[{\"name\":\"Extra cheese\",\"price_cents\":200}],\"subtotal\":16.0}],\"total\":16.0}"
+  },
+  {
+    "t": 140.7,
+    "time_ms": 1785984757005,
+    "role": "bot",
+    "message": "Thanks. Your pickup order is confirmed. You'll get a text confirmation shortly. Thanks for calling Taj Zeika. Have a great day.",
+    "duration_ms": 6900
+  },
+  {
+    "t": 149.525,
+    "time_ms": 1785984765830,
+    "role": "user",
+    "message": "Hmm. Thank you.",
+    "duration_ms": 120
+  },
+  {
+    "t": 152.64,
+    "time_ms": 1785984768945,
+    "role": "bot",
+    "message": "You're welcome. Your pickup order is all set. You'll get a text confirmation soon. Thanks for calling Taj Zeika.",
+    "duration_ms": 5760
+  },
+  {
+    "t": 158.88,
+    "time_ms": 1785984775185,
+    "role": "bot",
+    "message": "Enjoy your meal.",
+    "duration_ms": 360
+  },
+  {
+    "t": 163.085,
+    "time_ms": 1785984779390,
+    "role": "user",
+    "message": "Thank you so much.",
+    "duration_ms": 360
+  },
+  {
+    "t": 166.2,
+    "time_ms": 1785984782505,
+    "role": "bot",
+    "message": "My pleasure. Enjoy your pizza.",
+    "duration_ms": 1320
+  },
+  {
+    "t": 168.24,
+    "time_ms": 1785984784545,
+    "role": "bot",
+    "message": "If you need anything else, just call back.",
+    "duration_ms": 1560
+  },
+  {
+    "t": 172.385,
+    "time_ms": 1785984788690,
+    "role": "user",
+    "message": "Mm-hm.",
+    "duration_ms": 60
+  },
+  {
+    "t": 174.72,
+    "time_ms": 1785984791025,
+    "role": "bot",
+    "message": "Thanks. Take care.",
+    "duration_ms": 600
+  }
+]

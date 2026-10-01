@@ -1,0 +1,37 @@
+{
+  "generated_at": "2026-09-30T18:21:54Z",
+  "git": {
+    "commit": "1918acb",
+    "uncommitted_tracked_changes": true
+  },
+  "results": {
+    "full_test_suite": {
+      "command": "bin/rails test",
+      "passed": true,
+      "runs": 406,
+      "assertions": 3524,
+      "failures": 0,
+      "errors": 0,
+      "skips": 2
+    },
+    "replay_suite": {
+      "command": "bin/rails test test/baseline/live_call_replay_test.rb",
+      "passed": true,
+      "runs": 6,
+      "assertions": 613,
+      "failures": 0,
+      "errors": 0,
+      "skips": 0
+    },
+    "baseline_verify_frozen_originals_against_the_tag": {
+      "command": "bin/rails baseline:verify",
+      "passed": true,
+      "runs": 25,
+      "assertions": 101,
+      "failures": 0,
+      "errors": 0,
+      "skips": 0
+    }
+  },
+  "not_included": "RuboCop, Brakeman, bundler-audit and importmap audit are run separately and reported in the commit/step reports."
+}

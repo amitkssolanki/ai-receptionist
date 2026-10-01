@@ -4,7 +4,7 @@ class Api::Vapi::WebhooksControllerTest < ActionDispatch::IntegrationTest
   setup do
     ENV["VAPI_SERVER_SECRET"] = "test-vapi-secret"
 
-    @restaurant = Restaurant.create!(name: "Test Bistro", phone_number: "+15550001111")
+    @restaurant = Restaurant.create!(name: "Test Bistro", phone_number: "+15550001111", business_hours: ALWAYS_OPEN_HOURS)
     @category = @restaurant.menu_categories.create!(name: "Mains", position: 1)
     @menu_item = @category.menu_items.create!(restaurant: @restaurant, name: "Burger", price_cents: 1000)
     @modifier = @menu_item.menu_item_modifiers.create!(name: "Add cheese", price_cents: 150)
@@ -66,7 +66,7 @@ class Api::Vapi::WebhooksControllerTest < ActionDispatch::IntegrationTest
     body = JSON.parse(response.body)
     assert_equal "toolu_1", body["results"].first["toolCallId"]
     menu = JSON.parse(body["results"].first["result"])
-    assert_equal "Burger", menu.dig(0, "items", 0, "name")
+    assert_equal "Burger", menu.dig("categories", 0, "items", 0, "name")
   end
 
   test "add_to_cart then submit_order builds and confirms an order" do
@@ -87,11 +87,18 @@ class Api::Vapi::WebhooksControllerTest < ActionDispatch::IntegrationTest
     cart = JSON.parse(JSON.parse(response.body)["results"].first["result"])
     assert_equal 23.0, cart["total"]
 
+    assert_equal 1, cart["cart_version"]
+    post_event(type: "tool-calls", call: { id: "vapi_call_4" }, toolCallList: [ { id: "toolu_2b", function: { name: "get_cart", arguments: {} } } ])
+    read_back = JSON.parse(JSON.parse(response.body)["results"].first["result"])
+    assert_equal 1, read_back["cart_version"]
+    assert_match(/Total twenty-three dollars/, read_back["readback_text"])
+
     assert_enqueued_with(job: OrderConfirmationSmsJob) do
       post_event(
         type: "tool-calls",
         call: { id: "vapi_call_4" },
-        toolCallList: [ { id: "toolu_3", function: { name: "submit_order", arguments: { fulfillment_type: "pickup" } } } ]
+        toolCallList: [ { id: "toolu_3", function: { name: "submit_order", arguments: { fulfillment_type: "pickup", cart_version: 1 } } } ],
+        artifact: VapiHistory.answered("toolu_3") # the caller answered the read-back (the confirmation gate's input)
       )
     end
     assert_response :success

@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html class="h-full">
+  <head>
+    <title><%= content_for(:title) || "Voice Console" %></title>
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <%= csrf_meta_tags %>
+    <%= csp_meta_tag %>
+    <link rel="icon" href="/icon.png" type="image/png">
+    <%= stylesheet_link_tag :app, "data-turbo-track": "reload" %>
+    <%= javascript_importmap_tags %>
+  </head>
+
+  <body class="min-h-full bg-gray-950 text-gray-100">
+    <header class="border-b border-gray-800 px-5 py-2 flex items-center justify-between text-sm">
+      <div class="flex items-center gap-4">
+        <%= link_to "← Admin", root_path, class: "text-gray-400 hover:text-gray-100" %>
+        <span class="font-semibold tracking-wide">VOICE TEST CONSOLE</span>
+        <span class="text-gray-500"><%= current_user.restaurant.name %></span>
+      </div>
+      <span class="text-gray-500">The model proposes. The server decides.</span>
+    </header>
+    <main class="px-5 py-4">
+      <%= yield %>
+    </main>
+  </body>
+</html>

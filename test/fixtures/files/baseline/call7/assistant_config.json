@@ -1,0 +1,359 @@
+{
+  "id": "8f2053ae-d72d-4c8d-b96e-4d9facd1f618",
+  "orgId": "org_REDACTED",
+  "name": "Taj Zayka Receptionist",
+  "voice": {
+    "version": "2",
+    "voiceId": "Elliot",
+    "provider": "vapi"
+  },
+  "createdAt": "2026-08-06T02:22:11.452Z",
+  "updatedAt": "2026-08-06T02:49:50.807Z",
+  "model": {
+    "model": "gpt-5-mini",
+    "toolIds": [
+      "776e0ddb-61ca-4152-a132-908ba17966e1",
+      "6c46374e-c616-4015-96b6-429adc06ffee",
+      "8d43004a-9d47-4e4c-aa60-78ef8b9999a8",
+      "1e23754f-2517-496e-92d7-2f76385d8fab",
+      "67682c97-9492-46ab-a328-9350c12cf3f6",
+      "fbf3f875-b2a6-421c-81b4-23e0a623acb8",
+      "753ff523-88dc-4f11-aa8d-f232b9c67bd1"
+    ],
+    "messages": [
+      {
+        "role": "system",
+        "content": "You are the AI phone host for Taj Zayka, answering incoming calls to take orders, answer menu questions, and help callers with pickup and delivery. You sound like a friendly, efficient staff member — warm, natural, and concise. You are not a generic assistant; you work here.\n\nHow you talk\nSpeak naturally, like a real host on a busy phone line: short sentences, no corporate phrasing, no repeating yourself.\nAsk one question at a time. Never list more than two or three options in a single turn.\nIf the caller talks over you, stop immediately and listen — don't finish your sentence or repeat what you already said.\nNever read out raw data structures, IDs, or prices in cents. Always say prices in dollars (\"nineteen dollars\", not \"1900\").\nNever invent a menu item, price, or modifier. Only mention what the get_menu tool returns.\nCall flow\nGreeting. Answer with a short greeting naming the restaurant, e.g. \"Thanks for calling Taj Zayka, this is your AI host — how can I help?\"\n\nTaj Zayka is open 24 hours, every day, so there's no need to mention hours or closing time unless a caller specifically asks.\nUnderstand intent. Is the caller ordering, asking about the menu or hours, or asking for something outside that (reservations, catering, complaints, anything not about ordering food)? For anything outside ordering and basic menu/hours questions, use transfer_to_human.\n\nMenu questions. Call get_menu before answering any question about what's available, prices, or descriptions. Don't guess.\n\nTaking the order.\n\nFor each item the caller wants, confirm the specific item and any modifiers, then call add_to_cart.\nAfter adding an item, if it has suggested pairings (suggest_with), you may offer one natural upsell for that item — never more than once per item, and never if the caller has already declined an upsell this call.\nIf the caller wants to change a quantity or remove something, use update_cart_item_quantity or remove_cart_item.\nIf an item isn't returned by get_menu, it isn't available — tell the caller and suggest something similar from the menu. Don't try to add it anyway.\nPickup or delivery. Ask which the caller wants. If delivery, get the full delivery address.\n\nConfirm before finalizing. Call get_cart and read back every item, quantity, modifier, and the total out loud. Ask \"Did I get that right?\" and wait for explicit confirmation before calling submit_order. Never submit an order the caller hasn't confirmed.\n\nSubmit and close. Call submit_order with the fulfillment type and address (if delivery). Let the caller know they'll get a text confirmation, thank them, and end the call warmly.\n\nWhen to transfer\nCall transfer_to_human immediately if:\n\nThe caller asks to speak to a person.\nThe caller has a complaint, a large or catering order, a reservation request, or anything outside standard pickup/delivery ordering.\nThe caller seems distressed or confused by the automated system, or the conversation is going in circles after two attempts to clarify.\nGuardrails\nNever take payment information over the phone — there is no tool for this, and you should not ask for card numbers.\nNever confirm an order without reading it back and getting a clear yes.\nIf a tool call fails or returns an error, tell the caller you're having a technical issue and offer to transfer them to a human rather than guessing."
+      }
+    ],
+    "provider": "openai",
+    "reasoningEffort": "minimal",
+    "tools": [
+      {
+        "id": "776e0ddb-61ca-4152-a132-908ba17966e1",
+        "createdAt": "2026-08-06T02:44:23.454Z",
+        "updatedAt": "2026-08-06T02:44:40.519Z",
+        "type": "function",
+        "function": {
+          "name": "update_cart_item_quantity",
+          "parameters": {
+            "type": "object",
+            "required": [
+              "order_item_id",
+              "quantity"
+            ],
+            "properties": {
+              "quantity": {
+                "type": "integer"
+              },
+              "order_item_id": {
+                "type": "integer"
+              }
+            }
+          },
+          "description": "Change the quantity of an item already in the cart. Use the order_item_id returned by add_to_cart or get_cart."
+        },
+        "messages": [
+          {
+            "type": "request-start",
+            "blocking": false
+          }
+        ],
+        "orgId": "org_REDACTED",
+        "variableExtractionPlan": {
+          "schema": {
+            "type": "object",
+            "required": [],
+            "properties": {}
+          }
+        },
+        "latestVersion": "v2"
+      },
+      {
+        "id": "6c46374e-c616-4015-96b6-429adc06ffee",
+        "createdAt": "2026-08-06T02:43:16.965Z",
+        "updatedAt": "2026-08-06T02:43:37.553Z",
+        "type": "function",
+        "function": {
+          "name": "transfer_to_human",
+          "parameters": {
+            "type": "object",
+            "required": [],
+            "properties": {
+              "reason": {
+                "type": "string",
+                "description": "Why the call is being transferred, for the call log"
+              }
+            }
+          },
+          "description": "Log that this call is being handed off to a human. Call this whenever transferring the call, alongside the platform's native transfer action."
+        },
+        "messages": [
+          {
+            "type": "request-start",
+            "blocking": false
+          }
+        ],
+        "orgId": "org_REDACTED",
+        "variableExtractionPlan": {
+          "schema": {
+            "type": "object",
+            "required": [],
+            "properties": {}
+          }
+        },
+        "latestVersion": "v2"
+      },
+      {
+        "id": "8d43004a-9d47-4e4c-aa60-78ef8b9999a8",
+        "createdAt": "2026-08-06T02:42:43.997Z",
+        "updatedAt": "2026-08-06T02:43:11.863Z",
+        "type": "function",
+        "function": {
+          "name": "submit_order",
+          "parameters": {
+            "type": "object",
+            "required": [
+              "fulfillment_type"
+            ],
+            "properties": {
+              "notes": {
+                "type": "string",
+                "description": "Optional order-level notes"
+              },
+              "delivery_address": {
+                "type": "string",
+                "description": "Required if fulfillment_type is delivery"
+              },
+              "fulfillment_type": {
+                "enum": [
+                  "pickup",
+                  "delivery"
+                ],
+                "type": "string"
+              }
+            }
+          },
+          "description": "Finalize and submit the order. Only call this after reading back the full cart and total and getting explicit confirmation from the customer."
+        },
+        "messages": [
+          {
+            "type": "request-start",
+            "blocking": false
+          }
+        ],
+        "orgId": "org_REDACTED",
+        "variableExtractionPlan": {
+          "schema": {
+            "type": "object",
+            "required": [],
+            "properties": {}
+          }
+        },
+        "latestVersion": "v2"
+      },
+      {
+        "id": "1e23754f-2517-496e-92d7-2f76385d8fab",
+        "createdAt": "2026-08-06T02:42:17.826Z",
+        "updatedAt": "2026-08-06T02:42:38.189Z",
+        "type": "function",
+        "function": {
+          "name": "get_cart",
+          "parameters": {
+            "type": "object",
+            "required": [],
+            "properties": {}
+          },
+          "description": "Get the current cart contents and running total, to read back to the customer for confirmation."
+        },
+        "messages": [
+          {
+            "type": "request-start",
+            "blocking": false
+          }
+        ],
+        "orgId": "org_REDACTED",
+        "variableExtractionPlan": {
+          "schema": {
+            "type": "object",
+            "required": [],
+            "properties": {}
+          }
+        },
+        "latestVersion": "v2"
+      },
+      {
+        "id": "67682c97-9492-46ab-a328-9350c12cf3f6",
+        "createdAt": "2026-08-06T02:41:46.456Z",
+        "updatedAt": "2026-08-06T02:42:14.519Z",
+        "type": "function",
+        "function": {
+          "name": "remove_cart_item",
+          "parameters": {
+            "type": "object",
+            "required": [
+              "order_item_id"
+            ],
+            "properties": {
+              "order_item_id": {
+                "type": "integer"
+              }
+            }
+          },
+          "description": "Remove an item from the cart entirely. Use the order_item_id returned by add_to_cart or get_cart."
+        },
+        "messages": [
+          {
+            "type": "request-start",
+            "blocking": false
+          }
+        ],
+        "orgId": "org_REDACTED",
+        "variableExtractionPlan": {
+          "schema": {
+            "type": "object",
+            "required": [],
+            "properties": {}
+          }
+        },
+        "latestVersion": "v2"
+      },
+      {
+        "id": "fbf3f875-b2a6-421c-81b4-23e0a623acb8",
+        "createdAt": "2026-08-06T02:40:00.918Z",
+        "updatedAt": "2026-08-06T02:41:42.395Z",
+        "type": "function",
+        "function": {
+          "name": "add_to_cart",
+          "parameters": {
+            "type": "object",
+            "required": [
+              "menu_item_id"
+            ],
+            "properties": {
+              "notes": {
+                "type": "string",
+                "description": "Optional special instructions for this item"
+              },
+              "quantity": {
+                "type": "integer",
+                "description": "How many of this item, defaults to 1"
+              },
+              "menu_item_id": {
+                "type": "integer",
+                "description": "The id of the menu item from get_menu"
+              },
+              "modifier_ids": {
+                "type": "array",
+                "items": {
+                  "type": "integer"
+                },
+                "description": "Ids of any selected modifiers for this item, from get_menu"
+              }
+            }
+          },
+          "description": "Description: Add an item to the customer's order. Use the numeric id from get_menu results for menu_item_id and modifier_ids — never guess an id."
+        },
+        "messages": [
+          {
+            "type": "request-start",
+            "blocking": false
+          }
+        ],
+        "orgId": "org_REDACTED",
+        "variableExtractionPlan": {
+          "schema": {
+            "type": "object",
+            "required": [],
+            "properties": {}
+          }
+        },
+        "latestVersion": "v2"
+      },
+      {
+        "id": "753ff523-88dc-4f11-aa8d-f232b9c67bd1",
+        "createdAt": "2026-08-06T02:36:53.078Z",
+        "updatedAt": "2026-08-06T02:39:47.317Z",
+        "type": "function",
+        "function": {
+          "name": "get_menu",
+          "parameters": {
+            "type": "object",
+            "required": [],
+            "properties": {}
+          },
+          "description": "Get the restaurant's current menu: categories, items, prices, modifiers, and suggested pairings. Call this before answering any question about what's available or before adding items to the order."
+        },
+        "messages": [
+          {
+            "type": "request-start",
+            "blocking": false
+          }
+        ],
+        "orgId": "org_REDACTED",
+        "variableExtractionPlan": {
+          "schema": {
+            "type": "object",
+            "required": [],
+            "properties": {}
+          }
+        },
+        "latestVersion": "v2"
+      }
+    ]
+  },
+  "firstMessage": "Thanks for calling Taj Zayka, this is your AI host — how can I help?",
+  "voicemailMessage": "Please call back when you're available.",
+  "endCallMessage": "Goodbye.",
+  "transcriber": {
+    "model": "stt-rt-v5",
+    "language": "en",
+    "provider": "soniox",
+    "languages": [
+      "en"
+    ],
+    "fallbackPlan": {
+      "autoFallback": {
+        "enabled": true
+      }
+    }
+  },
+  "clientMessages": [
+    "transcript",
+    "hang",
+    "metadata",
+    "tool-calls",
+    "tool-calls-result",
+    "tool.completed",
+    "transfer-update",
+    "user-interrupted",
+    "status-update",
+    "assistant.started"
+  ],
+  "maxDurationSeconds": 300,
+  "metadata": {
+    "preset": "costSaver:2"
+  },
+  "analysisPlan": {
+    "summaryPlan": {
+      "enabled": false
+    },
+    "successEvaluationPlan": {
+      "enabled": false
+    }
+  },
+  "server": {
+    "url": "https://NGROK-TUNNEL.example/api/vapi/webhooks",
+    "headers": {
+      "X-Vapi-Secret": "<REDACTED>"
+    },
+    "timeoutSeconds": 20
+  },
+  "compliancePlan": {
+    "pciEnabled": false,
+    "zdrEnabled": false,
+    "hipaaEnabled": false
+  },
+  "firstMessageInterruptionsEnabled": false,
+  "latestVersion": "v4"
+}

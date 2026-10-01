@@ -1,0 +1,110 @@
+{
+  "source_log": "log/development.log",
+  "source_sha256": "22d449b9c2860f93b70de1a1423f6442e91ce9d0f6717e4f6c33c62d27fad67a",
+  "source_bytes": 16024709,
+  "source_lines": 4951,
+  "calls": {
+    "call6": {
+      "vapi_call_id": "019fd4eb-3d46-788a-9c27-da2e2d2c1f10",
+      "log_line_range": [
+        3270,
+        3488
+      ],
+      "event_counts": {
+        "assistant.started": 1,
+        "conversation-update": 6,
+        "end-of-call-report": 1,
+        "speech-update": 15,
+        "status-update": 2
+      },
+      "ended_reason": "silence-timed-out",
+      "duration_seconds": 66.543,
+      "cost_usd": 0.0625,
+      "cost_breakdown": {
+        "stt": 0.0046,
+        "llm": 0.0005,
+        "tts": 0.002,
+        "vapi": 0.0555,
+        "chat": 0,
+        "transport": 0,
+        "total": 0.0625,
+        "llmPromptTokens": 1544,
+        "llmCompletionTokens": 51,
+        "llmCachedPromptTokens": 0,
+        "ttsCharacters": 131,
+        "voicemailDetectionCost": 0,
+        "knowledgeBaseCost": 0,
+        "analysisCostBreakdown": {
+          "summary": 0,
+          "summaryPromptTokens": 0,
+          "summaryCompletionTokens": 0,
+          "summaryCachedPromptTokens": 0,
+          "structuredData": 0,
+          "structuredDataPromptTokens": 0,
+          "structuredDataCompletionTokens": 0,
+          "structuredDataCachedPromptTokens": 0,
+          "successEvaluation": 0,
+          "successEvaluationPromptTokens": 0,
+          "successEvaluationCompletionTokens": 0,
+          "successEvaluationCachedPromptTokens": 0,
+          "structuredOutput": 0,
+          "structuredOutputPromptTokens": 0,
+          "structuredOutputCompletionTokens": 0,
+          "structuredOutputCachedPromptTokens": 0
+        }
+      }
+    },
+    "call7": {
+      "vapi_call_id": "019fd4fa-7f12-7227-ba8a-3f777c3af6d1",
+      "log_line_range": [
+        3509,
+        4698
+      ],
+      "event_counts": {
+        "assistant.started": 1,
+        "conversation-update": 46,
+        "end-of-call-report": 1,
+        "speech-update": 66,
+        "status-update": 2,
+        "tool-calls": 4,
+        "user-interrupted": 4
+      },
+      "ended_reason": "customer-ended-call",
+      "duration_seconds": 182.45,
+      "cost_usd": 0.2008,
+      "cost_breakdown": {
+        "stt": 0.0123,
+        "llm": 0.0048,
+        "tts": 0.0317,
+        "vapi": 0.152,
+        "chat": 0,
+        "transport": 0,
+        "total": 0.2008,
+        "llmPromptTokens": 47861,
+        "llmCompletionTokens": 670,
+        "llmCachedPromptTokens": 38016,
+        "ttsCharacters": 2113,
+        "voicemailDetectionCost": 0,
+        "knowledgeBaseCost": 0,
+        "analysisCostBreakdown": {
+          "summary": 0,
+          "summaryPromptTokens": 0,
+          "summaryCompletionTokens": 0,
+          "summaryCachedPromptTokens": 0,
+          "structuredData": 0,
+          "structuredDataPromptTokens": 0,
+          "structuredDataCompletionTokens": 0,
+          "structuredDataCachedPromptTokens": 0,
+          "successEvaluation": 0,
+          "successEvaluationPromptTokens": 0,
+          "successEvaluationCompletionTokens": 0,
+          "successEvaluationCachedPromptTokens": 0,
+          "structuredOutput": 0,
+          "structuredOutputPromptTokens": 0,
+          "structuredOutputCompletionTokens": 0,
+          "structuredOutputCachedPromptTokens": 0
+        }
+      }
+    }
+  }
+}

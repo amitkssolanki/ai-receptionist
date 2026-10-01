@@ -20,7 +20,10 @@ Rails.application.configure do
 
   # Show full error reports.
   config.consider_all_requests_local = true
-  config.cache_store = :null_store
+  config.cache_store = :memory_store # sign-in rate limiting (Step 10) needs a real store
+
+  # Most tests use the single restaurant convenience; R23 tests switch it off explicitly.
+  config.x.vapi.default_restaurant_fallback = true
 
   # Render exception templates for rescuable exceptions and raise for other exceptions.
   config.action_dispatch.show_exceptions = :rescuable

@@ -18,39 +18,24 @@ class Restaurant < ApplicationRecord
     business_hours[DAY_KEYS[at.in_time_zone(timezone).wday]]
   end
 
+  # Hours are "HH:MM-HH:MM", "closed", or a full day as "24h" / "00:00-24:00". Does not support hours that
+  # cross midnight.
   def open_now?(at: Time.current)
     hours = hours_today(at: at)
     return false if hours.blank? || hours == "closed"
+    return true if hours.strip.casecmp?("24h")
 
     local_time = at.in_time_zone(timezone)
     open_str, close_str = hours.split("-")
     local_time.between?(time_on(local_time, open_str), time_on(local_time, close_str))
   end
 
-  # The menu shape returned by the voice webhook API's get_menu tool, shared by every
-  # voice platform adapter so there's one place that defines it.
-  def voice_menu_json
-    menu_categories.includes(menu_items: [ :menu_item_modifiers, :upsell_items ]).map do |category|
-      {
-        category: category.name,
-        items: category.menu_items.available.map do |item|
-          {
-            id: item.id,
-            name: item.name,
-            description: item.description,
-            price: item.price,
-            modifiers: item.menu_item_modifiers.map { |m| { id: m.id, name: m.name, price: m.price_cents / 100.0 } },
-            suggest_with: item.upsell_items.available.map { |u| { id: u.id, name: u.name, price: u.price } }
-          }
-        end
-      }
-    end
-  end
-
   private
 
   def time_on(local_time, time_str)
     hour, minute = time_str.split(":").map(&:to_i)
+    return local_time.beginning_of_day + 1.day if hour == 24 && minute.zero? # "24:00" = end of the day
+
     local_time.change(hour: hour, min: minute)
   end
 end

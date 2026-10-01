@@ -1,0 +1,21 @@
+<% timeline = ConsoleView::Timeline.new(call_log) %>
+<section id="events-panel" class="rounded border border-gray-800 bg-gray-900">
+  <header class="flex items-center justify-between border-b border-gray-800 px-4 py-2 text-xs">
+    <span class="font-semibold tracking-wide">SERVER EVENTS</span>
+    <span class="rounded bg-gray-800 px-2 py-0.5 text-gray-400" title="One row per tool execution the server recorded (ToolInvocation), plus call lifecycle. Rows marked 'client observed' are only what this browser saw Vapi announce.">source: RAILS (authoritative) · ⋯ rows are client-observed only</span>
+  </header>
+  <div class="overflow-x-auto">
+  <div class="min-w-[56rem] grid grid-cols-[3rem_9rem_1fr_1fr_8rem_6.5rem_4rem_4rem] gap-2 px-4 py-1 text-[0.65rem] uppercase tracking-wide text-gray-500">
+    <span>T+</span><span>tool</span><span>arguments</span><span>result</span><span>status</span><span>cart</span><span>srv</span><span>obs</span>
+  </div>
+  <div id="events" data-events-for="<%= call_log.id %>">
+    <% timeline.entries.each do |entry| %>
+      <% if entry.is_a?(ConsoleView::Timeline::LifecycleEntry) %>
+        <%= render "admin/console/lifecycle_event", entry: entry, call_log: call_log %>
+      <% else %>
+        <%= render "admin/console/event", event: entry %>
+      <% end %>
+    <% end %>
+  </div>
+  </div>
+</section>

@@ -13,7 +13,7 @@ That's what `Api::Vapi::WebhooksController` (`app/controllers/api/vapi/webhooks_
 In the assistant's settings (or your phone number's settings — either level works, see [Vapi's server URL docs](https://docs.vapi.ai/server-url)):
 
 - **Server URL**: `<your-ngrok-url>/api/vapi/webhooks`
-- **Server URL Secret**: any value — for local dev, `dev-secret-change-me` matches this app's default (see `VOICE_WEBHOOK_SECRET`-style fallback in the controller; set `VAPI_SERVER_SECRET` as an env var if you want your own value instead)
+- **Server URL Secret**: the value of `VAPI_SERVER_SECRET` (required, 16+ random characters, no default — generate one with `openssl rand -hex 32` and set the same value in the app's environment)
 
 This one URL receives everything — you do not need a separate URL per tool.
 

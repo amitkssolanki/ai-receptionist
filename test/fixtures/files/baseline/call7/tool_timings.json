@@ -1,0 +1,47 @@
+{
+  "method": "vapi_roundtrip_ms = tool_call_result.time - tool_calls.time from Vapi's final conversation-update; server_* hand-attributed from the Rails dev log (concurrent requests interleave and the dev log has no request ids, so automated attribution in server_requests.json is unreliable for tool calls)",
+  "tools": [
+    {
+      "tool": "get_menu",
+      "tool_call_id": "call_DeA64Ufy8pFTMgfLwZh4hQio",
+      "vapi_roundtrip_ms": 969,
+      "server_total_ms": 267,
+      "active_record_ms": 124.3,
+      "queries": 53,
+      "response_bytes": 4554,
+      "completed_log_line": 3714
+    },
+    {
+      "tool": "add_to_cart",
+      "tool_call_id": "call_oDMrQNdB4sio5vCJD90xITH9",
+      "vapi_roundtrip_ms": 785,
+      "server_total_ms": 115,
+      "active_record_ms": 61.4,
+      "queries": 11,
+      "response_bytes": 149,
+      "completed_log_line": 4088,
+      "note": "4 separate BEGIN/COMMIT transactions: order insert, call_log update, order_item insert, order total update"
+    },
+    {
+      "tool": "get_cart",
+      "tool_call_id": "call_jJtEB1ikJ9QhOw6CVGp2iaYM",
+      "vapi_roundtrip_ms": 426,
+      "server_total_ms": 19,
+      "active_record_ms": 6.0,
+      "queries": 4,
+      "response_bytes": 149,
+      "completed_log_line": 4343
+    },
+    {
+      "tool": "submit_order",
+      "tool_call_id": "call_pDEfuoG8uH3lb3I65XAAUwuB",
+      "vapi_roundtrip_ms": 489,
+      "server_total_ms": 74,
+      "active_record_ms": 25.5,
+      "queries": 6,
+      "response_bytes": 149,
+      "completed_log_line": 4441,
+      "note": "Enqueued OrderConfirmationSmsJob to Async adapter; job performed and returned early (Twilio env vars unset)"
+    }
+  ]
+}

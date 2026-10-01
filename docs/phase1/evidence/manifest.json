@@ -1,0 +1,25 @@
+{
+  "generated_at": "2026-09-30T17:50:30Z",
+  "git": {
+    "commit": "ee96de7",
+    "uncommitted_tracked_changes": true
+  },
+  "ruby": "3.4.7",
+  "rails": "8.1.3.1",
+  "env": "test",
+  "regenerate": "RAILS_ENV=test bin/rails evidence:generate   (and evidence:suite for test counts)",
+  "live_evidence": {
+    "status": "PARTIAL",
+    "recorded_in": "docs/voice_agent/verification_log.md (one real browser call, call #8, 2026-09-30, and vapi:check against the live dev assistant)",
+    "still_pending": [
+      "a scripted set of live calls beyond the first (plan Step 16: 5-8 calls)",
+      "live-model garlic-knots sample (plan Layer 3a, N=20, baseline vs new prompt)",
+      "a live call with a real phone number (SMS path)"
+    ]
+  },
+  "files": {
+    "garlic_knots_probe.json": "688941b6085a3c6745d6447742e7a7133bfcd553510c5ad0953e0c11e332eaf4",
+    "latency.json": "d4acfcec4855529e63f436fe72515fd034eb4809f2780ab08cccdd08783f329f",
+    "idempotency_and_versions.json": "80a81c238090444ee9535e56ced8c4b24ca68273cc1bb8863937129646f17980"
+  }
+}
