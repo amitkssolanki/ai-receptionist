@@ -25,7 +25,8 @@ The narration is a **voiceover recorded afterwards**: during a live call the mic
 2. **Normal console, idle**: `http://localhost:3000/admin/console` (signed in).
 3. **Call #6 review page**: `http://localhost:3000/admin/console/calls/13`: the conversation's end, then the first
    `submit_order` row in the server events.
-4. **Terminal**: the gate test above, run in the project directory, passing.
+4. **Terminal**: the gate test above, passing. Scripted with VHS: `vhs docs/phase2/gate_test.tape` from the repository root
+   writes `tmp/demo/gate_test.mp4` (needs `vhs`, `ttyd`, `ffmpeg`; re-render any time, no live call involved).
 5. **Fault-injection console**: `http://localhost:3000/admin/console?assistant=fault_injection`, idle, banner visible.
 6. **Attempt 2 review page**: `http://localhost:3000/admin/console/calls/18`: the label and the submit row.
 7. **The normal live call** (P2-5): screen and Chrome audio, from Start to the board showing CONFIRMED.
