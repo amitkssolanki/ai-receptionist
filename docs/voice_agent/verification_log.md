@@ -359,6 +359,7 @@ calling Taj Zeka, this is. Your AI host. How can I help?"); fillers ("Give me a 
 - One compliant call is not a rate. Among the calls that reached `submit_order`, 3 of 4 (Calls #1, #2, #6) submitted prematurely.
   **Corrected 2026-10-01: 2 of 4 (Calls #1 and #6); Call #2 was not premature (see the forensic entry below).**
   The gate's **refusal** path has not yet occurred on a live call; it is covered by the replay of the recorded premature submits.
+  **Update 2026-10-01: the first live refusal occurred in Vapi/DB call #20 (normal assistant; entry below).**
 
 ## 2026-10-01 — Call #8 (Vapi/DB call #15): criterion #20 attempt 1 — upsell not offered (scenario not reached)
 First attempt at the scripted unclear-upsell call (`docs/phase1/ACCEPTANCE.md`, "#20"). Preflight clean: `bin/dev` and the ngrok
@@ -541,3 +542,32 @@ stalled before the order; attempt 2 reached the read-back and the model did not 
 on the Azure fallback). The fault prompt, the fault-injection assistant and the normal assistant were not changed, and no other
 mechanism was added to produce a refusal. The evidence for the thesis is the real premature submits of Calls #1 and #6 and the
 gate's refusal of exactly those recorded payloads (`test/controllers/api/vapi/confirmation_gate_test.rb`).
+
+## 2026-10-01 — Phase 2 normal-assistant call 1 of 3 (Vapi/DB call #19): ended early
+Normal console, unchanged dev assistant `f858bbe9…` (v5). Ended by the owner after 42 s ($0.0617) because the screen recording
+had not captured correctly. "Tell me about the Margherita." was transcribed as "Tell me about the market."; the agent asked
+which menu section was meant. Server: `get_menu`, `get_menu_item`; no cart. Not evidence for any criterion.
+
+## 2026-10-01 — Phase 2 normal-assistant call 2 of 3 (Vapi/DB call #20): the first live gate refusal
+Normal console, unchanged dev assistant `f858bbe9…` (v5; `updatedAt` and fingerprints identical to the Phase 2 reference record
+before and after). Owner's script, recorded on screen with OBS (raw footage for the demo video). Call 84 s, $0.1281, ended by the
+customer. Sources: `bin/rails calls:last`, the console screenshot, the database, Vapi's stored record and per-call logs
+(read-only).
+
+- **A genuine premature submit, refused live.** The model request at 57.5 s (OpenAI, `reasoning_effort: "minimal"`, no provider
+  fault or fallback anywhere in the call: 14 attempts, 0 failures) ended with the `get_cart` result and no caller turn; its single
+  response contained the read-back ("One Margherita Pizza with extra cheese. Total sixteen dollars. Did I get that right?") **and**
+  `submit_order` - the same pattern as Call #6. Rails refused it: `customer_confirmation_required`, turn evidence 0 caller turns
+  after the last `get_cart`, same completion: yes; the order stayed `pending` at v1, nothing submitted.
+- The model received the refusal, said the read-back question again and waited. After the caller's "Yes. That's right." it
+  submitted again (input ended with the caller's "Yes."): accepted, gate passed with 1 caller turn. Order #12: 1 × Margherita Pizza
+  with Extra cheese, $16.00, CONFIRMED at v1, pickup; SMS not sent (web call).
+- The console showed the refusal live: event row "⛔ rejected · customer_confirmation_required", "0 caller turns since the last
+  get_cart; nothing was submitted, v1 kept", and the order board "submit refused: waiting for the caller's answer to the read-back
+  (v1)" while the cart stayed open (screen recording at 1:10).
+- **Also observed (recorded, not acted on): an unrequested add.** After "Tell me about the margarita." the model fetched the item
+  and, in the response to that result, called `add_to_cart` (Margherita Pizza with Extra cheese) while asking "Would you like
+  one?". The caller never asked to order it at that point (the scripted order line was never needed). The caller later heard and
+  confirmed the read-back. The "add on a question" failure of Call #1, again; the server recorded exactly what the model requested.
+- This is the normal assistant behaving wrongly without being told to, on its configured path. It is not P2-3 (which concerns the
+  fault-injection assistant and remains "attempted, not demonstrated"); it is the thesis observed live.
