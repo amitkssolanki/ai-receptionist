@@ -6,7 +6,7 @@ namespace :calls do
 
     status = ConsoleView::Status.new(call_log)
     board = ConsoleView::Board.new(call_log)
-    puts "call ##{call_log.id}  #{call_log.status}  console session: #{call_log.console_session_key.present? ? 'yes (token arrived)' : 'no'}  started #{status.started}"
+    puts "call ##{call_log.id}  #{call_log.status}  console session: #{call_log.console_session_key.present? ? 'yes (token arrived)' : 'no'}  started #{status.started}#{'  FAULT INJECTION (test assistant)' if status.fault_injection?}"
     puts "ended: #{call_log.ended_reason.presence || (status.ended? ? 'yes' : 'not yet')}  #{status.duration}  #{status.cost}  assistant #{call_log.assistant_version || '-'}"
     puts "tools: ok #{status.tools[:ok]}  rejected #{status.tools[:rejected]}  error #{status.tools[:error]}  duplicates absorbed #{status.duplicates_absorbed}"
     ConsoleView::Timeline.new(call_log).entries.each do |entry|

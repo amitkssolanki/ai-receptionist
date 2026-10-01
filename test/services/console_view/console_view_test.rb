@@ -184,7 +184,7 @@ class ConsoleViewTest < ActiveSupport::TestCase
     events.find { |e| e.invocation.tool_call_id == "s" }
   end
 
-  test "a chained read-back + submit (the call #9 pattern) is refused by the gate, with the turn evidence shown" do
+  test "a chained read-back + submit (call #9's recorded history) is refused by the gate, with the turn evidence shown" do
     payload = JSON.parse(file_fixture("vapi/live_submit_webhook_call9.json").read)
     payload["artifact"]["messages"].each { |m| m["toolCalls"]&.each { |t| t["id"] = "s" if t["id"] == payload.dig("toolCallList", 0, "id") } }
     payload["artifact"]["messagesOpenAIFormatted"].each { |m| m["tool_calls"]&.each { |t| t["id"] = "s" if t["id"] == payload.dig("toolCallList", 0, "id") } }

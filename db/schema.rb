@@ -10,11 +10,12 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_30_180000) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_01_004629) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
   create_table "call_logs", force: :cascade do |t|
+    t.string "assistant_id", comment: "The Vapi assistant that handled the call (from the authenticated webhook). Evidence only: never used for authorization or business rules."
     t.string "assistant_version"
     t.string "console_session_key"
     t.decimal "cost_usd", precision: 10, scale: 4

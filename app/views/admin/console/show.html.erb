@@ -17,6 +17,15 @@
     data-voice-console-client-messages-value="<%= @voice[:client_messages].to_json %>"
   <% end %>
 >
+  <% if @fault_injection %>
+    <section id="fault-injection-banner" class="rounded border-2 border-red-600 bg-red-950 px-4 py-3 mb-3 text-sm text-red-100" role="note">
+      <p class="font-bold tracking-wide text-red-300">FAULT INJECTION · deliberately misconfigured test assistant</p>
+      <p class="mt-1">This console calls “Taj Zayka Receptionist (FAULT INJECTION)”: a copy of the assistant whose prompt tells it to submit the
+        order without waiting for the caller's answer and to claim an item it never added (<code>config/vapi/fault_injection_prompt.md</code>).
+        It is not how the normal assistant is configured. The server, its tools and its rules are exactly the same.</p>
+      <p class="mt-1"><%= link_to "Normal console", admin_console_path, class: "underline text-red-200" %></p>
+    </section>
+  <% end %>
   <%# --- call strip --- %>
   <section class="rounded border border-gray-800 bg-gray-900 px-4 py-3 mb-3">
     <div class="flex flex-wrap items-center justify-between gap-3">
