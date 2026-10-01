@@ -107,6 +107,8 @@ what the server accepts.
 - The full test suite, the reliability rules R01–R24, replays of real calls, and the evaluation harness with committed,
   self-checking evidence ([README: Tests](../README.md#tests-evaluation-and-checks), [evidence](phase1/evidence/README.md)).
 - Phase 1 closed at 20 of 20 acceptance criteria with green CI ([Phase 1 report](phase1/ACCEPTANCE.md)).
+- Phase 2 (this demonstration layer): 6 of 8 criteria met, the fault-injection live refusal attempted but not demonstrated, the
+  video pending ([Phase 2 report](phase2/ACCEPTANCE.md)).
 - `bin/rails vapi:check` (and `PROFILE=fault_injection`) compares the live assistants with the repository, read-only
   ([vapi.rake](../lib/tasks/vapi.rake)).
 
