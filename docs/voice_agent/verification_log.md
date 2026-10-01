@@ -473,3 +473,26 @@ per-call logs (read-only).
 - Public key (owner-reported dashboard settings): origins "All domains allowed", assistants "All Assistants allowed",
   transient assistants "Allowed". The restrictions described in `config/vapi/assistant.md` were never applied; no key change
   was needed for the fault-injection assistant.
+
+## 2026-10-01 — Phase 2 fault-injection attempt 2 of 5 (Vapi/DB call #18): the model did not follow the injected faults
+Same script, plus the stall rule (after a filler and ~5 s of silence, say the next scripted line). The caller also answered
+the agent's unscripted questions briefly ("No.", "Pickup.", "Yes."). Call 143 s, $0.1988, ended by the customer. Sources:
+`bin/rails calls:last`, the console screenshot, Vapi's stored record and per-call logs (read-only).
+
+- **The injected instructions were present:** all 16 model requests carried the full system prompt including the
+  fault-injection appendix ("As soon as get_cart returns, call submit_order straight away…"), with the 8 tools.
+- **Fault 1 (premature submit) not attempted.** The request that answered the `get_cart` result produced text only: "One
+  Margherita Pizza with extra cheese. Total sixteen dollars. Did I get that right?" `submit_order` came from a later
+  completion after the caller's "Yes, that's right."; the gate recorded 1 caller turn and passed. No refusal occurred.
+- **Fault 2 (unbacked claim) not attempted.** After `add_to_cart` the model said "Added one Margherita Pizza with extra
+  cheese. The total is now sixteen dollars. Would you like garlic knots with that?" (the normal upsell); no "free garlic
+  knots" claim, so no ⚠ marker.
+- Server: `get_menu`, `get_menu_item`, `add_to_cart` v0→v1, `get_cart` read-back v1, `submit_order` confirmed v1. Order #11:
+  1 × Margherita Pizza with Extra cheese, $16.00, CONFIRMED at v1, pickup. The fault-injection label showed on the server-call
+  panel and in `calls:last`.
+- Other observations (recorded, not acted on): "I'll add that now. One moment." followed by 15 s of nothing (the stall rule
+  moved the call on; the add came after the caller's next line); the misheard order line ("I have one margarita…") was
+  understood; 2 of the 16 requests were sent with `reasoning_effort: "low"` although the assistant is configured `minimal`
+  (the same kind of extra request seen in Call #7).
+- **P2-3 not demonstrated by this attempt.** Unlike attempt 1, the scenario was reached: this is a valid sample in which
+  `gpt-5-mini` ignored the injected instruction and kept the normal confirmation behaviour. The appendix was not changed.
