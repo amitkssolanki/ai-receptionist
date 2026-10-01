@@ -7,7 +7,7 @@ The design rule is **"the model proposes, the server decides."** The voice pipel
 [Vapi](https://vapi.ai); every business fact — cart, prices, totals, cart version, read-back, order status, SMS — lives in this
 Rails app and changes only through server-side rules. The model's tool calls are requests, not facts.
 
-**Status:** Phase 1 (reliability + live voice console) is implemented and was verified with seven live browser calls. It is not
+**Status:** Phase 1 (reliability + live voice console) is implemented and was verified with nine live browser calls. It is not
 production software and the agent's conversational behaviour is not reliable (see [Known limitations](#known-limitations)).
 Acceptance against the plan: [docs/phase1/ACCEPTANCE.md](docs/phase1/ACCEPTANCE.md).
 
@@ -78,7 +78,8 @@ The model has eight tools (`config/vapi/tools.json`): `get_menu`, `get_menu_item
   confirmation, SMS), and the **server event stream** (every `ToolInvocation` with arguments, result, status, cart change, timing,
   turn evidence and what the confirmation gate did). Updates arrive over Action Cable after each commit; after a reconnect the page
   rebuilds from the database. `/admin/console/calls/:id` reviews a past or in-progress call. A heuristic marks agent lines that claim
-  a cart change the server never made. Only the restricted public key and the assistant id reach the browser.
+  a cart change the server never made. Only the Vapi public key and the assistant id reach the browser (never the private key
+  or the webhook secret).
 - **Admin**: menu (categories, items, modifiers, upsell pairings), orders (status transitions, no reopening), call logs, settings
   (hours, timezone).
 
@@ -165,10 +166,15 @@ bin/rubocop; bin/brakeman --no-pager; bin/bundler-audit; bin/importmap audit
 
 ## Known limitations
 
-- Live testing (seven browser calls) found the agent submitting before the caller answered (3 of 4 calls that reached submission —
+- Live testing (nine Phase 1 browser calls) found the agent submitting before the caller answered (2 of 4 calls that reached submission —
   the reason for the confirmation gate), announcing tool calls it never made, speaking its reasoning, and stacking fillers. Only the
   first is prevented server-side; the others are visible in the console, not fixed. One compliant call is not a rate.
-- The gate's refusal path has been verified against recorded real payloads, not yet in a live call.
+- The gate's refusal path has been verified against recorded real payloads, not in a live call; two deliberate fault-injection
+  attempts (Phase 2) did not produce one either.
+- The gate reads the order of Vapi's conversation history, which can lag what the model received: against one recorded call
+  (Call #2) it refuses an order the caller had confirmed. It fails closed (no wrong order); not fixed.
 - The model's reasoning effort is not a controllable variable through the assistant configuration (Vapi's requests did not follow
   it).
+- The browser public key is not restricted in the Vapi dashboard (any origin, any assistant, transient assistants allowed; owner-
+  reported 2026-10-01). `config/vapi/assistant.md` describes the intended restrictions; they were never applied.
 - Not built: payments, multiple restaurants, a second voice provider, call transfer, a real-phone SMS test, deployment.

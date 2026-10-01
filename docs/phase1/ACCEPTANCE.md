@@ -47,23 +47,26 @@ idempotent tool execution, a live console, layered evaluation (contract tests, r
 
 ## 3. What live testing discovered
 
-Seven live browser calls (owner's numbering; Vapi/DB ids in brackets). Details: `docs/voice_agent/verification_log.md`.
+Nine live browser calls (owner's numbering; Vapi/DB ids in brackets): seven when this report was first written, #8 and #9 added for
+criterion #20. Details: `docs/voice_agent/verification_log.md`. Corrected 2026-10-01 from Vapi's per-call model logs (Call #2).
 
 | Call | Runtime reasoning | Outcome |
 |---|---|---|
 | #1 (#8) | `minimal` | Added on a question; duplicate Margherita line; **submit 2.1 s after `get_cart`, 0 caller turns**; wrong order $35.50 (server correct for what it was told) |
-| #2 (#9) | `minimal` | Correct $21.50; **read-back and submit in one model completion, 0 caller turns** (the 12.9 s gap was the agent's speech); spoken reasoning; SMS fact volunteered |
+| #2 (#9) | `minimal` | Correct $21.50; **not premature** (corrected 2026-10-01): the model's input ended with the caller's "Yes. That's right.", but the webhook history stamps that turn 0.1 s after the submit, so the gate would refuse it (a false refusal); spoken reasoning; SMS fact volunteered |
 | #3 (#10) | — | **Invalid run**: stale `bin/dev` after a migration + fallback locking bug; no conclusions |
 | #4 (#11) | `minimal` | Announced "Getting your cart" with **no tool call**; went silent; abandoned; "Added…" spoken before the tool result |
 | #5 (#12) | configured `low`, runtime `minimal` | Garbled first utterance; "One moment." with no tool call; stalled |
 | #6 (#13) | configured `low`, runtime `minimal` | **Premature submit, 0 caller turns**, 1.2 s after the read-back fetch; second submit after the caller's yes absorbed; promised a text that was not sent |
-| #7 (#14) | `minimal` (+2 Azure requests at `low`, purpose unknown) | Correct $21.50; **1 caller turn** before the submit; model input ended with the caller's "Yes. That's right."; gate passed; no SMS promise |
+| #7 (#14) | `minimal` (+2 Azure retries at `low` after OpenAI provider faults) | Correct $21.50; **1 caller turn** before the submit; model input ended with the caller's "Yes. That's right."; gate passed; no SMS promise |
+| #8 (#15) | `minimal` | Criterion #20 attempt 1: "pizzas" misheard as "business"; the model repeated its greeting; no tool call; upsell not offered |
+| #9 (#16) | `minimal` | Criterion #20: garlic knots offered; the unclear reply transcribed "Should be—"; the model said "One moment." and dropped it (no add, no claim); order $16.00 confirmed after the caller's yes; gate passed |
 
 ## 4–6. Failure modes and how each was addressed
 
 | Failure mode | Seen in | Response | Kind of fix |
 |---|---|---|---|
-| Premature submit (before the caller answered) | Calls #1, #2, #6 (3 of 4 that reached submit) | Confirmation gate (§8) | **Server invariant** (deterministic) |
+| Premature submit (before the caller answered) | Calls #1, #6 (2 of 4 that reached submit; corrected 2026-10-01, Call #2 was not premature) | Confirmation gate (§8) | **Server invariant** (deterministic) |
 | Claim ≠ state ("I'll add garlic knots", no tool call) | Phase 0 call #7 | Server-owned read-back text and `cart_version`; console claim heuristic; evaluation probe | Server invariant + observability |
 | Add on a question; duplicate line instead of edit | Call #1 | Prompt/tool wording; console "same item on two lines" observation | Prompt (probabilistic) + observability |
 | Internal SMS state spoken to the caller | Calls #2, #6 | Model-facing result carries SMS only when queued; prompt aligned | Server contract + prompt |
@@ -88,11 +91,12 @@ submit's own entry**. Otherwise `submit_order` is refused with `customer_confirm
 `cart_version`); nothing is written and no SMS is queued. Missing, malformed or unreadable history fails closed. An already-submitted
 order still answers idempotently. It is a turn-taking gate, not a "yes" detector; `speech_chars` is never used.
 
-It was added because of the live evidence (3/3 premature submits) and is an architectural safeguard. **Call #7's compliant behaviour
-does not make it unnecessary.** Against the real recorded submits it behaves as intended: the premature submits of Calls #1, #2 and #6
-would each be refused; Call #6's later submit after the caller's yes would be accepted
-(`test/controllers/api/vapi/confirmation_gate_test.rb`, `live_submit_webhook_*.json`). **No live call has yet exercised the refusal
-path.**
+It was added because of the live evidence (at the time read as 3 of 3 premature submits; corrected on 2026-10-01 to Calls #1 and
+#6, see §3) and is an architectural safeguard. **Call #7's compliant behaviour does not make it unnecessary.** Against the real
+recorded submits: the premature submits of Calls #1 and #6 would each be refused, and Call #6's later submit after the caller's yes
+would be accepted (`test/controllers/api/vapi/confirmation_gate_test.rb`, `live_submit_webhook_*.json`). Call #2's recorded submit
+would also be refused although the caller had answered: a false refusal (§13). **No live call has yet exercised the refusal path**
+(Phase 2's two fault-injection attempts did not produce one either).
 
 ## 9. What the live calls demonstrate
 
@@ -106,11 +110,11 @@ path.**
 
 ## 10. What the live calls do NOT demonstrate
 
-- Any rate: seven calls (one invalid), one scripted scenario.
+- Any rate: nine calls (one invalid), two scripted scenarios.
 - The gate's refusal path in a live call.
 - The effect of `reasoningEffort: low` (Vapi sent `minimal` for the conversation regardless).
 - The SMS path to a real phone (web calls have no number), web-call transfer, large-order and closed-hours rules live.
-- The unclear-upsell ("That should be") case live.
+- How the model handles unclear replies in general (Call #9 is one attempt: it dropped the reply rather than clarifying).
 - Production operation, load, or cost at scale.
 
 ## 11. Automated test and evaluation results (this run, local)
@@ -124,7 +128,7 @@ path.**
 | JavaScript console modules (node) | pass |
 | `bin/rails baseline:verify` | OK — frozen originals pass against `portfolio-baseline` (25 runs) |
 | Line coverage (stdlib `Coverage`) | 93.5 % of `app/**/*.rb` (Phase 0: 65.7 %); every `app/services` file ≥ 95 % |
-| CI | **not run** (branch not pushed) |
+| CI | not run at the time of this table; later green on GitHub Actions (see "Remaining acceptance work" below) |
 
 ## 12. Security and reliability checks
 
@@ -135,9 +139,11 @@ responses carry no exception text or SQL; the gate stores no transcript text.
 
 ## 13. Known limitations
 
-- The agent's conversational reliability is not established: premature submits (3/4), announced-but-not-made tool calls, spoken
+- The agent's conversational reliability is not established: premature submits (2 of 4), announced-but-not-made tool calls, spoken
   reasoning, filler stacking, unscripted questions, a repeated greeting.
-- The gate relies on the order of Vapi's history; Call #7 showed that history splitting one caller reply around the submit.
+- The gate relies on the order of Vapi's history; Call #7 showed that history splitting one caller reply around the submit, and
+  Call #2's history stamps the caller's answer 0.1 s after the submit although the model had it: against that payload the gate
+  refuses a confirmed order (a false refusal; fails closed). Not fixed; a Phase 3 candidate.
   Timestamps in it are not precise speech timing.
 - Reasoning effort is not a controllable variable through the assistant configuration; `vapi:check` validates configuration, not the
   downstream request.
@@ -176,7 +182,7 @@ code and in the console:
 - **observable evidence**: a recorded `ToolInvocation` for every server action, turn evidence at submit, replayable fixtures from
   real calls, and a console that shows the model's words next to the server's decisions.
 
-Live testing showed the model submitting before the caller answered in 3 of 4 calls that reached submission. The response was not a
+Live testing showed the model submitting before the caller answered in 2 of 4 calls that reached submission (corrected from 3 of 4). The response was not a
 stronger prompt but a server invariant, verified against the real recorded payloads. The model proposes. The server decides.
 
 ---
