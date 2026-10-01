@@ -172,8 +172,8 @@ bin/rubocop; bin/brakeman --no-pager; bin/bundler-audit; bin/importmap audit
 - Live testing (nine Phase 1 browser calls) found the agent submitting before the caller answered (2 of 4 calls that reached submission —
   the reason for the confirmation gate), announcing tool calls it never made, speaking its reasoning, and stacking fillers. Only the
   first is prevented server-side; the others are visible in the console, not fixed. One compliant call is not a rate.
-- The gate's refusal path has been verified against recorded real payloads, not in a live call; two deliberate fault-injection
-  attempts (Phase 2) did not produce one either.
+- The gate's refusal path is verified against recorded real payloads and once live (Phase 2, Vapi/DB call #20: the normal
+  assistant submitted with no caller turn and was refused). Two deliberate fault-injection attempts did not produce one.
 - The gate reads the order of Vapi's conversation history, which can lag what the model received: against one recorded call
   (Call #2) it refuses an order the caller had confirmed. It fails closed (no wrong order); not fixed.
 - The model's reasoning effort is not a controllable variable through the assistant configuration (Vapi's requests did not follow

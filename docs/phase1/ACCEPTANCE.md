@@ -95,8 +95,9 @@ It was added because of the live evidence (at the time read as 3 of 3 premature 
 #6, see §3) and is an architectural safeguard. **Call #7's compliant behaviour does not make it unnecessary.** Against the real
 recorded submits: the premature submits of Calls #1 and #6 would each be refused, and Call #6's later submit after the caller's yes
 would be accepted (`test/controllers/api/vapi/confirmation_gate_test.rb`, `live_submit_webhook_*.json`). Call #2's recorded submit
-would also be refused although the caller had answered: a false refusal (§13). **No live call has yet exercised the refusal path**
-(Phase 2's two fault-injection attempts did not produce one either).
+would also be refused although the caller had answered: a false refusal (§13). **No Phase 1 live call exercised the refusal
+path.** (Update 2026-10-01: Phase 2's normal-assistant call, Vapi/DB #20, did: a premature submit refused live; Phase 2's two
+fault-injection attempts did not produce one. See the verification log.)
 
 ## 9. What the live calls demonstrate
 
@@ -111,7 +112,7 @@ would also be refused although the caller had answered: a false refusal (§13). 
 ## 10. What the live calls do NOT demonstrate
 
 - Any rate: nine calls (one invalid), two scripted scenarios.
-- The gate's refusal path in a live call.
+- The gate's refusal path in a live call (first seen in Phase 2, Vapi/DB call #20).
 - The effect of `reasoningEffort: low` (Vapi sent `minimal` for the conversation regardless).
 - The SMS path to a real phone (web calls have no number), web-call transfer, large-order and closed-hours rules live.
 - How the model handles unclear replies in general (Call #9 is one attempt: it dropped the reply rather than clarifying).

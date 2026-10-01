@@ -21,9 +21,11 @@ where they were captured, Vapi's stored logs
   caller had answered the read-back. Vapi's per-call model logs show the request that produced `submit_order` ended with the
   `get_cart` result, not with anything the caller said ([verification log](voice_agent/verification_log.md), entry "Forensic
   analysis of fault-injection attempt 2; correction of the premature-submit count"). Phase 1 first counted 3 of 4; Call #2 was
-  later found not to be premature (see §5).
+  later found not to be premature (see §5). In Phase 2 the normal assistant did it again on a live call (Vapi/DB call #20), and
+  the gate refused it (§5).
 - **Announced actions that never happened** ("Getting your cart" with no tool call), stalls after a filler ("One moment." and then
-  nothing), spoken reasoning, misheard speech ([Phase 1 report §3–§6](phase1/ACCEPTANCE.md)).
+  nothing), adding an item the caller had only asked about (Call #1, and again in Vapi/DB call #20), spoken reasoning, misheard
+  speech ([Phase 1 report §3–§6](phase1/ACCEPTANCE.md), [verification log](voice_agent/verification_log.md)).
 - In every valid call, **the server's state was correct for what it was asked**: Call #1's wrong order ($35.50) was exactly what the
   model requested, and the console showed it ([Phase 1 report §7](phase1/ACCEPTANCE.md)).
 
@@ -71,8 +73,11 @@ fails closed. It is a turn-taking check, not a judgement of what the caller said
   ([confirmation_gate_test.rb](../test/controllers/api/vapi/confirmation_gate_test.rb)). Call #6 happened before the gate was
   enforced: its review page shows the submit with 0 caller turns, issued by the same model response that answered the
   `get_cart` result.
-- **Live, with the gate on:** Calls #7 and #9 submitted after the caller's answer and the gate passed. No live call has produced a
-  refusal ([verification log](voice_agent/verification_log.md)).
+- **Live, with the gate on:** Calls #7 and #9 submitted after the caller's answer and the gate passed. Then, in Phase 2, the
+  unchanged normal assistant read the order back and submitted in the same response with no caller turn (Vapi/DB call #20, on its
+  configured path: OpenAI, `minimal`, no fallback). Rails refused it with `customer_confirmation_required`; the order stayed open
+  at v1; the model asked "Did I get that right?" again, and after the caller's "yes" the submit was accepted. It is the only live
+  refusal so far ([verification log](voice_agent/verification_log.md), entry "Phase 2 normal-assistant call 2 of 3").
 - **A false refusal, found later:** in Call #2 the model had the caller's "Yes. That's right." before it submitted, but Vapi's
   history stamps that turn 0.1 s after the submit, so the gate refuses that recorded payload. It fails closed (no wrong order;
   the caller confirms again). Recorded as a known limitation, not fixed.
@@ -92,9 +97,10 @@ injected claim either. That decision ran on Vapi's Azure fallback at `low` reaso
 live refusal was **attempted, not demonstrated** (2 of the 5 allowed calls used), and the prompt was not tuned to force it
 ([verification log](voice_agent/verification_log.md), Phase 2 entries).
 
-The lesson is the same one the gate encodes: a prompt can make a model's behaviour more or less likely, in either direction, but
-not certain. The normal prompt did not stop Calls #1 and #6 submitting early; an explicit instruction did not make attempt 2 do it.
-What is certain is what the server accepts.
+Minutes later, the normal assistant, told to wait, submitted early on its own (Vapi/DB call #20, §5). The lesson is the one the
+gate encodes: a prompt makes a model's behaviour more or less likely, in either direction, but not certain. The normal prompt did
+not stop Calls #1 and #6, or call #20, submitting early; an explicit instruction did not make attempt 2 do it. What is certain is
+what the server accepts.
 
 ## 7. Evidence and checks
 
@@ -109,7 +115,8 @@ What is certain is what the server accepts.
 - The agent's conversational reliability is not established (stalls, fillers, announced actions, misheard speech); the server
   prevents wrong orders, not awkward calls.
 - The gate depends on the ordering of Vapi's history (the Call #2 false refusal above).
-- No live call has shown the gate refusing; the refusal is shown against recorded real payloads.
+- One live refusal so far (Vapi/DB call #20); otherwise the refusal is shown against recorded real payloads. No rates: a handful
+  of calls.
 - Reasoning effort is not controllable through the Vapi assistant: provider fallbacks change it per request.
 - The browser public key is not restricted in the Vapi dashboard.
 - Not built: payments, phone calls and SMS delivery, call transfer, multiple restaurants, deployment
