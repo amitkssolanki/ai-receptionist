@@ -74,7 +74,8 @@ fails closed. It is a turn-taking check, not a judgement of what the caller said
   ([confirmation_gate_test.rb](../test/controllers/api/vapi/confirmation_gate_test.rb)). Call #6 happened before the gate was
   enforced: its review page shows the submit with 0 caller turns, issued by the same model response that answered the
   `get_cart` result.
-- **Live, with the gate on:** Calls #7 and #9 submitted after the caller's answer and the gate passed. Then, in Phase 2, the
+- **Live, with the gate on:** Calls #7 and #9, and in Phase 2 call #22 (a clean, screen-recorded happy path), submitted after the
+  caller's answer and the gate passed. In Phase 2, the
   unchanged normal assistant read the order back and submitted in the same response with no caller turn (Vapi/DB call #20, on its
   configured path: OpenAI, `minimal`, no fallback). Rails refused it with `customer_confirmation_required`; the order stayed open
   at v1; the model asked "Did I get that right?" again, and after the caller's "yes" the submit was accepted. It is the only live

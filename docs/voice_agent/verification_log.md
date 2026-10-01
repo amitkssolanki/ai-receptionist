@@ -600,3 +600,25 @@ right." Clean means: `add_to_cart` only after the order line (1 × Margherita Pi
 full; the first `submit_order` after the caller's "yes" (gate passed, no refusal); order confirmed; no unrequested add, invented
 option or unbacked claim - judged from Vapi's model input and the Rails records. If it is not clean, no further call is made and
 the video uses Call #9's review page (DB #16) for the happy path.
+
+## 2026-10-01 — Phase 2 additional normal call (4th, outside the original cap; Vapi/DB call #22): clean happy path
+The one additional call authorized above. Normal console, unchanged dev assistant `f858bbe9…` (fingerprints identical before the
+call). Screen-recorded with OBS (raw footage for the demo video). Call 89 s, $0.1205, ended by the customer. Sources: `bin/rails
+calls:last`, the console screenshot, the database, Vapi's stored record and per-call logs (read-only).
+
+**Clean by the definition fixed before the call:**
+- The caller's order line ("I would like one Margarita pizza with extra cheese. For pickup.") was the last message of the request
+  that led, via `get_menu` and `get_menu_item`, to `add_to_cart` 1 × Margherita Pizza + Extra cheese (v0→v1). "Added one
+  Margherita Pizza with extra cheese…" was spoken from a completion after that result.
+- After "Please read my order back." the model called `get_cart`; the completion answering it spoke the server's read-back in full:
+  "One Margherita Pizza with extra cheese. Total sixteen dollars. Did I get that right?" (no tool call).
+- The first and only `submit_order` came from a request whose input ended with the caller's "Yes, that's right."; gate passed
+  (1 caller turn, same completion: no); no refusal. Order #13: 1 × Margherita Pizza with Extra cheese, $16.00, CONFIRMED at v1,
+  pickup; SMS not sent (web call).
+- No unrequested add, no invented option, no claim the server did not back.
+
+**Recorded blemishes (not part of the definition):** the caller answered two direct questions ("No." to garlic knots; "Pickup?" to
+"pickup or delivery", asked although the order line said pickup). After "Pickup?" the model said "One moment while I pull up your
+cart to confirm." and made no request for 16 s, until the caller's next scripted line (the announced-action stall; no effect on the
+order). 3 of the 12 model requests fell back to Azure OpenAI at `low` after OpenAI faults, including the request that issued
+`submit_order`.
