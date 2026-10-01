@@ -104,8 +104,14 @@ bin/dev
 ```
 
 `bin/dev` runs Rails and the Tailwind watcher on `http://localhost:3000`. The seed creates the restaurant, its menu and a local-only
-admin login (`admin@example.com` / `password123` — never use it anywhere real). **After any migration, restart `bin/dev`**: a server
+admin login (`admin@example.com` / `password123`, development and test only). **After any migration, restart `bin/dev`**: a server
 started before a migration cannot record tool calls.
+
+Outside development and test the seed never creates that login: it creates an admin only from `ADMIN_EMAIL` and `ADMIN_PASSWORD`
+(at least 16 characters), and without them no one can sign in. That is a one-time bootstrap of an empty database: once any user
+exists, later seeds ignore both variables and never create, recreate or change an account. There is no sign-up and no emailed password reset; change a
+password with `bin/rails runner`. Every page except sign-in and `/up` requires a signed-in admin, and the Vapi webhook requires
+its secret (`test/security/anonymous_boundary_test.rb`).
 
 ### Configuration
 

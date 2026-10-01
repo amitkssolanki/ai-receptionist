@@ -8,9 +8,31 @@ restaurant = Restaurant.find_or_create_by!(name: "Taj Zayka") do |r|
   }
 end
 
-User.find_or_create_by!(email: "admin@example.com") do |u|
-  u.password = "password123"
-  u.restaurant = restaurant
+# The admin login. Locally (development, test) it is the documented admin@example.com / password123. Anywhere else it
+# comes only from ADMIN_EMAIL and ADMIN_PASSWORD (16+ characters), never from a default: without them no admin is created,
+# and nobody can sign in. bin/docker-entrypoint runs db:prepare, which seeds a fresh production database.
+#
+# Outside development and test this is a one-time bootstrap: once any user exists the variables are ignored, so values
+# left in the environment can never add, recreate or change an account (an existing admin is also never updated here).
+admin_bootstrap_done = !Rails.env.local? && User.exists?
+admin_email, admin_password =
+  if Rails.env.local?
+    [ "admin@example.com", "password123" ]
+  elsif admin_bootstrap_done
+    [ nil, nil ]
+  else
+    [ ENV["ADMIN_EMAIL"].presence, ENV["ADMIN_PASSWORD"].presence ]
+  end
+
+if admin_email && admin_password
+  if !Rails.env.local? && admin_password.length < 16
+    raise ArgumentError, "ADMIN_PASSWORD must be at least 16 characters outside development and test"
+  end
+
+  User.find_or_create_by!(email: admin_email) do |u|
+    u.password = admin_password
+    u.restaurant = restaurant
+  end
 end
 
 starters = restaurant.menu_categories.find_or_create_by!(name: "Starters") { |c| c.position = 1 }
@@ -212,4 +234,12 @@ pepperoni.menu_item_upsells.find_or_create_by!(upsell_item: garlic_knots)
 chicken_sandwich.menu_item_upsells.find_or_create_by!(upsell_item: garden_salad)
 
 puts "Seeded #{restaurant.name} with #{restaurant.menu_items.count} menu items across #{restaurant.menu_categories.count} categories."
-puts "Admin login: admin@example.com / password123"
+if Rails.env.local?
+  puts "Admin login (local only): admin@example.com / password123"
+elsif admin_bootstrap_done
+  puts "Admin bootstrap skipped: users already exist (ADMIN_EMAIL and ADMIN_PASSWORD are ignored)."
+elsif admin_email && admin_password
+  puts "Admin user ready: #{admin_email}"
+else
+  puts "No admin user created: set ADMIN_EMAIL and ADMIN_PASSWORD (16+ characters) and run bin/rails db:seed again."
+end
