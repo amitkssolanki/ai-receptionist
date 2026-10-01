@@ -6,6 +6,7 @@ require "test_helper"
 # (webhook_security_test.rb), and the cable connection needs a signed-in session (console_channel_test.rb).
 class AnonymousBoundaryTest < ActionDispatch::IntegrationTest
   PUBLIC = {
+    "home#show" => "the static homepage: reads no records or configuration (home_controller_test.rb)",
     "users/sessions#new" => "the sign-in form",
     "users/sessions#create" => "sign-in itself, rate-limited",
     "users/sessions#destroy" => "sign-out",
@@ -132,8 +133,8 @@ class AnonymousBoundaryTest < ActionDispatch::IntegrationTest
     assert_not_includes response.body, "boundary_call"
   end
 
-  test "the root and admin pages show no restaurant, order or call data to an anonymous visitor" do
-    [ root_path, admin_orders_path, admin_order_path(@order), admin_call_logs_path, admin_console_call_state_path(@call_log) ].each do |path|
+  test "the dashboard and admin pages show no restaurant, order or call data to an anonymous visitor" do
+    [ admin_root_path, admin_orders_path, admin_order_path(@order), admin_call_logs_path, admin_console_call_state_path(@call_log) ].each do |path|
       get path
       assert_sign_in_required(path)
       assert_not_includes response.body, @restaurant.name

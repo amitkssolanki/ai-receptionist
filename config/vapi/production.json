@@ -1,0 +1,5 @@
+{
+  "name": "Taj Zayka Receptionist (production)",
+  "serverUrl": "https://restaurant-receptionist.railsfanatics.com/api/vapi/webhooks",
+  "publicKeyAllowedOrigins": ["https://restaurant-receptionist.railsfanatics.com"]
+}

@@ -11,7 +11,7 @@ class Users::SessionsControllerTest < ActionDispatch::IntegrationTest
 
   test "sign-in still works" do
     post user_session_path, params: { user: { email: @user.email, password: "password123" } }
-    assert_redirected_to root_path
+    assert_redirected_to admin_root_path
   end
 
   test "the 11th sign-in attempt within three minutes is refused, even with the right password" do
@@ -23,7 +23,7 @@ class Users::SessionsControllerTest < ActionDispatch::IntegrationTest
     post user_session_path, params: { user: { email: @user.email, password: "password123" } }
     assert_redirected_to new_user_session_path
     assert_match(/Too many sign-in attempts/, flash[:alert])
-    get root_path
+    get admin_root_path
     assert_redirected_to new_user_session_path, "the refused attempt did not sign anyone in"
   end
 
@@ -31,8 +31,23 @@ class Users::SessionsControllerTest < ActionDispatch::IntegrationTest
     10.times { post user_session_path, params: { user: { email: @user.email, password: "wrong-password" } } }
     travel 4.minutes do
       post user_session_path, params: { user: { email: @user.email, password: "password123" } }
-      assert_redirected_to root_path
+      assert_redirected_to admin_root_path
     end
+  end
+
+  test "signing in after being sent away from a protected page returns there, not to the public homepage" do
+    get admin_console_path
+    assert_redirected_to new_user_session_path
+    post user_session_path, params: { user: { email: @user.email, password: "password123" } }
+    assert_redirected_to admin_console_path
+  end
+
+  test "signing out returns to the public homepage" do
+    post user_session_path, params: { user: { email: @user.email, password: "password123" } }
+    delete destroy_user_session_path
+    assert_redirected_to root_path
+    get admin_root_path
+    assert_redirected_to new_user_session_path
   end
 
   test "the login page renders through the subclass" do

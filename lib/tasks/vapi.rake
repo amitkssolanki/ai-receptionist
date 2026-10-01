@@ -9,10 +9,10 @@ namespace :vapi do
     end
     id = profile.assistant_id
     if id.blank?
-      source = profile.fault_injection? ? "VAPI_FAULT_INJECTION_ASSISTANT_ID or credentials vapi.fault_injection_assistant_id" : "VAPI_DEV_ASSISTANT_ID or credentials vapi.dev_assistant_id"
+      source = profile.fault_injection? ? "VAPI_FAULT_INJECTION_ASSISTANT_ID or credentials vapi.fault_injection_assistant_id" : "VAPI_ASSISTANT_ID, VAPI_DEV_ASSISTANT_ID or credentials vapi.dev_assistant_id"
       abort "vapi:check: no #{profile.key} assistant id is configured (#{source})"
     end
-    abort "vapi:check: refusing to check the frozen baseline assistant; set VAPI_DEV_ASSISTANT_ID to the development assistant" if id == VapiConfig::BASELINE_ASSISTANT_ID
+    abort "vapi:check: refusing to check the frozen baseline assistant; set VAPI_ASSISTANT_ID (or VAPI_DEV_ASSISTANT_ID) to the assistant to check" if id == VapiConfig::BASELINE_ASSISTANT_ID
 
     begin
       assistant, tools = VapiConfig::Client.new.assistant_with_tools(id)

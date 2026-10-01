@@ -1,119 +1,86 @@
-# Name of your application. Used to uniquely configure containers.
-service: ai_receptionist
+# Kamal deployment of the AI Restaurant Receptionist (docs/deploy/PRODUCTION.md is the runbook).
+#
+# Same server, registry, proxy and Postgres-accessory conventions as MCP Server, Platestead and Keepford: the shared
+# server 91.98.193.40 (Kamal's default SSH user, root), images on ghcr.io/amitkssolanki, TLS from kamal-proxy with
+# Let's Encrypt. This application has its own service name, hostname, Postgres container and databases; it shares no
+# database with the other applications and publishes no Postgres port on the host.
+#
+# Secrets are listed by NAME only. .kamal/secrets reads their values from .env.kamal, which is git-ignored and never
+# committed. There is no RAILS_MASTER_KEY: production reads nothing from config/credentials.yml.enc (its secret_key_base
+# is the development one), so every production value comes from the environment below.
+service: ai-receptionist
+image: amitkssolanki/ai-receptionist
 
-# Name of the container image (use your-user/app-name on external registries).
-image: ai_receptionist
-
-# Deploy to these servers.
 servers:
   web:
-    - 192.168.0.1
-  # job:
-  #   hosts:
-  #     - 192.168.0.1
-  #   cmd: bin/jobs
+    hosts:
+      - 91.98.193.40
+    options:
+      memory: 768m # Puma plus the Solid Queue supervisor; bounded so a fault cannot starve the other applications
 
-# Enable SSL auto certification via Let's Encrypt and allow for multiple apps on a single web server.
-# If used with Cloudflare, set encryption mode in SSL/TLS setting to "Full" to enable CF-to-app encryption.
-#
-# Using an SSL proxy like this requires turning on config.assume_ssl and config.force_ssl in production.rb!
-#
-# Don't use this when deploying to multiple web servers (then you have to terminate SSL at your load balancer).
-#
-# proxy:
-#   ssl: true
-#   host: app.example.com
+proxy:
+  ssl: true
+  host: restaurant-receptionist.railsfanatics.com
+  app_port: 80 # Thruster in front of Puma (Dockerfile)
+  healthcheck:
+    path: /up
+    interval: 5
+    timeout: 5
 
-# Where you keep your container images.
 registry:
-  # Alternatives: hub.docker.com / registry.digitalocean.com / ghcr.io / ...
-  server: localhost:5555
+  server: ghcr.io
+  username: amitkssolanki
+  password:
+    - KAMAL_REGISTRY_PASSWORD
 
-  # Needed for authenticated registries.
-  # username: your-user
+builder:
+  arch: amd64
 
-  # Always use an access token rather than real password when possible.
-  # password:
-  #   - KAMAL_REGISTRY_PASSWORD
-
-# Inject ENV variables into containers (secrets come from .kamal/secrets).
 env:
-  secret:
-    - RAILS_MASTER_KEY
   clear:
-    # Run the Solid Queue Supervisor inside the web server's Puma process to do jobs.
-    # When you start using multiple servers, you should split out job processing to a dedicated machine.
-    SOLID_QUEUE_IN_PUMA: true
+    RAILS_HOST: restaurant-receptionist.railsfanatics.com # config.hosts and URLs (config/environments/production.rb)
+    RAILS_LOG_LEVEL: info
+    DB_HOST: ai-receptionist-postgres # the accessory below, on Kamal's private Docker network
+    SOLID_QUEUE_IN_PUMA: true # RAILS_MAX_THREADS stays unset: Puma 3 threads, pools of 5 (Solid Queue needs threads + 2)
+  secret:
+    - SECRET_KEY_BASE # new for production (bin/rails secret); never the development one
+    - AI_RECEPTIONIST_DATABASE_PASSWORD # = POSTGRES_PASSWORD, set in .kamal/secrets
+    - VAPI_SERVER_SECRET # new for production, 16+ characters; the production assistant sends it as X-Vapi-Secret
+    - VAPI_PUBLIC_KEY # the production browser key, restricted in Vapi to this origin and the production assistant
+    - VAPI_ASSISTANT_ID # the production assistant (never the development, baseline or fault-injection assistant)
+    - ADMIN_EMAIL # one-time admin bootstrap of an empty database (db/seeds.rb)
+    - ADMIN_PASSWORD # one-time; emptied in .env.kamal after the first deploy (runbook step 16)
 
-    # Set number of processes dedicated to Solid Queue (default: 1)
-    # JOB_CONCURRENCY: 3
+# Not configured on purpose: TWILIO_* (browser calls have no phone number, so no confirmation SMS is sent; the job is a
+# no-op without them), VAPI_PRIVATE_KEY (only the local, read-only vapi:check uses it) and
+# VAPI_FAULT_INJECTION_ASSISTANT_ID (development-only; VapiConfig ignores it in production).
 
-    # Set number of cores available to the application on each server (default: 1).
-    # WEB_CONCURRENCY: 2
+logging:
+  driver: json-file
+  options:
+    max-size: 10m
+    max-file: 3
 
-    # Match this to any external database server to configure Active Record correctly
-    # Use ai_receptionist-db for a db accessory server on same machine via local kamal docker network.
-    # DB_HOST: 192.168.0.2
+asset_path: /rails/public/assets
 
-    # Log everything from Rails
-    # RAILS_LOG_LEVEL: debug
+accessories:
+  postgres:
+    image: postgres:18
+    host: 91.98.193.40
+    cmd: postgres -c shared_buffers=64MB -c max_connections=60 # 4 databases x Puma and Solid Queue pools of 5, with margin
+    options:
+      memory: 256m
+    env:
+      clear:
+        POSTGRES_USER: ai_receptionist
+        POSTGRES_DB: ai_receptionist_production # db:prepare creates the _cache, _queue and _cable databases next to it
+      secret:
+        - POSTGRES_PASSWORD
+    directories:
+      - data:/var/lib/postgresql
 
-# Aliases are triggered with "bin/kamal <alias>". You can overwrite arguments on invocation:
-# "bin/kamal logs -r job" will tail logs from the first server in the job section.
 aliases:
   console: app exec --interactive --reuse "bin/rails console"
   shell: app exec --interactive --reuse "bash"
   logs: app logs -f
-  dbc: app exec --interactive --reuse "bin/rails dbconsole --include-password"
-
-# Use a persistent storage volume for sqlite database files and local Active Storage files.
-# Recommended to change this to a mounted volume path that is backed up off server.
-volumes:
-  - "ai_receptionist_storage:/rails/storage"
-
-# Bridge fingerprinted assets, like JS and CSS, between versions to avoid
-# hitting 404 on in-flight requests. Combines all files from new and old
-# version inside the asset_path.
-asset_path: /rails/public/assets
-
-# Configure the image builder.
-builder:
-  arch: amd64
-
-  # # Build image via remote server (useful for faster amd64 builds on arm64 computers)
-  # remote: ssh://docker@docker-builder-server
-  #
-  # # Pass arguments and secrets to the Docker build process
-  # args:
-  #   RUBY_VERSION: ruby-3.4.7
-  # secrets:
-  #   - GITHUB_TOKEN
-  #   - RAILS_MASTER_KEY
-
-# Use a different ssh user than root
-# ssh:
-#   user: app
-
-# Use accessory services (secrets come from .kamal/secrets).
-# accessories:
-#   db:
-#     image: mysql:8.0
-#     host: 192.168.0.2
-#     # Change to 3306 to expose port to the world instead of just local network.
-#     port: "127.0.0.1:3306:3306"
-#     env:
-#       clear:
-#         MYSQL_ROOT_HOST: '%'
-#       secret:
-#         - MYSQL_ROOT_PASSWORD
-#     files:
-#       - config/mysql/production.cnf:/etc/mysql/my.cnf
-#       - db/production.sql:/docker-entrypoint-initdb.d/setup.sql
-#     directories:
-#       - data:/var/lib/mysql
-#   redis:
-#     image: valkey/valkey:8
-#     host: 192.168.0.2
-#     port: 6379
-#     directories:
-#       - data:/data
+  dbc: accessory exec postgres --interactive --reuse "psql -U ai_receptionist ai_receptionist_production"

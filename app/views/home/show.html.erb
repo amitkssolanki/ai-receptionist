@@ -1,0 +1,315 @@
+<% content_for :title, "AI Restaurant Receptionist · The model proposes. The server decides." %>
+<% content_for :description, "A voice receptionist for restaurant orders: a language model holds the conversation, and a Rails server decides what actually happens to the order." %>
+<%
+  # Every figure and quote on this page comes from the project's own records: test calls #20 and #22 (the review pages
+  # shown below) and the frozen prototype baseline (test/fixtures/files/baseline). docs/CASE_STUDY.md has the evidence.
+  case_study_url = "https://github.com/amitkssolanki/ai-receptionist/blob/main/docs/CASE_STUDY.md"
+  source_url = "https://github.com/amitkssolanki/ai-receptionist"
+  primary_cta = user_signed_in? ? [ "Open the voice console", admin_console_path ] : [ "Sign in to try it", new_user_session_path ]
+  button = "inline-flex items-center justify-center rounded-md px-5 py-3 text-sm font-semibold transition"
+  eyebrow = "text-xs font-semibold uppercase tracking-[0.2em] text-emerald-400"
+  source_tag = "rounded bg-gray-800 px-2 py-0.5 font-mono text-[11px] text-gray-400"
+%>
+
+<header class="sticky top-0 z-20 border-b border-white/5 bg-gray-950/85 backdrop-blur">
+  <div class="mx-auto flex max-w-6xl items-center justify-between gap-4 px-5 py-4">
+    <a href="#top" class="flex items-center gap-2.5 font-semibold text-gray-100">
+      <span aria-hidden="true" class="grid h-7 w-7 place-items-center rounded-md bg-emerald-400/10 ring-1 ring-emerald-400/30">
+        <span class="h-2.5 w-2.5 rounded-full bg-emerald-400"></span>
+      </span>
+      <span class="text-sm sm:text-base">AI Restaurant Receptionist</span>
+    </a>
+    <nav class="flex items-center gap-5 text-sm">
+      <a href="#how-it-works" class="hidden text-gray-400 hover:text-gray-100 md:inline">How it works</a>
+      <a href="#source-of-truth" class="hidden text-gray-400 hover:text-gray-100 md:inline">Source of truth</a>
+      <a href="#reliability" class="hidden text-gray-400 hover:text-gray-100 md:inline">Reliability</a>
+      <% if user_signed_in? %>
+        <%= link_to "Dashboard", admin_root_path, class: "font-medium text-gray-100 hover:text-emerald-300" %>
+      <% else %>
+        <%= link_to "Sign in", new_user_session_path, class: "font-medium text-gray-100 hover:text-emerald-300" %>
+      <% end %>
+    </nav>
+  </div>
+</header>
+
+<main id="top">
+  <%# --- hero --- %>
+  <section class="mx-auto grid max-w-6xl gap-14 px-5 pt-16 pb-20 sm:pt-24 lg:grid-cols-[1.05fr_0.95fr] lg:items-center lg:gap-16">
+    <div>
+      <p class="<%= eyebrow %>">Voice ordering for a restaurant</p>
+      <h1 class="mt-5 text-4xl font-bold tracking-tight text-gray-50 sm:text-5xl lg:text-6xl">
+        The model proposes.<br><span class="text-emerald-400">The server decides.</span>
+      </h1>
+      <p class="mt-6 max-w-xl text-lg leading-relaxed text-gray-400">
+        A caller talks to an AI receptionist about the menu and places an order. A language model holds the conversation;
+        a Rails server owns the order. Every change the model wants is a request the server checks, applies or refuses.
+      </p>
+      <div class="mt-9 flex flex-col gap-3 sm:flex-row">
+        <%= link_to primary_cta[0], primary_cta[1], class: "#{button} bg-emerald-400 text-gray-950 hover:bg-emerald-300" %>
+        <a href="#how-it-works" class="<%= button %> text-gray-100 ring-1 ring-white/15 hover:bg-white/5">See how it works</a>
+      </div>
+      <p class="mt-5 text-sm text-gray-500">The demo runs as a browser voice call for signed-in operators.</p>
+    </div>
+
+    <%# A real exchange from recorded test call #22: what was said, and what the server recorded. %>
+    <figure class="relative">
+      <div class="rounded-xl border border-white/10 bg-gray-900/70 p-5 shadow-2xl shadow-black/40">
+        <div class="flex items-center justify-between gap-3">
+          <span class="text-xs font-semibold uppercase tracking-wider text-gray-300">Conversation</span>
+          <span class="<%= source_tag %>">from the voice platform · not authoritative</span>
+        </div>
+        <div class="mt-4 space-y-2.5 font-mono text-[13px] leading-relaxed">
+          <p><span class="text-gray-500">Caller</span> <span class="text-gray-200">I would like one Margarita pizza with extra cheese. For pickup.</span></p>
+          <p class="text-gray-600" aria-label="lines omitted">…</p>
+          <p><span class="text-gray-500">AI</span> <span class="text-gray-200">Added one margarita pizza, with extra cheese.</span></p>
+        </div>
+      </div>
+
+      <div class="mx-6 flex items-center gap-3 py-3 font-mono text-[12px]" aria-hidden="true">
+        <span class="h-6 w-px shrink-0 bg-gradient-to-b from-white/10 to-emerald-400/60"></span>
+        <span class="text-gray-400">add_to_cart</span>
+        <span class="text-emerald-400">✓ ok</span>
+        <span class="text-gray-500">cart v0 → v1</span>
+      </div>
+
+      <div class="rounded-xl border border-emerald-400/30 bg-gray-900 p-5 shadow-2xl shadow-black/40">
+        <div class="flex items-center justify-between gap-3">
+          <span class="text-xs font-semibold uppercase tracking-wider text-gray-300">Order</span>
+          <span class="<%= source_tag %>">from Rails · authoritative</span>
+        </div>
+        <dl class="mt-4 text-sm">
+          <div class="flex items-baseline justify-between gap-4">
+            <dt class="text-gray-100">1 × Margherita Pizza <span class="block text-xs text-gray-500">+ Extra cheese</span></dt>
+            <dd class="font-mono text-gray-100">$16.00</dd>
+          </div>
+          <div class="mt-4 flex items-baseline justify-between border-t border-white/10 pt-3">
+            <dt class="font-semibold text-gray-100">Total</dt>
+            <dd class="font-mono font-semibold text-gray-50">$16.00</dd>
+          </div>
+          <div class="mt-3 flex flex-wrap gap-x-5 gap-y-1 text-xs text-gray-500">
+            <span>cart version <span class="font-mono text-gray-300">v1</span></span>
+            <span>read-back <span class="text-gray-300">written by the server</span></span>
+            <span class="font-semibold text-emerald-400">CONFIRMED · pickup</span>
+          </div>
+        </dl>
+      </div>
+      <figcaption class="mt-3 text-xs text-gray-500">From a recorded test call (#22).</figcaption>
+    </figure>
+  </section>
+
+  <%# --- how a call works --- %>
+  <section id="how-it-works" class="scroll-mt-20 border-t border-white/5 bg-gray-900/40">
+    <div class="mx-auto max-w-6xl px-5 py-20">
+      <p class="<%= eyebrow %>">How a call works</p>
+      <h2 class="mt-4 max-w-3xl text-3xl font-bold tracking-tight text-gray-50 sm:text-4xl">The conversation and the order live in different places.</h2>
+
+      <ol class="mt-12 grid gap-4 lg:grid-cols-4">
+        <% [
+             [ "Caller", "Talks naturally: asks what's on the menu, orders, changes their mind.", "gray" ],
+             [ "AI receptionist", "The voice platform turns speech into text; a language model decides what to say and which tool to call; the reply is spoken back.", "gray" ],
+             [ "Rails tools + rules", "Each tool call arrives as a request. Rails checks it against the menu and the rules, applies it in one transaction, and answers with the result or a clear error.", "emerald" ],
+             [ "Authoritative order", "Items, prices, total, cart version and status live in the database. The read-back and the confirmation come from here.", "emerald" ]
+           ].each_with_index do |(title, body, tone), index| %>
+          <li class="relative rounded-xl border p-6 <%= tone == "emerald" ? "border-emerald-400/30 bg-emerald-400/[0.04]" : "border-white/10 bg-gray-900/60" %>">
+            <span class="font-mono text-xs <%= tone == "emerald" ? "text-emerald-400" : "text-gray-500" %>">0<%= index + 1 %></span>
+            <h3 class="mt-3 text-lg font-semibold text-gray-50"><%= title %></h3>
+            <p class="mt-2 text-sm leading-relaxed text-gray-400"><%= body %></p>
+            <% if index < 3 %>
+              <span aria-hidden="true" class="absolute -right-3 top-1/2 z-10 hidden -translate-y-1/2 text-lg text-gray-600 lg:block">→</span>
+              <span aria-hidden="true" class="absolute -bottom-4 left-8 z-10 text-lg text-gray-600 lg:hidden">↓</span>
+            <% end %>
+          </li>
+        <% end %>
+      </ol>
+      <p class="mt-10 text-lg text-gray-300">The model's tool calls are <span class="font-semibold text-gray-50">requests, not facts</span>. The server is the only place an order changes.</p>
+
+      <div class="mt-16 grid gap-10 lg:grid-cols-[0.8fr_1.2fr]">
+        <div>
+          <h3 class="text-xl font-semibold text-gray-50">What a caller can do</h3>
+          <p class="mt-3 text-sm leading-relaxed text-gray-400">Each of these is a server tool the model can ask for. The server answers every request; the model never edits the order itself.</p>
+        </div>
+        <ul class="grid gap-x-8 gap-y-5 text-sm sm:grid-cols-2">
+          <% [
+               [ "Ask what's on the menu", "get_menu" ],
+               [ "Ask about a dish, its options and pairings", "get_menu_item" ],
+               [ "Order items, with quantities, options and notes", "add_to_cart" ],
+               [ "Change a quantity or remove an item", "update_cart_item_quantity · remove_cart_item" ],
+               [ "Hear the order read back, exactly as the server has it", "get_cart" ],
+               [ "Confirm it for pickup or delivery", "submit_order" ]
+             ].each do |label, tools| %>
+            <li class="border-l border-emerald-400/40 pl-4">
+              <span class="text-gray-100"><%= label %></span>
+              <span class="mt-1 block font-mono text-[11px] text-gray-500"><%= tools %></span>
+            </li>
+          <% end %>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <%# --- the AI is not the source of truth (frozen prototype baseline, call 7) --- %>
+  <section id="source-of-truth" class="scroll-mt-20 border-t border-white/5">
+    <div class="mx-auto max-w-6xl px-5 py-20">
+      <p class="<%= eyebrow %>">The AI is not the source of truth</p>
+      <h2 class="mt-4 max-w-3xl text-3xl font-bold tracking-tight text-gray-50 sm:text-4xl">A model can say something. Only the server can change the order.</h2>
+
+      <div class="mt-12 grid gap-4 md:grid-cols-2">
+        <div class="rounded-xl border border-amber-400/30 bg-amber-400/[0.04] p-6">
+          <div class="flex items-center justify-between gap-3">
+            <span class="text-xs font-semibold uppercase tracking-wider text-amber-300">What the assistant said</span>
+            <span class="<%= source_tag %>">conversation</span>
+          </div>
+          <blockquote class="mt-6 text-2xl font-medium leading-snug text-gray-50 sm:text-3xl">
+            “Great. <mark class="rounded bg-amber-400/20 px-1 text-amber-200">I'll add garlic knots.</mark>”
+          </blockquote>
+          <p class="mt-6 font-mono text-xs text-gray-500">No add_to_cart request followed.</p>
+        </div>
+
+        <div class="rounded-xl border border-emerald-400/30 bg-gray-900 p-6">
+          <div class="flex items-center justify-between gap-3">
+            <span class="text-xs font-semibold uppercase tracking-wider text-emerald-300">What the server recorded</span>
+            <span class="<%= source_tag %>">order · authoritative</span>
+          </div>
+          <dl class="mt-6 space-y-3 text-sm">
+            <div class="flex items-baseline justify-between gap-4">
+              <dt class="text-gray-100">1 × Margherita Pizza <span class="block text-xs text-gray-500">+ Extra cheese</span></dt>
+              <dd class="font-mono text-gray-100">$16.00</dd>
+            </div>
+            <div class="flex items-baseline justify-between gap-4">
+              <dt class="text-gray-500 line-through decoration-gray-600">Garlic knots</dt>
+              <dd class="text-xs font-semibold uppercase tracking-wider text-amber-300">not in the order</dd>
+            </div>
+            <div class="flex items-baseline justify-between border-t border-white/10 pt-3">
+              <dt class="font-semibold text-gray-100">Total</dt>
+              <dd class="font-mono font-semibold text-gray-50">$16.00</dd>
+            </div>
+          </dl>
+        </div>
+      </div>
+
+      <div class="mt-10 grid gap-8 text-[15px] leading-relaxed text-gray-400 md:grid-cols-2">
+        <p>
+          In a call to the early prototype, the assistant announced garlic knots but never called the tool that adds them.
+          Nothing asked the server to change the order, so it stayed one Margherita pizza for $16, and that is what was
+          submitted. The caller had been told something the order never contained.
+        </p>
+        <p>
+          The rewrite closes that gap on the server side. The read-back is now a sentence the server writes from the cart, so
+          the caller hears exactly what will be submitted, and the operator's console highlights assistant lines that claim
+          a change the server never received.
+        </p>
+      </div>
+      <p class="mt-6 text-xs text-gray-500">From the frozen prototype baseline, recorded before the rewrite.</p>
+    </div>
+  </section>
+
+  <%# --- reliability --- %>
+  <section id="reliability" class="scroll-mt-20 border-t border-white/5 bg-gray-900/40">
+    <div class="mx-auto max-w-6xl px-5 py-20">
+      <p class="<%= eyebrow %>">Built for reliable tool execution</p>
+      <h2 class="mt-4 max-w-3xl text-3xl font-bold tracking-tight text-gray-50 sm:text-4xl">The rules that keep the order right when the model is wrong.</h2>
+
+      <div class="mt-12 grid gap-x-12 gap-y-10 md:grid-cols-2">
+        <% [
+             [ "Prices come from the menu", "The model names an item; Rails looks up its price and options and computes the total. Nothing the model says can set a price." ],
+             [ "One version of the cart", "Every change creates a new cart version. The read-back records which version the caller heard, and an order is accepted only at that version, so nothing can slip in after it." ],
+             [ "Nothing is submitted without the caller", "The server refuses a submit unless the caller spoke after the read-back. In a recorded call the model read the order back and submitted it in one breath; the server refused, then accepted it after the caller's yes." ],
+             [ "Every request counts once", "Each tool call is validated, applied at most once even if the voice platform retries it, and recorded in the same database transaction as the change it made." ]
+           ].each do |title, body| %>
+          <div>
+            <h3 class="flex items-center gap-3 text-lg font-semibold text-gray-50">
+              <span aria-hidden="true" class="h-2 w-2 rounded-full bg-emerald-400"></span><%= title %>
+            </h3>
+            <p class="mt-3 pl-5 text-[15px] leading-relaxed text-gray-400"><%= body %></p>
+          </div>
+        <% end %>
+      </div>
+
+      <figure class="mt-14 overflow-hidden rounded-xl border border-white/10 bg-gray-950">
+        <%= link_to image_path("home/confirmation-gate-call-20.jpg"), target: "_blank", rel: "noopener", title: "Open full size" do %>
+        <%= image_tag "home/confirmation-gate-call-20.jpg", width: 2000, height: 547, loading: "lazy", decoding: "async", class: "block h-auto w-full",
+                      alt: "Two submit_order rows from recorded test call #20. The first, 1.8 seconds after the last get_cart, is rejected with customer_confirmation_required: 0 caller turns since the last get_cart, nothing submitted, cart version 1 kept. The second, after the caller answered, is accepted: confirmed at version 1." %>
+        <% end %>
+        <figcaption class="border-t border-white/10 px-5 py-3 text-xs text-gray-500">
+          Recorded test call #20, server events: the first submit refused (<span class="font-mono text-amber-300">customer_confirmation_required</span>), the second accepted after the caller's yes.
+        </figcaption>
+      </figure>
+
+      <p class="mt-10 max-w-3xl text-sm leading-relaxed text-gray-500">
+        Around it: the voice platform must present a shared secret with every webhook, and every page except this one and
+        the sign-in page requires a signed-in operator.
+      </p>
+    </div>
+  </section>
+
+  <%# --- what the server accepted --- %>
+  <section id="observability" class="scroll-mt-20 border-t border-white/5">
+    <div class="mx-auto max-w-6xl px-5 py-20">
+      <p class="<%= eyebrow %>">See what the server actually accepted</p>
+      <h2 class="mt-4 max-w-3xl text-3xl font-bold tracking-tight text-gray-50 sm:text-4xl">What the model said, next to what the server did.</h2>
+      <p class="mt-5 max-w-3xl text-[15px] leading-relaxed text-gray-400">
+        The operator console shows a call as it happens, and reviews it afterwards, in three views that never mix sources.
+      </p>
+
+      <ul class="mt-10 grid gap-6 text-sm sm:grid-cols-3">
+        <li class="border-t border-white/15 pt-4">
+          <span class="font-semibold text-gray-100">Conversation</span>
+          <span class="mt-1 block text-gray-400">What was said, from the voice platform. Shown, never trusted.</span>
+        </li>
+        <li class="border-t border-emerald-400/50 pt-4">
+          <span class="font-semibold text-gray-100">Order board</span>
+          <span class="mt-1 block text-gray-400">The order as the server holds it: items, total, cart version, read-back, confirmation.</span>
+        </li>
+        <li class="border-t border-emerald-400/50 pt-4">
+          <span class="font-semibold text-gray-100">Server events</span>
+          <span class="mt-1 block text-gray-400">Every tool call: its arguments, the result, the cart version and how long it took.</span>
+        </li>
+      </ul>
+
+      <figure class="mt-10 overflow-hidden rounded-xl border border-white/10 bg-gray-950 shadow-2xl shadow-black/50">
+        <%= link_to image_path("home/console-call-22.jpg"), target: "_blank", rel: "noopener", title: "Open full size" do %>
+        <%= image_tag "home/console-call-22.jpg", width: 1920, height: 1080, loading: "lazy", decoding: "async", class: "block h-auto w-full",
+                      alt: "The console's review of recorded test call #22. Left, the conversation from the voice platform, labelled not authoritative. Right, the server call and the order board from Rails, labelled authoritative: order #13, one Margherita Pizza with extra cheese, total $16.00, cart version 1, read-back delivered for v1, confirmation submitted v1. Below, server events: call started, get_menu, get_menu_item, add_to_cart (cart v0 to v1), get_cart." %>
+        <% end %>
+        <figcaption class="border-t border-white/10 px-5 py-3 text-xs text-gray-500">Recorded test call #22, as the console's review page shows it. Select the image to open it full size.</figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <%# --- try it --- %>
+  <section id="try" class="border-t border-white/5 bg-gray-900/40">
+    <div class="mx-auto grid max-w-6xl gap-12 px-5 py-20 lg:grid-cols-[1.1fr_0.9fr]">
+      <div>
+        <p class="<%= eyebrow %>">Try the receptionist</p>
+        <h2 class="mt-4 text-3xl font-bold tracking-tight text-gray-50 sm:text-4xl">Talk to it from the browser.</h2>
+        <p class="mt-5 max-w-xl text-[15px] leading-relaxed text-gray-400">
+          The voice console starts a real voice call in the browser and shows the conversation, the order and the server
+          events side by side. Each call is a real, paid voice session, so the console is open to signed-in operators only.
+        </p>
+        <div class="mt-8 flex flex-col gap-3 sm:flex-row">
+          <%= link_to primary_cta[0], primary_cta[1], class: "#{button} bg-emerald-400 text-gray-950 hover:bg-emerald-300" %>
+          <a href="<%= case_study_url %>" class="<%= button %> text-gray-100 ring-1 ring-white/15 hover:bg-white/5" target="_blank" rel="noopener">Read the case study</a>
+        </div>
+      </div>
+      <div class="rounded-xl border border-white/10 p-6">
+        <h3 class="text-sm font-semibold text-gray-100">What this demo is, and is not</h3>
+        <ul class="mt-4 space-y-2.5 text-sm text-gray-400">
+          <li class="flex gap-3"><span class="text-emerald-400">✓</span>Browser voice calls to one demo restaurant</li>
+          <li class="flex gap-3"><span class="text-emerald-400">✓</span>Menu questions, ordering, changes, read-back and confirmation</li>
+          <li class="flex gap-3"><span class="text-gray-600">–</span>No phone number or text messages</li>
+          <li class="flex gap-3"><span class="text-gray-600">–</span>No payments and no transfer to a person</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer class="border-t border-white/5">
+  <div class="mx-auto flex max-w-6xl flex-col gap-3 px-5 py-8 text-xs text-gray-500 sm:flex-row sm:items-center sm:justify-between">
+    <span>AI Restaurant Receptionist · an independent build · Ruby on Rails and Vapi</span>
+    <span class="flex gap-5">
+      <a href="<%= case_study_url %>" class="hover:text-gray-300" target="_blank" rel="noopener">Case study</a>
+      <a href="<%= source_url %>" class="hover:text-gray-300" target="_blank" rel="noopener">Source</a>
+    </span>
+  </div>
+</footer>

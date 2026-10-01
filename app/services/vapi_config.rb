@@ -67,12 +67,12 @@ module VapiConfig
     if profile.to_s == "fault_injection"
       id = fault_injection_assistant_id
       if id.blank?
-        problems << "No fault-injection assistant id is configured (set VAPI_FAULT_INJECTION_ASSISTANT_ID or credentials vapi.fault_injection_assistant_id; see config/vapi/fault_injection.md)."
+        problems << (Rails.env.production? ? "The fault-injection assistant is development-only and is never used in production." : "No fault-injection assistant id is configured (set VAPI_FAULT_INJECTION_ASSISTANT_ID or credentials vapi.fault_injection_assistant_id; see config/vapi/fault_injection.md).")
       elsif [ BASELINE_ASSISTANT_ID, dev_assistant_id ].include?(id)
         problems << "The configured fault-injection assistant is the development or baseline assistant; it must be a separate assistant."
       end
     elsif dev_assistant_id.blank?
-      problems << "No development assistant id is configured (set VAPI_DEV_ASSISTANT_ID or credentials vapi.dev_assistant_id)."
+      problems << "No assistant id is configured (set VAPI_ASSISTANT_ID; locally VAPI_DEV_ASSISTANT_ID or credentials vapi.dev_assistant_id also work)."
     elsif dev_assistant_id == BASELINE_ASSISTANT_ID
       problems << "The configured assistant is the frozen baseline assistant; the console only uses the development assistant."
     end
@@ -81,10 +81,18 @@ module VapiConfig
 
   # Read-only credentials for vapi:check. Never printed.
   def private_key = ENV["VAPI_PRIVATE_KEY"].presence || Rails.application.credentials.dig(:vapi, :private_key).presence
-  def dev_assistant_id = ENV["VAPI_DEV_ASSISTANT_ID"].presence || Rails.application.credentials.dig(:vapi, :dev_assistant_id).presence
+  # The assistant the console calls. VAPI_ASSISTANT_ID is the environment-neutral name (production sets it to the production
+  # assistant, docs/deploy/PRODUCTION.md); VAPI_DEV_ASSISTANT_ID and credentials remain for existing local setups.
+  def dev_assistant_id
+    ENV["VAPI_ASSISTANT_ID"].presence || ENV["VAPI_DEV_ASSISTANT_ID"].presence ||
+      Rails.application.credentials.dig(:vapi, :dev_assistant_id).presence
+  end
 
-  # The fault-injection assistant (a separate Vapi assistant; see config/vapi/fault_injection.md). nil when not set up.
+  # The fault-injection assistant (a separate Vapi assistant; see config/vapi/fault_injection.md). nil when not set up, and
+  # always nil in production: it is a development and test instrument, never a deployed assistant.
   def fault_injection_assistant_id
+    return if Rails.env.production?
+
     ENV["VAPI_FAULT_INJECTION_ASSISTANT_ID"].presence || Rails.application.credentials.dig(:vapi, :fault_injection_assistant_id).presence
   end
 end

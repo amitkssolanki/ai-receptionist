@@ -2,6 +2,8 @@ Rails.application.routes.draw do
   devise_for :users, skip: [ :registrations ], controllers: { sessions: "users/sessions" }
 
   namespace :admin do
+    root "dashboards#show" # /admin: the signed-in dashboard
+
     resources :menu_categories, shallow: true do
       resources :menu_items, shallow: true do
         resources :menu_item_modifiers, except: [ :index, :show ]
@@ -29,5 +31,6 @@ Rails.application.routes.draw do
   # Can be used by load balancers and uptime monitors to verify that the app is live.
   get "up" => "rails/health#show", as: :rails_health_check
 
-  root "admin/dashboards#show"
+  # The public homepage: what the receptionist is and how it works. Static, reads no data (home_controller_test.rb).
+  root "home#show"
 end

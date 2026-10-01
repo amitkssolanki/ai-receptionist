@@ -16,7 +16,7 @@ module VapiConfig
     # Returns [assistant, tools]: the assistant body and every tool it uses (inline plus model.toolIds).
     def assistant_with_tools(assistant_id)
       raise Error, "no Vapi private key configured (VAPI_PRIVATE_KEY or credentials vapi.private_key)" if @private_key.blank?
-      raise Error, "no development assistant id configured (VAPI_DEV_ASSISTANT_ID or credentials vapi.dev_assistant_id)" if assistant_id.blank?
+      raise Error, "no development assistant id configured (VAPI_ASSISTANT_ID, VAPI_DEV_ASSISTANT_ID or credentials vapi.dev_assistant_id)" if assistant_id.blank?
 
       assistant = get("/assistant/#{assistant_id}")
       model = assistant["model"] || {}
