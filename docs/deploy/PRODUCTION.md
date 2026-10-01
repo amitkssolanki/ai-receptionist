@@ -1,7 +1,7 @@
 # Production deployment runbook
 
 The AI Restaurant Receptionist at **https://restaurant-receptionist.railsfanatics.com**, deployed with Kamal 2 to the
-server MCP Server, Platestead and Keepford already use. This document holds no secret values: it names every value and
+server MCP Server, Platestead and Keepford (and vrinda and fieldnote) already use. This document holds no secret values: it names every value and
 says where it is generated and stored. Configuration: `config/deploy.yml`, `.kamal/secrets`, `config/vapi/production.json`;
 `test/deploy/production_config_test.rb` keeps them consistent.
 
@@ -32,6 +32,11 @@ ssh root@91.98.193.40 'free -m; df -h /; docker stats --no-stream --format "{{.N
 
 Go ahead only if about 1.1 GB of memory stays available with the other applications running. If not, stop: do not
 lower the other applications' limits from this repository.
+
+**Done (2026-10-01, read-only):** 7.7 GB total, 2,698 MB available with every running application (MCP Server,
+Platestead, Keepford, plus vrinda and fieldnote); after this application's limits about 1.67 GB stays available. Disk
+16 GB free (57% used), load average 0.2 on 4 cores. `kamal-proxy` runs `v0.9.2`, the minimum Kamal 2.12 accepts, so
+`kamal deploy` neither aborts nor touches it. No `ai-receptionist` containers or data existed yet.
 
 ## 1. DNS
 
@@ -66,10 +71,13 @@ No manual database work. `kamal accessory boot postgres` starts `postgres:18` wi
 `ai_receptionist_production_cache`, `_queue` and `_cable` from their schema files, and runs `db/seeds.rb` (the demo
 restaurant, its menu and the one-time admin bootstrap). Later deploys run pending migrations only.
 
-Manual backup before risky changes (writes to the deploying machine):
+Manual backup before risky changes (writes to the deploying machine). Use plain `ssh`: without `--raw`, `kamal
+accessory exec` adds its own lines to the output and would corrupt the dump.
 
 ```bash
-kamal accessory exec postgres --reuse "pg_dumpall -U ai_receptionist" > ai-receptionist-$(date +%F).sql
+ssh root@91.98.193.40 'docker exec ai-receptionist-postgres pg_dumpall -U ai_receptionist' > ai-receptionist-$(date +%F).sql
+# restore (only into this application's database server):
+ssh root@91.98.193.40 'docker exec -i ai-receptionist-postgres psql -U ai_receptionist -d postgres' < ai-receptionist-YYYY-MM-DD.sql
 ```
 
 ## 5. Environment variables
@@ -263,8 +271,7 @@ shell command.
 - **Stop paid usage immediately:** delete or disable the production public key in Vapi (browser calls stop), and
   clear the production assistant's server URL if needed.
 - **Previous version:** `kamal app containers` lists versions; `kamal rollback <version>` boots the previous image.
-- **Database:** take a backup (step 4) before any deploy with migrations; restore with `psql` through
-  `kamal accessory exec postgres`.
+- **Database:** take a backup (step 4) before any deploy with migrations; restore it with the step 4 command.
 - **Take the application down:** `kamal app remove` removes only this application's containers and its proxy route.
   `kamal accessory remove postgres` also deletes this application's database files: back up first. Neither touches
   MCP Server, Platestead or Keepford. Remove the DNS record last.
@@ -276,7 +283,14 @@ After the first successful deploy and a successful sign-in (step 12):
 1. Keep the password in your password manager.
 2. In `.env.kamal`, empty the value: the line becomes `ADMIN_PASSWORD=`.
 3. `kamal deploy` (the new container starts without it).
-4. Check without printing it: `kamal app exec --reuse 'test -z "$ADMIN_PASSWORD" && echo empty'` prints `empty`.
+4. Check without printing it (counts characters inside the container; `0` = unset, `1` = empty, anything more = still set):
+
+   ```bash
+   ssh root@91.98.193.40 'docker exec $(docker ps -q --filter label=service=ai-receptionist --filter label=role=web | head -1) printenv ADMIN_PASSWORD | wc -c'
+   ```
+
+   (Not `kamal app exec '... $ADMIN_PASSWORD ...'`: Kamal runs the command through the host's shell, which would expand
+   the variable on the host, where it is always empty.)
 
 The seeds already ignore the variable once an admin exists; removing it keeps a password out of the server's
 environment.
