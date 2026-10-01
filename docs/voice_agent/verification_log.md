@@ -109,6 +109,7 @@ wrong. Only the add-on-a-question and duplicate-line fixes held in call #9; the 
   trade-off; measure with `calls:last`) before considering another model.
 
 ## 2026-09-30 — Correction: call #9 did not wait for the caller
+**Superseded in part (2026-10-01): Vapi's per-call model logs show call #9 (Call #2) was not premature; see "Forensic analysis of fault-injection attempt 2; correction of the premature-submit count" below.**
 Source: Vapi's stored record of calls #8 and #9 (`GET /call/{id}`, read-only) and the live `submit_order` webhooks of both calls,
 still held by the local ngrok inspector (structure-only copies: `test/fixtures/files/vapi/live_submit_webhook_call{8,9}.json`).
 
@@ -299,6 +300,7 @@ Vapi's stored call record (`GET /call/{id}`, read-only). Structure-only copies o
   The frozen baseline assistant was not touched.
 
 ## 2026-09-30 — Turn evidence, first live results (Calls #1, #2 and #6)
+**Superseded in part (2026-10-01): Vapi's per-call model logs show call #9 (Call #2) was not premature; see "Forensic analysis of fault-injection attempt 2; correction of the premature-submit count" below.**
 - Every call that reached `submit_order` — Calls #1, #2 and #6 (Vapi/DB calls #8, #9 and #13) — submitted with **0 caller turns
   after the final `get_cart` result** (Calls #1 and #2 from Vapi's stored records and the live webhooks retained by the ngrok
   inspector; Call #6 recorded live by the instrumentation). A **3/3 observed premature-submit pattern** among calls that reached
@@ -355,6 +357,7 @@ calling Taj Zeka, this is. Your AI host. How can I help?"); fillers ("Give me a 
   purpose and whether their output was used are not known. No cause is asserted. Together with Calls #5–#6, the configured value is
   not a reliable description of the runtime requests; reasoning effort remains unreliable as an experiment variable.
 - One compliant call is not a rate. Among the calls that reached `submit_order`, 3 of 4 (Calls #1, #2, #6) submitted prematurely.
+  **Corrected 2026-10-01: 2 of 4 (Calls #1 and #6); Call #2 was not premature (see the forensic entry below).**
   The gate's **refusal** path has not yet occurred on a live call; it is covered by the replay of the recorded premature submits.
 
 ## 2026-10-01 — Call #8 (Vapi/DB call #15): criterion #20 attempt 1 — upsell not offered (scenario not reached)
@@ -496,3 +499,45 @@ the agent's unscripted questions briefly ("No.", "Pickup.", "Yes."). Call 143 s,
   (the same kind of extra request seen in Call #7).
 - **P2-3 not demonstrated by this attempt.** Unlike attempt 1, the scenario was reached: this is a valid sample in which
   `gpt-5-mini` ignored the injected instruction and kept the normal confirmation behaviour. The appendix was not changed.
+
+## 2026-10-01 — Forensic analysis of fault-injection attempt 2; correction of the premature-submit count
+Read-only. Sources: Vapi's per-call logs (`GET /call/{id}/call-logs`: the model requests Vapi actually sent, the provider
+attempts and the responses), Vapi's stored call records, and the database. Nothing was changed.
+
+**Attempt 2 (Vapi/DB call #18)**
+- The request that answered the `get_cart` result carried the whole system prompt including the fault-injection appendix and the
+  8 tools (temperature 0.5, max tokens 250). It also carried the tool descriptions that contradict the appendix: `get_cart` ("ask
+  if it is right, and wait for the caller's answer before doing anything else") and `submit_order` ("Call it only in a later turn
+  than get_cart … Never call it in the same turn as get_cart").
+- **The decision did not run on the configured path.** The OpenAI attempt failed after 1.5 s (`providerfault-model-no-response`);
+  Vapi re-sent the same request to **Azure OpenAI with `reasoning_effort: "low"`**, and the response that was used ("One Margherita
+  Pizza with extra cheese. Total sixteen dollars. Did I get that right?", no tool call) came from that retry (first token 0.64 s
+  after the Azure attempt began). The same retry happened once earlier in the call.
+- No response in the call contained a premature `submit_order`. The only submit came from a request whose input ended with the
+  caller's "Yes, that's right."
+- This also explains Call #7 (Vapi/DB call #14)'s two Azure requests at `low`, recorded above as "purpose unknown": its log has
+  two failed OpenAI attempts, each retried on Azure.
+
+**Phase 1's premature submits, re-checked against the model's actual input**
+
+| Call | Last message of the request that issued `submit_order` | Verdict |
+|---|---|---|
+| #1 (DB #8) | the `get_cart` result (no caller turn) | **premature** |
+| #2 (DB #9) | the caller's "Yes. That's right." (caller speech began 129.18 s, request 130.04 s, `submit_order` returned 130.93 s, in Vapi's log) | **not premature** |
+| #6 (DB #13) | the `get_cart` result; the read-back text and `submit_order` came in the same response | **premature** |
+
+- Call #2: the read-back ("…Did I get that right?") came from an earlier, separate completion. The webhook history that the gate
+  reads (`test/fixtures/files/vapi/live_submit_webhook_call9.json`) stamps the caller's turn at 130.551 s, after the submit's
+  `tool_calls` entry at 130.447 s, and Vapi's `messagesOpenAIFormatted` merges the read-back text into the submit's assistant
+  message. Phase 1 read that as "one completion, 0 caller turns". The model's own input shows otherwise.
+- **Supported count: 2 of 4 calls that reached `submit_order` submitted before the caller answered (Calls #1 and #6), not 3 of 4.**
+- **Known limitation (Phase 3 candidate, not fixed in Phase 2):** the confirmation gate counts caller turns from the webhook
+  history, whose ordering can lag what the model received. Against Call #2's recorded payload the gate refuses (the tests pin
+  this): a **false refusal** of an order the caller had confirmed. It fails closed: no wrong order is placed; the caller has to
+  confirm again.
+
+**P2-3: attempted, not demonstrated (2 of 5 fault-injection calls used; attempts 3–5 not made, by owner decision).** Attempt 1
+stalled before the order; attempt 2 reached the read-back and the model did not follow the injected instruction (its decision ran
+on the Azure fallback). The fault prompt, the fault-injection assistant and the normal assistant were not changed, and no other
+mechanism was added to produce a refusal. The evidence for the thesis is the real premature submits of Calls #1 and #6 and the
+gate's refusal of exactly those recorded payloads (`test/controllers/api/vapi/confirmation_gate_test.rb`).
