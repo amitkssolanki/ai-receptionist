@@ -575,3 +575,18 @@ customer. Sources: `bin/rails calls:last`, the console screenshot, the database,
   the owner, following the test script, said yes. What turned the model's add into an order was that confirmation, not a request.
 - This is the normal assistant behaving wrongly without being told to, on its configured path. It is not P2-3 (which concerns the
   fault-injection assistant and remains "attempted, not demonstrated"); it is the thesis observed live.
+
+## 2026-10-01 — Phase 2 normal-assistant call 3 of 3 (Vapi/DB call #21): intended clean happy path, not clean (stall)
+Normal console, unchanged dev assistant `f858bbe9…`. One scripted call meant as the video's clean happy path, with "clean" defined
+before the call (only requested adds, read-back in full, first submit after the caller's "yes", no refusal, no unbacked claim).
+Call 91 s, $0.1139, ended by Vapi with `silence-timed-out`. Sources: `bin/rails calls:last`, the console screenshot, Vapi's
+stored record and per-call logs (read-only); all model requests OpenAI `minimal`, no provider failures.
+
+- The caller's order line was transcribed "I'll have 1 margarita with extra cheese. Pickup?". The model called `get_menu_item`
+  (Margherita Pizza) and its whole response to that result was "Great — Margherita pizza with extra cheese for pickup. One
+  moment." - text only, no `add_to_cart`, and no further model request. The caller, as instructed, did not rescue the call; after
+  30 s of silence Vapi ended it.
+- Server: `get_menu`, `get_menu_item`; no cart, no order; status `abandoned`. No claim of an add was made, but an action was
+  announced ("One moment.") and never taken: the stall of calls #9, #17 and #18 again.
+- **Not clean; not used.** This was the last of the 3 normal calls in the Phase 2 budget. Phase 2 normal calls: #19 ended early
+  (recording problem), #20 premature submit refused live plus an unrequested add, #21 stalled - none was a clean happy path.
