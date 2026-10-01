@@ -565,9 +565,13 @@ customer. Sources: `bin/rails calls:last`, the console screenshot, the database,
 - The console showed the refusal live: event row "⛔ rejected · customer_confirmation_required", "0 caller turns since the last
   get_cart; nothing was submitted, v1 kept", and the order board "submit refused: waiting for the caller's answer to the read-back
   (v1)" while the cart stayed open (screen recording at 1:10).
-- **Also observed (recorded, not acted on): an unrequested add.** After "Tell me about the margarita." the model fetched the item
-  and, in the response to that result, called `add_to_cart` (Margherita Pizza with Extra cheese) while asking "Would you like
-  one?". The caller never asked to order it at that point (the scripted order line was never needed). The caller later heard and
-  confirmed the read-back. The "add on a question" failure of Call #1, again; the server recorded exactly what the model requested.
+- **Also observed (recorded, not acted on): an unrequested add with an invented option.** The caller's only lines were "Hi.
+  What's on the menu?", "Tell me about the margarita.", "No.", "No.", "Pickup?", "Yes. That's right." and "Thank you." After the
+  `get_menu_item` result the model called `add_to_cart` for a Margherita Pizza **with Extra cheese** (the item's first listed
+  option) while asking "Would you like one?". The caller never asked to order it and never mentioned extra cheese. This breaks two
+  explicit prompt rules (`docs/voice_agent/system_prompt.md`: a question such as "tell me about the Margherita" is not an order;
+  ask about options before adding): the "add on a question" failure of Call #1, again, plus an option chosen for the caller. The
+  server recorded exactly what the model requested and read back "One Margherita Pizza with extra cheese. Total sixteen dollars.";
+  the owner, following the test script, said yes. What turned the model's add into an order was that confirmation, not a request.
 - This is the normal assistant behaving wrongly without being told to, on its configured path. It is not P2-3 (which concerns the
   fault-injection assistant and remains "attempted, not demonstrated"); it is the thesis observed live.

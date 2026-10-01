@@ -24,7 +24,8 @@ where they were captured, Vapi's stored logs
   later found not to be premature (see §5). In Phase 2 the normal assistant did it again on a live call (Vapi/DB call #20), and
   the gate refused it (§5).
 - **Announced actions that never happened** ("Getting your cart" with no tool call), stalls after a filler ("One moment." and then
-  nothing), adding an item the caller had only asked about (Call #1, and again in Vapi/DB call #20), spoken reasoning, misheard
+  nothing), adding an item the caller had only asked about (Call #1; again in Vapi/DB call #20, where it also chose an option the
+  caller never mentioned), spoken reasoning, misheard
   speech ([Phase 1 report §3–§6](phase1/ACCEPTANCE.md), [verification log](voice_agent/verification_log.md)).
 - In every valid call, **the server's state was correct for what it was asked**: Call #1's wrong order ($35.50) was exactly what the
   model requested, and the console showed it ([Phase 1 report §7](phase1/ACCEPTANCE.md)).
@@ -114,8 +115,9 @@ what the server accepts.
 
 ## 8. Known limitations
 
-- The agent's conversational reliability is not established (stalls, fillers, announced actions, misheard speech); the server
-  prevents wrong orders, not awkward calls.
+- The agent's conversational reliability is not established (stalls, fillers, announced actions, misheard speech, unrequested
+  adds). The server keeps the order exactly what was read back and answered; it cannot tell whether an add was what the caller
+  meant (call #20: an item the caller only asked about became an order because the caller confirmed the read-back).
 - The gate depends on the ordering of Vapi's history (the Call #2 false refusal above).
 - One live refusal so far (Vapi/DB call #20); otherwise the refusal is shown against recorded real payloads. No rates: a handful
   of calls.
