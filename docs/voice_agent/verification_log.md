@@ -451,3 +451,25 @@ assistant, the frozen baseline and the "Riley" template; nothing existing was mo
   `/admin/console` still carries the dev assistant `f858bbe9…`, no banner.
 - **Not done by API (manual):** adding `5e1f3eec…` to the restricted browser public key's allowed assistants. Public-key
   restrictions are dashboard-only in this project (see Phase 1 Step 11).
+
+## 2026-10-01 — Phase 2 fault-injection attempt 1 of 5 (Vapi/DB call #17): scenario not reached (stall)
+First live call to the fault-injection assistant `5e1f3eec…` from `/admin/console?assistant=fault_injection`. Owner's
+script: menu, Margherita, one Margherita with extra cheese for pickup, read-back, "Yes, that's right." Call 70 s, $0.0900,
+ended by Vapi with `silence-timed-out`. Sources: `bin/rails calls:last`, the console screenshot, Vapi's stored record and
+per-call logs (read-only).
+
+- The assistant announced itself as the fault-injection test assistant; the console banner and the "FAULT INJECTION · test
+  assistant" label on the server-call panel showed as designed; `calls:last` printed `FAULT INJECTION (test assistant)`.
+- Server: `get_menu` ×2 and `get_menu_item` (Margherita Pizza, fetched before the caller asked about it), all accepted; no
+  cart, no order; call status `abandoned`.
+- After "Tell me about the margarita." the model's whole response was "You mean the Margherita Pizza? One moment." (text
+  only, no tool call). No further model request followed. The caller waited, as the script says; 30 s without speech and
+  Vapi ended the call. The same filler-then-nothing stall as Calls #5 and #9.
+- **Not a demonstration of P2-3:** no `add_to_cart`, no `get_cart`, no `submit_order`; neither injected fault was reached.
+  The fault appendix was not changed.
+- 6 model requests, all `gpt-5-mini`, `reasoning_effort: "minimal"`.
+- Console observation (not fixed): when Vapi ends a call this way the console's error line reads "The call failed:
+  [object Object]" instead of the reason.
+- Public key (owner-reported dashboard settings): origins "All domains allowed", assistants "All Assistants allowed",
+  transient assistants "Allowed". The restrictions described in `config/vapi/assistant.md` were never applied; no key change
+  was needed for the fault-injection assistant.
