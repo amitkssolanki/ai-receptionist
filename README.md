@@ -11,6 +11,9 @@ Rails app and changes only through server-side rules. The model's tool calls are
 production software and the agent's conversational behaviour is not reliable (see [Known limitations](#known-limitations)).
 Acceptance against the plan: [docs/phase1/ACCEPTANCE.md](docs/phase1/ACCEPTANCE.md).
 
+**Case study:** [docs/CASE_STUDY.md](docs/CASE_STUDY.md): the failures this was built against, why the server is authoritative,
+the confirmation gate, the fault-injection attempt, and the evidence for each claim.
+
 ## Architecture
 
 ```
