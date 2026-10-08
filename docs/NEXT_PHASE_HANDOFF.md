@@ -5,13 +5,14 @@ closeout. Facts and numbers are in [`CURRENT_STATE.md`](CURRENT_STATE.md); this 
 
 ## Starting point
 
-- Branch from **`main`** (the only branch). The code baseline is `fab8b2e`; the closeout added documentation-only commits on top
-  of it, so start from the current `origin/main` (`git log -1 origin/main`).
+- Branch from **`main`** (the only branch). The code baseline is `fab8b2e`; only documentation-only commits follow it, so start
+  from the current `origin/main` (`git log -1 origin/main`).
 - The working tree of a fresh clone is clean. On the owner's machine the encrypted credentials file shows as modified: that is
   local configuration, never committed.
 - CI (`scan_ruby`, `scan_js`, `test`, `lint`) is green on `main`; `bin/rails baseline:verify` passes.
-- Production runs `f964ef7`. `main` is ahead of production by two dependency updates (Rails 8.1.4, solid_cable 4.1.0) and
-  documentation; deploy them, or not, as a deliberate step with the runbook's checks.
+- Production is synchronized with `main`: `c674cd5` (Rails 8.1.4, solid_cable 4.1.0) was deployed on 2026-10-08, followed by
+  the documentation-only reconciliation commit, so production runs the head of `main`.
+- GitHub deletes merged head branches automatically, and Dependabot security alerts are enabled.
 
 ## What is complete
 

@@ -15,7 +15,7 @@ demo restaurant ("Taj Zayka"), browser voice only, no customers.
 |---|---|
 | Branch | `main` is the only branch, locally and on GitHub |
 | Code baseline | `fab8b2e` (Merge PR #23, solid_cable 4.1.0): the last change to application code or dependencies, CI green |
-| On top of it | documentation-only closeout commits; `git log -1 origin/main` is the authoritative final commit |
+| On top of it | documentation-only commits: the closeout (`c674cd5`) and the reconciliation after the 2026-10-08 deploy; `git log -1 origin/main` is the authoritative final commit |
 | Tag | `portfolio-baseline` (`257a9e7`): the frozen Phase 0 baseline that `bin/rails baseline:verify` checks against. Keep it |
 | Open PRs | none |
 | CI | GitHub Actions `CI` (`scan_ruby`, `scan_js`, `test`, `lint`) green on `main` |
@@ -30,17 +30,18 @@ solid_cable 4.1.0; merged at the closeout, see below).
 | | |
 |---|---|
 | Hostname | https://restaurant-receptionist.railsfanatics.com |
-| Deployment | Kamal 2, deployed 2026-10-01 with [`docs/deploy/PRODUCTION.md`](deploy/PRODUCTION.md); last deployed commit `f964ef7` |
-| Not deployed | `main` after `f964ef7`: Rails 8.1.3.1 → 8.1.4 and solid_cable 4.0.0 → 4.1.0 (PRs #22, #23) plus documentation. Deploying them is the owner's decision; the runbook's checks apply |
+| Deployment | Kamal 2 with [`docs/deploy/PRODUCTION.md`](deploy/PRODUCTION.md): first deployed 2026-10-01 (last commit that day `f964ef7`); on 2026-10-08 `c674cd5` was deployed, bringing Rails 8.1.4 and solid_cable 4.1.0 (PRs #22, #23) to production, then this documentation-only reconciliation commit |
+| Synchronized | production runs the head of `main` (`main` = `origin/main` = the deployed commit); no application code or dependency change is undeployed |
 | Infrastructure | a VPS shared with the owner's other Kamal apps and one shared `kamal-proxy` (never rebooted from this repository) |
 | Database | a dedicated Postgres 18 accessory, `ai-receptionist-postgres`, used by no other app |
 | Vapi | a separate production assistant, "Taj Zayka Receptionist (production)", and a separate production public key restricted to the production origin and that assistant, no transient assistants |
 | Mode | browser voice calls from the signed-in console (`/admin/console`); no phone number, no Twilio, no SMS |
 | Admin bootstrap | `ADMIN_PASSWORD` was used once for the first admin and then removed from the deployment (runbook step 16) |
-| Post-deploy checks | 11 of 11 passed on `f964ef7` (2026-10-01): `/`, `/og.png`, `/up`; anonymous `/admin` and console redirect to sign-in; webhook 401 without the secret; admin sign-in, dashboard, console, sign-out; Solid Queue processes registered, no failed jobs; the other apps on the server unaffected |
+| Post-deploy checks, 2026-10-08 | on `c674cd5`: the running image's files match the commit; Rails 8.1.4 and solid_cable 4.1.0 at runtime; no pending migrations (schema `20261001004629`); `/` and `/up` 200, HTTPS valid, HTTP redirects to HTTPS; anonymous `/admin`, console and Action Cable refused; webhook 401 without or with a wrong secret, 200 with the production secret; `vapi:check` OK against the production assistant; admin record present and the authenticated pages load (checked in-process, not by a password sign-in); Solid Queue processes registered, 0 failed jobs; no secret values in the logs; production data unchanged; the other apps on the server unaffected |
+| Post-deploy checks, 2026-10-01 | 11 of 11 passed on `f964ef7`: `/`, `/og.png`, `/up`; anonymous `/admin` and console redirect to sign-in; webhook 401 without the secret; admin sign-in, dashboard, console, sign-out; Solid Queue processes registered, no failed jobs; the other apps on the server unaffected |
 
-Production was not touched at the closeout: no deploy, no Vapi call, no configuration change. The production facts above are
-the 2026-10-01 deployment records; they were not re-checked against the live server on 2026-10-08.
+The 2026-10-08 deploys changed no application behaviour, configuration, Vapi setting or data, and made no Vapi call. The browser
+sign-in with the real admin password is left to the owner.
 
 ### Production smoke test (2026-10-01)
 
@@ -71,8 +72,8 @@ production order #1 became CONFIRMED ($14.00). Recorded in
 - Secrets live outside Git: `.env.kamal` (git-ignored, owner's machine), the owner's password manager / Keychain, Vapi's
   dashboard. The encrypted credentials file is modified locally on the owner's machine and is never committed.
 - Dependabot **version updates** run weekly (bundler, GitHub Actions; `.github/dependabot.yml`). Dependabot **security alerts**
-  are disabled in the repository settings, so GitHub reports none; `bundler-audit` (CI and local) and `importmap audit` cover
-  known advisories and are clean.
+  are enabled (since 2026-10-08; none open), alongside `bundler-audit` (CI and local) and `importmap audit`, which are clean.
+  Automatic Dependabot security-fix PRs are not enabled.
 
 ## Intentional scope exclusions
 
@@ -100,8 +101,8 @@ Phase 3 candidates, which are candidates only, not an agreed scope.
 
 - `main` is the only long-lived branch and the only starting point. Do not revive deleted phase branches; their commits are all
   in `main` and their PRs (#17–#21) keep the review history.
-- New work: a short-lived branch from the current `origin/main`, merged by pull request with green CI, then deleted (locally
-  and on GitHub).
+- New work: a short-lived branch from the current `origin/main`, merged by pull request with green CI, then deleted (GitHub
+  deletes merged head branches automatically since 2026-10-08; delete the local copy).
 - No history rewriting or force-pushes on `main`; do not delete the `portfolio-baseline` tag.
 
 ## Next-phase starting point

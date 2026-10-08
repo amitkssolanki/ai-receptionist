@@ -5,9 +5,10 @@ server MCP Server, Platestead and Keepford (and vrinda and fieldnote) already us
 says where it is generated and stored. Configuration: `config/deploy.yml`, `.kamal/secrets`, `config/vapi/production.json`;
 `test/deploy/production_config_test.rb` keeps them consistent.
 
-**Status (recorded 2026-10-08):** deployed 2026-10-01 by following this runbook; the last deployed commit is `f964ef7`. Steps 0–16
-are done, including the browser smoke call (step 13) and the removal of `ADMIN_PASSWORD` (step 16). `main` has moved on since
-(dependency updates and documentation, not deployed); see [docs/CURRENT_STATE.md](../CURRENT_STATE.md).
+**Status (recorded 2026-10-08):** first deployed 2026-10-01 by following this runbook; steps 0–16 are done, including the
+browser smoke call (step 13) and the removal of `ADMIN_PASSWORD` (step 16). Redeployed 2026-10-08 with `c674cd5` (Rails 8.1.4,
+solid_cable 4.1.0; no migrations) and then the documentation-only reconciliation commit: production runs the head of `main`.
+See [docs/CURRENT_STATE.md](../CURRENT_STATE.md).
 
 What anyone on the internet can reach once deployed: the homepage `/` (static: it reads no records or configuration), the
 sign-in page, sign-out, `/up` (200 or 500, no data), the Vapi webhook (refused without the production `X-Vapi-Secret`) and
