@@ -1,5 +1,10 @@
 # Phase 2 acceptance report: the thesis on camera
 
+> **Closeout note (2026-10-08):** this report is historical and kept as written on 2026-10-01. Since then: the branch
+> `phase-2-thesis-on-camera` was pushed, its CI fixed by the Brakeman 8.1.0 bump (`ec46569`), merged into `main` by PR #18
+> and deleted at the repository closeout; the owner recorded and approved the portfolio video (the condition P2-7 waited for).
+> P2-3 stays "attempted, not demonstrated". Current state: [docs/CURRENT_STATE.md](../CURRENT_STATE.md).
+
 Status as of 2026-10-01, branch `phase-2-thesis-on-camera` (from `phase-1-reliability-console` at `c28ca09`; not pushed, not
 merged). Plan: Option B of the Phase 2 assessment, approved with 8 fixed criteria (P2-1 to P2-8). Evidence: this repository,
 [`docs/voice_agent/verification_log.md`](../voice_agent/verification_log.md) (Phase 2 entries from 2026-10-01) and

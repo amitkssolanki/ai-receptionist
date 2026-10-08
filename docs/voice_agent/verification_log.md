@@ -1,7 +1,7 @@
 # Live verification log
 
-Facts from real runs against the live development assistant. Nothing here is generated or simulated; each entry says what was
-observed, by whom, and what it does and does not show. (The scripted, model-free results are in `docs/phase1/evidence/`.)
+Facts from real runs against the live development assistant (and, in the last entry, the production assistant). Nothing here
+is generated or simulated; each entry says what was observed, by whom, and what it does and does not show. (The scripted, model-free results are in `docs/phase1/evidence/`.)
 
 ## 2026-09-30 — `vapi:check` against the live dev assistant `f858bbe9…`
 Clean, with the webhook secret verified as matching (the API returns the header value). Details in `docs/phase1/EXECUTION_LOG.md`.
@@ -622,3 +622,17 @@ calls:last`, the console screenshot, the database, Vapi's stored record and per-
 cart to confirm." and made no request for 16 s, until the caller's next scripted line (the announced-action stall; no effect on the
 order). 3 of the 12 model requests fell back to Azure OpenAI at `low` after OpenAI faults, including the request that issued
 `submit_order`.
+
+## 2026-10-01 — Production smoke call (production assistant `2fbdb0bf…`, https://restaurant-receptionist.railsfanatics.com)
+The one paid browser call of `docs/deploy/PRODUCTION.md` step 13, made by the owner from the signed-in production console after
+the first production deployment, with the separate production assistant and the restricted production public key. Written up
+at the 2026-10-08 repository closeout from the deploy session's records: the production database was not queried and Vapi's
+per-call model logs were not re-examined for this entry, so it carries fewer details than the entries above.
+
+- **A premature submit, refused live in production.** The model issued `submit_order` before the caller had answered the
+  read-back. Rails refused it with `customer_confirmation_required`; nothing was submitted and the order stayed open.
+- The caller then confirmed; the next `submit_order` was accepted. Production order #1: CONFIRMED, $14.00. SMS not sent (web
+  call; Twilio is not configured in production).
+- What it shows: the confirmation gate behaving in production as it did in development (Vapi/DB call #20), on the unprompted
+  production assistant. What it does not show: a rate, long-term operation, or anything about phone calls. It is the second
+  live refusal recorded in this log.

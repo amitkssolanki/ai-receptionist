@@ -78,8 +78,11 @@ fails closed. It is a turn-taking check, not a judgement of what the caller said
   caller's answer and the gate passed. In Phase 2, the
   unchanged normal assistant read the order back and submitted in the same response with no caller turn (Vapi/DB call #20, on its
   configured path: OpenAI, `minimal`, no fallback). Rails refused it with `customer_confirmation_required`; the order stayed open
-  at v1; the model asked "Did I get that right?" again, and after the caller's "yes" the submit was accepted. It is the only live
-  refusal so far ([verification log](voice_agent/verification_log.md), entry "Phase 2 normal-assistant call 2 of 3").
+  at v1; the model asked "Did I get that right?" again, and after the caller's "yes" the submit was accepted. It was the first
+  live refusal ([verification log](voice_agent/verification_log.md), entry "Phase 2 normal-assistant call 2 of 3").
+- **In production:** the production smoke call (2026-10-01, separate production assistant) did the same: a premature
+  `submit_order` refused with `customer_confirmation_required`, the caller confirmed, the next submit was accepted and production
+  order #1 was CONFIRMED ([verification log](voice_agent/verification_log.md), entry "Production smoke call").
 - **A false refusal, found later:** in Call #2 the model had the caller's "Yes. That's right." before it submitted, but Vapi's
   history stamps that turn 0.1 s after the submit, so the gate refuses that recorded payload. It fails closed (no wrong order;
   the caller confirms again). Recorded as a known limitation, not fixed.
@@ -109,8 +112,9 @@ what the server accepts.
 - The full test suite, the reliability rules R01–R24, replays of real calls, and the evaluation harness with committed,
   self-checking evidence ([README: Tests](../README.md#tests-evaluation-and-checks), [evidence](phase1/evidence/README.md)).
 - Phase 1 closed at 20 of 20 acceptance criteria with green CI ([Phase 1 report](phase1/ACCEPTANCE.md)).
-- Phase 2 (this demonstration layer): 6 of 8 criteria met, the fault-injection live refusal attempted but not demonstrated, the
-  video pending ([Phase 2 report](phase2/ACCEPTANCE.md)).
+- Phase 2 (this demonstration layer): at its report, 6 of 8 criteria met, the fault-injection live refusal attempted but not
+  demonstrated, the video pending; the owner later recorded and approved the portfolio video
+  ([Phase 2 report](phase2/ACCEPTANCE.md)).
 - `bin/rails vapi:check` (and `PROFILE=fault_injection`) compares the live assistants with the repository, read-only
   ([vapi.rake](../lib/tasks/vapi.rake)).
 
@@ -120,9 +124,11 @@ what the server accepts.
   adds). The server keeps the order exactly what was read back and answered; it cannot tell whether an add was what the caller
   meant (call #20: an item the caller only asked about became an order because the caller confirmed the read-back).
 - The gate depends on the ordering of Vapi's history (the Call #2 false refusal above).
-- One live refusal so far (Vapi/DB call #20); otherwise the refusal is shown against recorded real payloads. No rates: a handful
-  of calls.
+- Two live refusals (Vapi/DB call #20 in development, and the production smoke call); otherwise the refusal is shown against
+  recorded real payloads. No rates: a handful of calls.
 - Reasoning effort is not controllable through the Vapi assistant: provider fallbacks change it per request.
-- The browser public key is not restricted in the Vapi dashboard.
-- Not built: payments, phone calls and SMS delivery, call transfer, multiple restaurants, deployment
+- The development browser public key is not restricted in the Vapi dashboard; the production key is restricted to the production
+  origin and assistant ([runbook](deploy/PRODUCTION.md) §10).
+- Deployed as a browser-voice demo for one demo restaurant ([runbook](deploy/PRODUCTION.md)): no customers and no long-term
+  operational history. Not built: payments, phone calls and SMS delivery, call transfer, multiple restaurants
   ([README: Known limitations](../README.md#known-limitations)).

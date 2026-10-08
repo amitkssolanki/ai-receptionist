@@ -7,9 +7,12 @@ The design rule is **"the model proposes, the server decides."** The voice pipel
 [Vapi](https://vapi.ai); every business fact — cart, prices, totals, cart version, read-back, order status, SMS — lives in this
 Rails app and changes only through server-side rules. The model's tool calls are requests, not facts.
 
-**Status:** Phase 1 (reliability + live voice console) is implemented and was verified with nine live browser calls. It is not
-production software and the agent's conversational behaviour is not reliable (see [Known limitations](#known-limitations)).
-Acceptance against the plan: [docs/phase1/ACCEPTANCE.md](docs/phase1/ACCEPTANCE.md).
+**Status:** complete and frozen. Phase 1 (reliability + live voice console) and Phase 2 (the thesis on camera) are merged, and
+the app is deployed as a browser-voice demo at https://restaurant-receptionist.railsfanatics.com (one demo restaurant, no
+phone calls, no SMS, no payments). The server-side guarantees are tested and were observed live; the agent's conversational
+behaviour is not reliable (see [Known limitations](#known-limitations)). Current state and the starting point for any future
+work: [docs/CURRENT_STATE.md](docs/CURRENT_STATE.md), [docs/NEXT_PHASE_HANDOFF.md](docs/NEXT_PHASE_HANDOFF.md). Acceptance:
+[Phase 1](docs/phase1/ACCEPTANCE.md), [Phase 2](docs/phase2/ACCEPTANCE.md).
 
 **Case study:** [docs/CASE_STUDY.md](docs/CASE_STUDY.md): the failures this was built against, why the server is authoritative,
 the confirmation gate, the fault-injection attempt, and the evidence for each claim.
@@ -140,7 +143,7 @@ payload-free summary (tool calls, versions, turn evidence, order) that is safe t
 ## Tests, evaluation and checks
 
 ```
-bin/rails test                                               # full suite (about 400 tests)
+bin/rails test                                               # full suite (about 470 tests)
 bin/rails test test/baseline/reliability_characterization_test.rb   # R01–R24 reliability rules
 bin/rails test test/baseline/live_call_replay_test.rb        # replays of real recorded calls
 bin/rails test test/services/evaluation                      # evaluation harness + evidence freshness
@@ -163,6 +166,10 @@ bin/rubocop; bin/brakeman --no-pager; bin/bundler-audit; bin/importmap audit
 
 ## Documentation
 
+- [docs/CURRENT_STATE.md](docs/CURRENT_STATE.md) — the final state: commit, production, tests, security, exclusions, branch
+  policy; [docs/NEXT_PHASE_HANDOFF.md](docs/NEXT_PHASE_HANDOFF.md) — the starting document for any future phase.
+- [docs/CASE_STUDY.md](docs/CASE_STUDY.md) — the case study; [docs/phase2/ACCEPTANCE.md](docs/phase2/ACCEPTANCE.md) — Phase 2
+  status against its criteria; [DEMO_SCRIPT.md](docs/phase2/DEMO_SCRIPT.md) — the demo video's storyboard.
 - [docs/phase1/PLAN.md](docs/phase1/PLAN.md) — the Phase 1 plan and its acceptance criteria;
   [ACCEPTANCE.md](docs/phase1/ACCEPTANCE.md) — status against them;
   [EXECUTION_LOG.md](docs/phase1/EXECUTION_LOG.md) — what was built, step by step;
@@ -180,12 +187,15 @@ bin/rubocop; bin/brakeman --no-pager; bin/bundler-audit; bin/importmap audit
 - Live testing (nine Phase 1 browser calls) found the agent submitting before the caller answered (2 of 4 calls that reached submission —
   the reason for the confirmation gate), announcing tool calls it never made, speaking its reasoning, and stacking fillers. Only the
   first is prevented server-side; the others are visible in the console, not fixed. One compliant call is not a rate.
-- The gate's refusal path is verified against recorded real payloads and once live (Phase 2, Vapi/DB call #20: the normal
-  assistant submitted with no caller turn and was refused). Two deliberate fault-injection attempts did not produce one.
+- The gate's refusal path is verified against recorded real payloads and twice live: Phase 2, Vapi/DB call #20 (the normal
+  development assistant submitted with no caller turn and was refused), and the production smoke call of 2026-10-01 (refused,
+  then accepted after the caller confirmed). Two deliberate fault-injection attempts did not produce one.
 - The gate reads the order of Vapi's conversation history, which can lag what the model received: against one recorded call
   (Call #2) it refuses an order the caller had confirmed. It fails closed (no wrong order); not fixed.
 - The model's reasoning effort is not a controllable variable through the assistant configuration (Vapi's requests did not follow
   it).
-- The browser public key is not restricted in the Vapi dashboard (any origin, any assistant, transient assistants allowed; owner-
-  reported 2026-10-01). `config/vapi/assistant.md` describes the intended restrictions; they were never applied.
-- Not built: payments, multiple restaurants, a second voice provider, call transfer, a real-phone SMS test, deployment.
+- The **development** browser public key is not restricted in the Vapi dashboard (any origin, any assistant, transient
+  assistants allowed; owner-reported 2026-10-01; it serves the local console only). The production key is a separate key
+  restricted to the production origin and assistant ([docs/deploy/PRODUCTION.md](docs/deploy/PRODUCTION.md) §10).
+- Not built, by design: phone calling, SMS (Twilio is not configured in production), payments, multiple restaurants, a second
+  voice provider, call transfer. The production deployment is a demo with no customers and no long-term operational history.

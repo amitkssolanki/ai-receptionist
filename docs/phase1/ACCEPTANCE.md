@@ -1,5 +1,9 @@
 # Phase 1 acceptance report
 
+> **Closeout note (2026-10-08):** this report is historical and kept as written. The branch `phase-1-reliability-console`
+> was merged into `main` by PR #17 and deleted at the repository closeout; every commit it names is in `main`'s history.
+> Current state: [docs/CURRENT_STATE.md](../CURRENT_STATE.md).
+
 Status as of 2026-09-30, branch `phase-1-reliability-console`; first written after commit `1f1fb5b`, updated after
 commit `1918acb` (criterion #18 and the README). Updated 2026-10-01 with the CI result and the #20 live call (see "Remaining acceptance work" at the end). Source of truth for the
 criteria: `docs/phase1/PLAN.md` §14. Evidence: this repository, `docs/phase1/EXECUTION_LOG.md`, `docs/phase1/evidence/`,
